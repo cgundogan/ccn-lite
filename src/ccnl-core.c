@@ -22,6 +22,7 @@
  * 2014-03-20 started to move ccnx (pre 2014) specific routines to "fwd-ccnb.c"
  */
 
+#include "ccnl-cs.h"
 #include "ccnl-ext.h"
 
 #ifndef USE_NFN
@@ -670,28 +671,6 @@ ccnl_content_new(struct ccnl_relay_s *ccnl, struct ccnl_pkt_s **pkt)
     c->last_used = CCNL_NOW();
 
     return c;
-}
-
-struct ccnl_content_s*
-ccnl_content_remove(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
-{
-    struct ccnl_content_s *c2;
-    DEBUGMSG_CORE(TRACE, "ccnl_content_remove\n");
-
-    c2 = c->next;
-    DBL_LINKED_LIST_REMOVE(ccnl->contents, c);
-
-//    free_content(c);
-    if (c->pkt) {
-        free_prefix(c->pkt->pfx);
-        ccnl_free(c->pkt->buf);
-        ccnl_free(c->pkt);
-    }
-    //    free_prefix(c->name);
-    ccnl_free(c);
-
-    ccnl->contentcnt--;
-    return c2;
 }
 
 struct ccnl_content_s*

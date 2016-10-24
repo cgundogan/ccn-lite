@@ -111,7 +111,7 @@ SUITE_LIBS = ${CCNB_LIB} ${CCNTLV_LIB} ${CISTLV_LIB} ${IOTTLV_LIB} ${NDNTLV_LIB}
 UTIL_LIB := util/base64.o util/ccnl-common.o
 
 
-CCNL_CORE_LIB = ccnl-defs.h ccnl-core.h ccnl-core.c ccnl-core-fwd.c ccnl-core-util.c
+CCNL_CORE_LIB = ccnl-defs.h ccnl-core.h ccnl-core.c ccnl-core-fwd.c ccnl-core-util.c ccnl-cs.h ccnl-cs.c
 
 CCNL_RELAY_LIB = ccn-lite-relay.c ${SUITE_LIBS} \
                  ${CCNL_CORE_LIB} ${CCNL_PLATFORM_LIB} \
@@ -125,6 +125,7 @@ CCNL_PLATFORM_LIB = ccnl-os-includes.h \
 NFN_LIB = ccnl-ext-nfn.c krivine.c krivine-common.c
 
 OMNET_DEPS = ccnl-core.c ccnl-core-fwd.c ccnl-core.h ccnl-core-util.c ccnl-defs.h \
+			 ccnl-cs.h ccnl-cs.c \
              ccnl-ext-crypto.c ccnl-ext-debug.c ccnl-ext-debug.h ccnl-ext-echo.c \
              ccnl-ext-frag.c ccnl-ext.h ccnl-ext-hmac.c ccnl-ext-http.c \
              ccnl-ext-localrpc.c ccnl-ext-logging.c ccnl-ext-mgmt.c ccnl-ext-sched.c \

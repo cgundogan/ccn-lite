@@ -32,7 +32,7 @@ NDNTLV_LIB = ../ccnl-pkt-ndntlv.h ../ccnl-pkt-ndntlv.c
 SUITE_LIBS = ${CCNB_LIB} ${CCNTLV_LIB} ${LOCALRPC_LIB} ${NDNTLV_LIB}
 
 
-CCNL_CORE_LIB = ../ccnl-defs.h ../ccnl-core.h ../ccnl-core.c
+CCNL_CORE_LIB = ../ccnl-defs.h ../ccnl-core.h ../ccnl-core.c ../ccnl-cs.h ../ccnl-cs.c
 
 # CCNL_RELAY_LIB = ../ccn-lite-relay.c ${SUITE_LIBS} \
 #                  ${CCNL_CORE_LIB} ${CCNL_PLATFORM_LIB} \
