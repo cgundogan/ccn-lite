@@ -55,6 +55,11 @@ ifdef USE_NFN
     CFLAGS += ${NFNFLAGS}
 endif
 
+ifdef USE_WPAN
+    $(info *** With WPAN ***)
+    CFLAGS += -DUSE_WPAN
+endif
+
 # ----------------------------------------------------------------------
 
 all: $(PROGS)

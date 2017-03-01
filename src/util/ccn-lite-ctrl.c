@@ -326,8 +326,8 @@ mkEchoserverRequest(unsigned char *out, char *path, int suite,
 }
 
 int
-mkNewFaceRequest(unsigned char *out, char *macsrc, char *ip4src, char *ip6src,
-         char *host, char *port, char *flags, char *private_key_path)
+mkNewFaceRequest(unsigned char *out, char *facetype, char *macsrc,
+        char *ip4src, char *ip6src, char *host, char *port, char *flags, char *private_key_path)
 {
     int len = 0, len1 = 0, len2 = 0, len3 = 0;
     unsigned char out1[CCNL_MAX_PACKET_SIZE];
@@ -344,8 +344,14 @@ mkNewFaceRequest(unsigned char *out, char *macsrc, char *ip4src, char *ip6src,
     // prepare FACEINSTANCE
     len3 = ccnl_ccnb_mkHeader(faceinst, CCN_DTAG_FACEINSTANCE, CCN_TT_DTAG);
     len3 += ccnl_ccnb_mkStrBlob(faceinst+len3, CCN_DTAG_ACTION, CCN_TT_DTAG, "newface");
-    if (macsrc)
+    if (macsrc) {
+#ifdef USE_WPAN
+        if (!strcmp(facetype, "newWPANface"))
+            len3 += ccnl_ccnb_mkStrBlob(faceinst+len3, CCNL_DTAG_WPANSRC, CCN_TT_DTAG, macsrc);
+        else
+#endif
         len3 += ccnl_ccnb_mkStrBlob(faceinst+len3, CCNL_DTAG_MACSRC, CCN_TT_DTAG, macsrc);
+    }
     if (ip4src) {
         len3 += ccnl_ccnb_mkStrBlob(faceinst+len3, CCNL_DTAG_IP4SRC, CCN_TT_DTAG, ip4src);
         len3 += ccnl_ccnb_mkStrBlob(faceinst+len3, CCN_DTAG_IPPROTO, CCN_TT_DTAG, "17");
@@ -1104,6 +1110,9 @@ help:
        "  newETHface    MACSRC|any MACDST ETHTYPE [FACEFLAGS]\n"
        "  newUDPface    IP4SRC|any IP4DST PORT [FACEFLAGS]\n"
        "  newUDP6face   IP6SRC|any IP6DST PORT [FACEFLAGS]\n"
+#ifdef USE_WPAN
+       "  newWPANface   WPANSRC\n"
+#endif
        "  newUNIXface   PATH [FACEFLAGS]\n"
        "  destroyface   FACEID\n"
        "  prefixreg     PREFIX FACEID [SUITE]\n"
@@ -1174,15 +1183,27 @@ help:
             goto help;
         len = mkEchoserverRequest(out, argv[2], suite, private_key_path);
     } else if (!strcmp(argv[1], "newETHface")||!strcmp(argv[1],
-                "newUDPface")||!strcmp(argv[1], "newUDP6face")) {
+                "newUDPface")||!strcmp(argv[1], "newUDP6face")
+              ) {
         if (argc < 5)
             goto help;
-        len = mkNewFaceRequest(out,
+        len = mkNewFaceRequest(out, argv[1],
                        !strcmp(argv[1], "newETHface") ? argv[2] : NULL,
                        !strcmp(argv[1], "newUDPface") ? argv[2] : NULL,
                        !strcmp(argv[1], "newUDP6face") ? argv[2] : NULL,
                        argv[3], argv[4],
                        argc > 5 ? argv[5] : "0x0001", private_key_path);
+#ifdef USE_WPAN
+    } else if (!strcmp(argv[1], "newWPANface")) {
+        if (argc < 3)
+            goto help;
+        len = mkNewFaceRequest(out, argv[1],
+                       argv[2],
+                       NULL,
+                       NULL,
+                       NULL, NULL,
+                       NULL, private_key_path);
+#endif
     } else if (!strcmp(argv[1], "newUNIXface")) {
         if (argc < 3)
             goto help;

@@ -812,6 +812,9 @@ ccnl_mgmt_newface(struct ccnl_relay_s *ccnl, struct ccnl_buf_s *orig,
     int buflen, num, typ;
     unsigned char *action, *macsrc, *ip4src, *ip6src, *proto, *host, *port,
         *path, *frag, *flags;
+#ifdef USE_WPAN
+    unsigned char *wpansrc = NULL;
+#endif
     char *cp = "newface cmd failed";
     int rc = -1;
     struct ccnl_face_s *f = NULL;
@@ -847,6 +850,7 @@ ccnl_mgmt_newface(struct ccnl_relay_s *ccnl, struct ccnl_buf_s *orig,
         extractStr(macsrc, CCNL_DTAG_MACSRC);
         extractStr(ip4src, CCNL_DTAG_IP4SRC);
         extractStr(ip6src, CCNL_DTAG_IP6SRC);
+        extractStr(wpansrc, CCNL_DTAG_WPANSRC);
         extractStr(path, CCNL_DTAG_UNIXSRC);
         extractStr(proto, CCN_DTAG_IPPROTO);
         extractStr(host, CCN_DTAG_HOST);
@@ -902,6 +906,18 @@ ccnl_mgmt_newface(struct ccnl_relay_s *ccnl, struct ccnl_buf_s *orig,
 	}
 #endif
     }
+#ifdef USE_WPAN
+    if (wpansrc != NULL) {
+        DEBUGMSG(TRACE, "  adding WPAN face wpansrc=%s\n", wpansrc);
+        sockunion su;
+        su.sa.sa_family = AF_IEEE802154;
+        su.wpan.addr.addr_type = IEEE802154_ADDR_SHORT;
+        su.wpan.addr.pan_id = 0x23;
+        su.wpan.addr.addr.short_addr = strtol((const char*)wpansrc, NULL, 0);
+        f = ccnl_get_face_or_create(ccnl, 0, // from->ifndx,
+                                    &su.sa, sizeof(su.wpan));
+    }
+#endif
 #ifdef USE_UNIXSOCKET
     if (path) {
         sockunion su;
@@ -947,6 +963,11 @@ ccnl_mgmt_newface(struct ccnl_relay_s *ccnl, struct ccnl_buf_s *orig,
                  macsrc, ip6src, proto, host, port, frag, flags);
 	}
 #endif
+#ifdef USE_WPAN
+	if (wpansrc != NULL) {
+        DEBUGMSG(TRACE, "  newface request for (wpansrc=%s) failed or was ignored\n", wpansrc);
+	}
+#endif
     }
     rc = 0;
 
@@ -973,6 +994,11 @@ Bail:
         len3 += ccnl_ccnb_mkStrBlob(faceinst_buf+len3, CCNL_DTAG_IP6SRC, CCN_TT_DTAG, (char*) ip6src);
         len3 += ccnl_ccnb_mkStrBlob(faceinst_buf+len3, CCN_DTAG_IPPROTO, CCN_TT_DTAG, "17");
     }
+#ifdef USE_WPAN
+    if (wpansrc) {
+        len3 += ccnl_ccnb_mkStrBlob(faceinst_buf+len3, CCNL_DTAG_WPANSRC, CCN_TT_DTAG, (char*) wpansrc);
+    }
+#endif
     if (host)
         len3 += ccnl_ccnb_mkStrBlob(faceinst_buf+len3, CCN_DTAG_HOST, CCN_TT_DTAG, (char*) host);
     if (port)
@@ -1003,6 +1029,9 @@ Bail:
     ccnl_free(macsrc);
     ccnl_free(ip4src);
     ccnl_free(ip6src);
+#ifdef USE_WPAN
+    ccnl_free(wpansrc);
+#endif
     ccnl_free(proto);
     ccnl_free(host);
     ccnl_free(port);
@@ -1686,6 +1715,12 @@ ccnl_mgmt_prefixreg(struct ccnl_relay_s *ccnl, struct ccnl_buf_s *orig,
         int fi = strtol((const char*)faceid, NULL, 0);
 
         p->suite = suite[0];
+
+        for (fwd = ccnl->fib; fwd; fwd = fwd->next) {
+            if (!ccnl_prefix_cmp(fwd->prefix, NULL, p, CMP_EXACT)) {
+                goto Bail;
+            }
+        }
 
         DEBUGMSG(TRACE, "mgmt: adding prefix %s to faceid=%s, suite=%s\n",
                  ccnl_prefix_to_path(p), faceid, ccnl_suite2str(suite[0]));
