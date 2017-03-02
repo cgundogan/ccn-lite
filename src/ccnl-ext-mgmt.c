@@ -1722,7 +1722,7 @@ ccnl_mgmt_prefixreg(struct ccnl_relay_s *ccnl, struct ccnl_buf_s *orig,
             }
         }
 
-        DEBUGMSG(TRACE, "mgmt: adding prefix %s to faceid=%s, suite=%s\n",
+        printf("mgmt: adding prefix <%s> to faceid=%s, suite=%s\n",
                  ccnl_prefix_to_path(p), faceid, ccnl_suite2str(suite[0]));
 
         for (f = ccnl->faces; f && f->faceid != fi; f = f->next);
