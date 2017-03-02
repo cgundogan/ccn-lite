@@ -24,6 +24,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -66,7 +67,7 @@ int main(int argc, char *argv[]) {
     sd = socket(PF_IEEE802154, SOCK_DGRAM, 0);
     if (sd < 0) {
         perror("socket");
-        return 1;
+        exit(1);
     }
 
     /* Prepare source socket address struct */
@@ -88,7 +89,7 @@ int main(int argc, char *argv[]) {
     if (ret) {
         perror("bind");
         close(sd);
-        return 1;
+        exit(1);
     }
 
     addrlen = sizeof(dst);
@@ -113,7 +114,7 @@ int main(int argc, char *argv[]) {
                 puts(cmd);
                 system(cmd);
             }
-            return 0;
+            exit(0);
         }
 
 #if EXTENDED
@@ -125,5 +126,5 @@ int main(int argc, char *argv[]) {
 
     shutdown(sd, SHUT_RDWR);
     close(sd);
-    return 0;
+    exit(0);
 }
