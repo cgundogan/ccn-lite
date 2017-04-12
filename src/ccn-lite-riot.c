@@ -451,6 +451,16 @@ void
     msg_init_queue(_msg_queue, CCNL_QUEUE_SIZE);
     struct ccnl_relay_s *ccnl = (struct ccnl_relay_s*) arg;
 
+#ifdef USE_SUITE_COMPAS
+    ccnl->compas_sol_num = 0;
+    ccnl->compas_pam_msg.type = COMPAS_PAM_MSG;
+    ccnl->compas_nam_msg.type = COMPAS_NAM_MSG;
+    ccnl->compas_sol_msg.type = COMPAS_SOL_MSG;
+    ccnl->compas_dodag_parent_msg.type = COMPAS_DODAG_PARENT_TIMEOUT_MSG;
+    ccnl->compas_started = 0;
+    xtimer_set_msg(&ccnl->compas_sol_timer, COMPAS_SOL_PERIOD,
+                   &ccnl->compas_sol_msg, sched_active_pid);
+#endif
 
     /* XXX: https://xkcd.com/221/ */
     random_init(0x4);
@@ -493,6 +503,35 @@ void
                 xtimer_remove(&_ageing_timer);
                 xtimer_set_msg(&_ageing_timer, US_PER_SEC, &reply, sched_active_pid);
                 break;
+#ifdef USE_SUITE_COMPAS
+            case COMPAS_PAM_MSG:
+                if (ccnl->dodag.rank != COMPAS_DODAG_UNDEF) {
+                    compas_send_pam(ccnl, NULL);
+                    uint64_t trickle_int = trickle_next(&ccnl->pam_trickle);
+                    xtimer_set_msg64(&ccnl->compas_pam_timer, trickle_int * 1000,
+                                   &ccnl->compas_pam_msg, sched_active_pid);
+                }
+                break;
+            case COMPAS_NAM_MSG:
+                if (compas_handle_nam(ccnl)) {
+                    xtimer_set_msg(&ccnl->compas_nam_timer, COMPAS_NAM_PERIOD, &ccnl->compas_nam_msg, sched_active_pid);
+                }
+                break;
+            case COMPAS_SOL_MSG:
+                ccnl->compas_sol_num++;
+                if (ccnl->dodag.rank == COMPAS_DODAG_UNDEF || ccnl->compas_dodag_parent_timeout) {
+                    compas_send_sol(ccnl);
+                    xtimer_set_msg(&ccnl->compas_sol_timer, COMPAS_SOL_PERIOD,
+                                   &ccnl->compas_sol_msg, sched_active_pid);
+                }
+                else {
+                    ccnl->compas_sol_num = 0;
+                }
+                break;
+            case COMPAS_DODAG_PARENT_TIMEOUT_MSG:
+                compas_dodag_parent_timeout(ccnl);
+                break;
+#endif
             default:
                 DEBUGMSG(WARNING, "ccn-lite: unknown message type\n");
                 break;
@@ -512,7 +551,7 @@ ccnl_start(void)
     ccnl_relay.max_cache_entries = CCNL_CACHE_SIZE;
     ccnl_relay.max_pit_entries = CCNL_DEFAULT_MAX_PIT_ENTRIES;
     /* start the CCN-Lite event-loop */
-    _ccnl_event_loop_pid =  thread_create(_ccnl_stack, sizeof(_ccnl_stack),
+    ccnl_relay.pid = _ccnl_event_loop_pid =  thread_create(_ccnl_stack, sizeof(_ccnl_stack),
                                           THREAD_PRIORITY_MAIN - 1,
                                           THREAD_CREATE_STACKTEST, _ccnl_event_loop,
                                           &ccnl_relay, "ccnl");

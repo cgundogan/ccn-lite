@@ -51,6 +51,14 @@
 #endif
 // ----------------------------------------------------------------------
 
+#ifdef USE_SUITE_COMPAS
+#ifdef CCNL_RIOT
+#include "xtimer.h"
+#endif
+#include "compas/routing/dodag.h"
+#include "compas/trickle.h"
+#endif
+
 #ifdef USE_WPAN
 /* TODO: remove when af_ieee802154.h is in linux mainline */
 #define IEEE802154_ADDR_LEN 8
@@ -162,6 +170,48 @@ struct ccnl_relay_s {
 
 #ifdef USE_NFN
     struct ccnl_krivine_s *km;
+#endif
+
+#ifdef USE_SUITE_COMPAS
+    trickle_t pam_trickle;
+#define TRICKLE_IMIN        (8)
+#define TRICKLE_IMAX        (20)
+#define TRICKLE_REDCONST    (10)
+    unsigned compas_sol_num;
+#ifdef CCNL_RIOT
+#define COMPAS_PAM_MSG (0xBEEF)
+#define COMPAS_NAM_MSG (0xBEFF)
+#define COMPAS_DODAG_PARENT_TIMEOUT_MSG (0xBFFF)
+#define COMPAS_SOL_MSG (0xBEF0)
+    xtimer_t compas_dodag_parent_timer;
+    msg_t compas_dodag_parent_msg;
+    xtimer_t compas_pam_timer;
+    msg_t compas_pam_msg;
+    xtimer_t compas_nam_timer;
+    msg_t compas_nam_msg;
+    xtimer_t compas_sol_timer;
+    msg_t compas_sol_msg;
+    kernel_pid_t pid;
+#else
+    struct ccnl_timer_s *compas_pam_timer;
+    struct ccnl_timer_s *compas_sol_timer;
+    struct ccnl_timer_s *compas_dodag_parent_timer;
+#endif
+#define COMPAS_PAM_PERIOD_BASE (300)
+#define COMPAS_PAM_PERIOD_JITTER (200)
+#define COMPAS_PAM_PERIOD (COMPAS_PAM_PERIOD_BASE * 1000 + (rand() % (COMPAS_PAM_PERIOD_JITTER * 1000)))
+#define COMPAS_NAM_PERIOD_BASE (100)
+#define COMPAS_NAM_PERIOD_JITTER (200)
+#define COMPAS_NAM_PERIOD (COMPAS_NAM_PERIOD_BASE * 1000 + (rand() % (COMPAS_NAM_PERIOD_JITTER * 1000)))
+#define COMPAS_SOL_PERIOD_BASE (2000 * 1000)
+#define COMPAS_SOL_PERIOD_JITTER (500)
+#define COMPAS_SOL_PERIOD (COMPAS_SOL_PERIOD_BASE + (rand() % (COMPAS_SOL_PERIOD_JITTER * 1000)))
+#define COMPAS_DODAG_PARENT_TIMEOUT_PERIOD (30 * 1000000)
+    compas_dodag_t dodag;
+    struct ccnl_face_s *dodag_face;
+    uint64_t compas_started;
+    unsigned compas_dodag_parent_timeout;
+    unsigned compas_nam_timer_running;
 #endif
 
   /*

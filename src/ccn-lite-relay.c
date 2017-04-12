@@ -631,6 +631,13 @@ ccnl_io_loop(struct ccnl_relay_s *ccnl)
     maxfd++;
 
     DEBUGMSG(INFO, "starting main event and IO loop\n");
+
+    char *compas_prefix = "/HAW";
+    compas_dodag_init_root(&ccnl->dodag, compas_prefix, strlen(compas_prefix));
+    trickle_init(&ccnl->pam_trickle, TRICKLE_IMIN, TRICKLE_IMAX, TRICKLE_REDCONST);
+    uint64_t trickle_int = trickle_next(&ccnl->pam_trickle);
+    ccnl->compas_pam_timer = ccnl_set_timer(((int) trickle_int) * 1000, ccnl_compas_send_pam, ccnl, NULL);
+
     while (!ccnl->halt_flag) {
         int usec;
 

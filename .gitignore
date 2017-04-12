@@ -77,4 +77,6 @@ distribution/Debian/ccn-lite
 distribution/Debian/ccn-lite.deb
 distribution/RedHat/rpmbuild
 
+src/COMPAS
+
 # eof
