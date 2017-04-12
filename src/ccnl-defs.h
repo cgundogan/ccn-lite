@@ -89,7 +89,10 @@ enum {
 #ifdef USE_SUITE_NDNTLV
   CCNL_SUITE_NDNTLV = 6,
 #endif
-  CCNL_SUITE_LAST = 7
+#ifdef USE_SUITE_COMPAS
+  CCNL_SUITE_COMPAS = 7,
+#endif
+  CCNL_SUITE_LAST = 8
 };
 
 #define CCNL_SUITE_DEFAULT (CCNL_SUITE_LAST - 1)
@@ -105,7 +108,8 @@ enum {
   CCNL_ENC_CCNX2014,
   CCNL_ENC_IOT2014,
   CCNL_ENC_LOCALRPC,
-  CCNL_ENC_CISCO2015
+  CCNL_ENC_CISCO2015,
+  CCNL_ENC_COMPAS,
 };
 
 // ----------------------------------------------------------------------

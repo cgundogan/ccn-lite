@@ -110,6 +110,9 @@ const char *compile_string = ""
 #ifdef USE_UNIXSOCKET
         "UNIXSOCKET, "
 #endif
+#ifdef USE_SUITE_COMPAS
+        "SUITE_COMPAS, "
+#endif
         ;
 
 // ----------------------------------------------------------------------
@@ -375,6 +378,10 @@ ccnl_isSuite(int suite)
 #endif
 #ifdef USE_SUITE_NDNTLV
     if (suite == CCNL_SUITE_NDNTLV)
+        return true;
+#endif
+#ifdef USE_SUITE_COMPAS
+    if (suite == CCNL_SUITE_COMPAS)
         return true;
 #endif
     return false;

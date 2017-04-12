@@ -631,6 +631,11 @@ ccnl_io_loop(struct ccnl_relay_s *ccnl)
     maxfd++;
 
     DEBUGMSG(INFO, "starting main event and IO loop\n");
+
+    char *compas_prefix = "/HAW";
+    compas_dodag_init_root(&ccnl->dodag, compas_prefix, strlen(compas_prefix));
+    ccnl->compas_pam_timer = ccnl_set_timer(COMPAS_PAM_PERIOD, ccnl_compas_send_pam, ccnl, NULL);
+
     while (!ccnl->halt_flag) {
         int usec;
 
