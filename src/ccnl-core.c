@@ -24,6 +24,11 @@
 
 #include "ccnl-ext.h"
 
+#ifdef USE_SUITE_COMPAS
+#include "compas/routing/dodag.h"
+#include "compas/routing/pam.h"
+#endif
+
 #ifndef USE_NFN
 # define ccnl_nfn_interest_remove(r,i)  ccnl_interest_remove(r,i)
 #endif
@@ -1154,6 +1159,18 @@ ccnl_core_RX(struct ccnl_relay_s *relay, int ifndx, unsigned char *data,
 
 // ----------------------------------------------------------------------
 
+int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, unsigned char **data, int *datalen)
+{
+    compas_pam_parse(&relay->dodag, (compas_pam_t *) *data,
+                     from->peer.linklayer.sll_addr, from->peer.linklayer.sll_halen);
+
+    /* mark parsing of message completed */
+    *datalen = 0;
+    printf("Prefix: %.*s\n", relay->dodag.prefix_len, relay->dodag.prefix);
+
+    return 0;
+}
+
 void
 ccnl_core_init(void)
 {
@@ -1180,6 +1197,9 @@ ccnl_core_init(void)
 #ifdef USE_SUITE_NDNTLV
     ccnl_core_suites[CCNL_SUITE_NDNTLV].RX       = ccnl_ndntlv_forwarder;
     ccnl_core_suites[CCNL_SUITE_NDNTLV].cMatch   = ccnl_ndntlv_cMatch;
+#endif
+#ifdef USE_SUITE_NDNTLV
+    ccnl_core_suites[CCNL_SUITE_COMPAS].RX       = ccnl_compas_forwarder;
 #endif
 
 #ifdef USE_NFN

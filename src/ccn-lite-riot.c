@@ -208,6 +208,32 @@ extern ccnl_isContentFunc ccnl_suite2isContentFunc(int suite);
  * @}
  */
 
+#include "compas/routing/pam.h"
+
+/**
+ * Timer to send PAMs
+ */
+static xtimer_t _pam_timer;
+
+/**
+ * MSG type for PAMs
+ */
+#define COMPAS_PAM_MSG (0xBEEF)
+
+/**
+ * Period for sending PAMs
+ */
+#define COMPAS_PAM_PERIOD (2 * US_PER_SEC)
+
+/**
+ * Msg to send PAMs
+ */
+static msg_t _pam_msg = { .type = COMPAS_PAM_MSG };
+
+#define COMPAS_CUSTOM_PREFIX_LEN (4)
+static compas_dodag_t _dodag;
+static const char _compas_prefix[COMPAS_CUSTOM_PREFIX_LEN] = "/HAW";
+
 // ----------------------------------------------------------------------
 struct ccnl_buf_s*
 ccnl_buf_new(void *data, int len)
@@ -279,6 +305,46 @@ ccnl_open_netif(kernel_pid_t if_pid, gnrc_nettype_t netreg_type)
 }
 
 static msg_t _ageing_reset = { .type = CCNL_MSG_AGEING };
+
+void compas_send_pam(struct ccnl_relay_s *ccnl, compas_dodag_t *dodag)
+{
+    gnrc_pktsnip_t *hdr = NULL;
+    gnrc_pktsnip_t *pkt= gnrc_pktbuf_add(NULL, NULL, compas_pam_len(dodag) + 2, GNRC_NETTYPE_CCN);
+    memset(pkt->data, 0x80, 1);
+    memset(((uint8_t *) pkt->data) + 1, CCNL_ENC_COMPAS, 1);
+    compas_pam_create(dodag, (compas_pam_t *) (((uint8_t *) pkt->data) + 2));
+
+    if (pkt == NULL) {
+        puts("error: packet buffer full");
+        return;
+    }
+
+    hdr = gnrc_netif_hdr_build(NULL, 0, NULL, 0);
+
+    if (hdr == NULL) {
+        puts("error: packet buffer full");
+        gnrc_pktbuf_release(pkt);
+        return;
+    }
+
+    LL_PREPEND(pkt, hdr);
+    gnrc_netif_hdr_t *nethdr = (gnrc_netif_hdr_t *)hdr->data;
+    nethdr->flags = GNRC_NETIF_HDR_FLAGS_BROADCAST;
+
+    struct ccnl_if_s *ifc = NULL;
+    for (int i = 0; i < ccnl->ifcount; i++) {
+        if (ccnl->ifs[i].if_pid != 0) {
+            ifc = &ccnl->ifs[i];
+            break;
+        }
+    }
+
+    if (gnrc_netapi_send(ifc->if_pid, pkt) < 1) {
+        puts("error: unable to send\n");
+        gnrc_pktbuf_release(pkt);
+        return;
+    }
+}
 
 /* (link layer) sending function */
 void
@@ -455,6 +521,12 @@ void
     /* XXX: https://xkcd.com/221/ */
     random_init(0x4);
 
+    if(COMPAS_RUN_AS_DODAG_ROOT) {
+        compas_dodag_init_root(&_dodag, _compas_prefix, COMPAS_CUSTOM_PREFIX_LEN);
+        printf("dodag: %.*s\n", COMPAS_PREFIX_LEN, _dodag.prefix);
+        xtimer_set_msg(&_pam_timer, COMPAS_PAM_PERIOD, &_pam_msg, sched_active_pid);
+    }
+
     while(!ccnl->halt_flag) {
         msg_t m, reply;
         /* start periodic timer */
@@ -492,6 +564,11 @@ void
                 ccnl_do_ageing(arg, NULL);
                 xtimer_remove(&_ageing_timer);
                 xtimer_set_msg(&_ageing_timer, US_PER_SEC, &reply, sched_active_pid);
+                break;
+            case COMPAS_PAM_MSG:
+                printf("Send PAM\n");
+                compas_send_pam(ccnl, &_dodag);
+                xtimer_set_msg(&_pam_timer, COMPAS_PAM_PERIOD, &_pam_msg, sched_active_pid);
                 break;
             default:
                 DEBUGMSG(WARNING, "ccn-lite: unknown message type\n");

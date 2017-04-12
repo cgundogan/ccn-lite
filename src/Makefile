@@ -163,13 +163,24 @@ OMNET_DEPS = ccnl-core.c ccnl-core-fwd.c ccnl-core.h ccnl-core-util.c ccnl-defs.
 all: ${PROGS}
 	$(MAKE) -C util
 
-lib-ccn-lite.a: ccn-lite-riot.c \
-	${SUITE_LIBS} ${CCNL_CORE_LIB} ${CCNL_PLATFORM_LIB}
-	${CC} -o $@ ${RIOT_CFLAGS} ${CCNLCFLAGS} -c $<
+COMPAS_PATH := $(HOME)/i3/COMPAS
 
+libcompas.a: TARGET_ARCH:=
+libcompas.a:
+	$(RM)r COMPAS && rsync -a $(COMPAS_PATH) . --exclude .git && "$(MAKE)" -BC COMPAS
+
+lib-ccn-lite.a: CCNLCFLAGS+=-ICOMPAS/include -DUSE_SUITE_COMPAS
+lib-ccn-lite.a: ccn-lite-riot.c \
+	${SUITE_LIBS} ${CCNL_CORE_LIB} ${CCNL_PLATFORM_LIB} libcompas.a
+	${CC} -o ${<:%.c=%.o} ${RIOT_CFLAGS} ${CCNLCFLAGS} -c $<
+	${AR} x COMPAS/libcompas.a
+	${AR} rcs $@ *.o
+
+lib-ccn-lite-utils.a: CCNLCFLAGS+=-ICOMPAS/include -DUSE_SUITE_COMPAS
 lib-ccn-lite-utils.a: ${UTIL_LIB} util/base64.c util/ccnl-common.c
 	${AR} rcs $@ ${UTIL_LIB}
 
+$(UTIL_LIB): CCNLCFLAGS+=-ICOMPAS/include -DUSE_SUITE_COMPAS
 $(UTIL_LIB): %.o: %.c
 	${CC} -o $@ ${RIOT_CFLAGS} ${CCNLCFLAGS} -c $<
 

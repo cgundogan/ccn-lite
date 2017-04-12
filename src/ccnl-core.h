@@ -51,6 +51,10 @@
 #endif
 // ----------------------------------------------------------------------
 
+#ifdef USE_SUITE_COMPAS
+#include "compas/routing/dodag.h"
+#endif
+
 #ifdef USE_WPAN
 /* TODO: remove when af_ieee802154.h is in linux mainline */
 #define IEEE802154_ADDR_LEN 8
@@ -162,6 +166,10 @@ struct ccnl_relay_s {
 
 #ifdef USE_NFN
     struct ccnl_krivine_s *km;
+#endif
+
+#ifdef USE_SUITE_COMPAS
+    compas_dodag_t dodag;
 #endif
 
   /*
