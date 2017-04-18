@@ -175,6 +175,7 @@ struct ccnl_relay_s {
 #ifdef USE_SUITE_COMPAS
     compas_dodag_t dodag;
     xtimer_t compas_pam_timer;
+    msg_t compas_pam_msg;
 #endif
 
   /*

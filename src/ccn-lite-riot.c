@@ -222,13 +222,7 @@ extern ccnl_isContentFunc ccnl_suite2isContentFunc(int suite);
  */
 #define COMPAS_PAM_PERIOD (2 * US_PER_SEC)
 
-/**
- * Msg to send PAMs
- */
-static msg_t _pam_msg = { .type = COMPAS_PAM_MSG };
-
 #define COMPAS_CUSTOM_PREFIX_LEN (4)
-static compas_dodag_t _dodag;
 static const char _compas_prefix[COMPAS_CUSTOM_PREFIX_LEN] = "/HAW";
 
 // ----------------------------------------------------------------------
@@ -303,8 +297,9 @@ ccnl_open_netif(kernel_pid_t if_pid, gnrc_nettype_t netreg_type)
 
 static msg_t _ageing_reset = { .type = CCNL_MSG_AGEING };
 
-void compas_send_pam(struct ccnl_relay_s *ccnl, compas_dodag_t *dodag)
+void compas_send_pam(struct ccnl_relay_s *ccnl)
 {
+    compas_dodag_t *dodag = &ccnl->dodag;
     gnrc_pktsnip_t *hdr = NULL;
     gnrc_pktsnip_t *pkt= gnrc_pktbuf_add(NULL, NULL, compas_pam_len(dodag) + 2, GNRC_NETTYPE_CCN);
     memset(pkt->data, 0x80, 1);
@@ -514,14 +509,15 @@ void
     msg_init_queue(_msg_queue, CCNL_QUEUE_SIZE);
     struct ccnl_relay_s *ccnl = (struct ccnl_relay_s*) arg;
 
+    ccnl->compas_pam_msg.type = COMPAS_PAM_MSG;
 
     /* XXX: https://xkcd.com/221/ */
     random_init(0x4);
 
     if(COMPAS_RUN_AS_DODAG_ROOT) {
-        compas_dodag_init_root(&_dodag, _compas_prefix, COMPAS_CUSTOM_PREFIX_LEN);
-        printf("dodag: %.*s\n", COMPAS_PREFIX_LEN, _dodag.prefix);
-        xtimer_set_msg(&ccnl->compas_pam_timer, COMPAS_PAM_PERIOD, &_pam_msg, sched_active_pid);
+        compas_dodag_init_root(&ccnl->dodag, _compas_prefix, COMPAS_CUSTOM_PREFIX_LEN);
+        printf("dodag: %.*s\n", COMPAS_PREFIX_LEN, ccnl->dodag.prefix);
+        xtimer_set_msg(&ccnl->compas_pam_timer, COMPAS_PAM_PERIOD, &ccnl->compas_pam_msg, sched_active_pid);
     }
 
     while(!ccnl->halt_flag) {
@@ -564,8 +560,8 @@ void
                 break;
             case COMPAS_PAM_MSG:
                 printf("Send PAM\n");
-                compas_send_pam(ccnl, &_dodag);
-                xtimer_set_msg(&ccnl->compas_pam_timer, COMPAS_PAM_PERIOD, &_pam_msg, sched_active_pid);
+                compas_send_pam(ccnl);
+                xtimer_set_msg(&ccnl->compas_pam_timer, COMPAS_PAM_PERIOD, &ccnl->compas_pam_msg, sched_active_pid);
                 break;
             default:
                 DEBUGMSG(WARNING, "ccn-lite: unknown message type\n");
