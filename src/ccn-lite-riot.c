@@ -217,11 +217,6 @@ extern ccnl_isContentFunc ccnl_suite2isContentFunc(int suite);
  */
 #define COMPAS_PAM_MSG (0xBEEF)
 
-/**
- * Period for sending PAMs
- */
-#define COMPAS_PAM_PERIOD (2 * US_PER_SEC)
-
 #define COMPAS_CUSTOM_PREFIX_LEN (4)
 static const char _compas_prefix[COMPAS_CUSTOM_PREFIX_LEN] = "/HAW";
 

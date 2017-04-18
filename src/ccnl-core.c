@@ -1161,12 +1161,18 @@ ccnl_core_RX(struct ccnl_relay_s *relay, int ifndx, unsigned char *data,
 
 int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, unsigned char **data, int *datalen)
 {
-    compas_pam_parse(&relay->dodag, (compas_pam_t *) *data,
-                     from->peer.linklayer.sll_addr, from->peer.linklayer.sll_halen);
+    int state = compas_pam_parse(&relay->dodag, (compas_pam_t *) *data,
+                                 from->peer.linklayer.sll_addr, from->peer.linklayer.sll_halen);
 
     /* mark parsing of message completed */
     *datalen = 0;
     compas_dodag_print(&relay->dodag);
+
+    /* start timer to send PAMs when joining a DODAG */
+    if (state == 0) {
+        xtimer_remove(&relay->compas_pam_timer);
+        xtimer_set_msg(&relay->compas_pam_timer, COMPAS_PAM_PERIOD, &relay->compas_pam_msg, sched_active_pid);
+    }
 
     return 0;
 }
