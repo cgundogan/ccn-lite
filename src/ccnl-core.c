@@ -1168,8 +1168,10 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
     *datalen = 0;
     compas_dodag_print(&relay->dodag);
 
-    /* start timer to send PAMs when joining a DODAG */
+    /* Joining a DODAG */
     if (state == 0) {
+        struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(relay->dodag.prefix, CCNL_SUITE_NDNTLV, NULL, NULL);
+        ccnl_fib_add_entry(relay, prefix, from);
         xtimer_remove(&relay->compas_pam_timer);
         xtimer_set_msg(&relay->compas_pam_timer, COMPAS_PAM_PERIOD, &relay->compas_pam_msg, sched_active_pid);
     }
