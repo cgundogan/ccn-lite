@@ -1166,7 +1166,7 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
 
     /* mark parsing of message completed */
     *datalen = 0;
-    printf("Prefix: %.*s\n", relay->dodag.prefix_len, relay->dodag.prefix);
+    compas_dodag_print(&relay->dodag);
 
     return 0;
 }
