@@ -51,6 +51,10 @@
 #endif
 // ----------------------------------------------------------------------
 
+#ifdef CCNL_RIOT
+#include "xtimer.h"
+#endif
+
 #ifdef USE_SUITE_COMPAS
 #include "compas/routing/dodag.h"
 #endif
@@ -170,6 +174,7 @@ struct ccnl_relay_s {
 
 #ifdef USE_SUITE_COMPAS
     compas_dodag_t dodag;
+    xtimer_t compas_pam_timer;
 #endif
 
   /*

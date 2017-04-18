@@ -208,12 +208,9 @@ extern ccnl_isContentFunc ccnl_suite2isContentFunc(int suite);
  * @}
  */
 
+#ifdef USE_SUITE_COMPAS
 #include "compas/routing/pam.h"
-
-/**
- * Timer to send PAMs
- */
-static xtimer_t _pam_timer;
+#endif
 
 /**
  * MSG type for PAMs
@@ -524,7 +521,7 @@ void
     if(COMPAS_RUN_AS_DODAG_ROOT) {
         compas_dodag_init_root(&_dodag, _compas_prefix, COMPAS_CUSTOM_PREFIX_LEN);
         printf("dodag: %.*s\n", COMPAS_PREFIX_LEN, _dodag.prefix);
-        xtimer_set_msg(&_pam_timer, COMPAS_PAM_PERIOD, &_pam_msg, sched_active_pid);
+        xtimer_set_msg(&ccnl->compas_pam_timer, COMPAS_PAM_PERIOD, &_pam_msg, sched_active_pid);
     }
 
     while(!ccnl->halt_flag) {
@@ -568,7 +565,7 @@ void
             case COMPAS_PAM_MSG:
                 printf("Send PAM\n");
                 compas_send_pam(ccnl, &_dodag);
-                xtimer_set_msg(&_pam_timer, COMPAS_PAM_PERIOD, &_pam_msg, sched_active_pid);
+                xtimer_set_msg(&ccnl->compas_pam_timer, COMPAS_PAM_PERIOD, &_pam_msg, sched_active_pid);
                 break;
             default:
                 DEBUGMSG(WARNING, "ccn-lite: unknown message type\n");
