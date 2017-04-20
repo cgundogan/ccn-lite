@@ -296,15 +296,16 @@ void compas_send_pam(struct ccnl_relay_s *ccnl)
 {
     compas_dodag_t *dodag = &ccnl->dodag;
     gnrc_pktsnip_t *hdr = NULL;
-    gnrc_pktsnip_t *pkt= gnrc_pktbuf_add(NULL, NULL, compas_pam_len(dodag) + 2, GNRC_NETTYPE_CCN);
-    memset(pkt->data, 0x80, 1);
-    memset(((uint8_t *) pkt->data) + 1, CCNL_ENC_COMPAS, 1);
-    compas_pam_create(dodag, (compas_pam_t *) (((uint8_t *) pkt->data) + 2));
+    gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL, compas_pam_len(dodag) + 2, GNRC_NETTYPE_CCN);
 
     if (pkt == NULL) {
         puts("error: packet buffer full");
         return;
     }
+
+    memset(pkt->data, 0x80, 1);
+    memset(((uint8_t *) pkt->data) + 1, CCNL_ENC_COMPAS, 1);
+    compas_pam_create(dodag, (compas_pam_t *) (((uint8_t *) pkt->data) + 2));
 
     hdr = gnrc_netif_hdr_build(NULL, 0, NULL, 0);
 
