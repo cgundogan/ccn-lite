@@ -69,8 +69,6 @@
 #define CCNL_DEFAULT_MAX_CACHE_ENTRIES  0   // means: no content caching
 #define CCNL_MAX_NONCES                 256 // for detected dups
 
-#include "compas/routing/dodag.h"
-
 enum {
 #ifdef USE_SUITE_CCNB
   CCNL_SUITE_CCNB = 1,
