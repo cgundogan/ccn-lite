@@ -622,6 +622,9 @@ void
             case COMPAS_PAM_MSG:
                 printf("Send PAM\n");
                 compas_send_pam(ccnl);
+                if(!COMPAS_RUN_AS_DODAG_ROOT) {
+                    compas_send_nam(ccnl, "/HAW/test/hallo", sizeof("/HAW/test/hallo"));
+                }
                 xtimer_set_msg(&ccnl->compas_pam_timer, COMPAS_PAM_PERIOD, &ccnl->compas_pam_msg, sched_active_pid);
                 break;
             default:
