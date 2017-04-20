@@ -209,6 +209,7 @@ extern ccnl_isContentFunc ccnl_suite2isContentFunc(int suite);
  */
 
 #ifdef USE_SUITE_COMPAS
+#include "compas/routing/nam.h"
 #include "compas/routing/pam.h"
 #endif
 
@@ -318,6 +319,70 @@ void compas_send_pam(struct ccnl_relay_s *ccnl)
     LL_PREPEND(pkt, hdr);
     gnrc_netif_hdr_t *nethdr = (gnrc_netif_hdr_t *)hdr->data;
     nethdr->flags = GNRC_NETIF_HDR_FLAGS_BROADCAST;
+
+    struct ccnl_if_s *ifc = NULL;
+    for (int i = 0; i < ccnl->ifcount; i++) {
+        if (ccnl->ifs[i].if_pid != 0) {
+            ifc = &ccnl->ifs[i];
+            break;
+        }
+    }
+
+    if (gnrc_netapi_send(ifc->if_pid, pkt) < 1) {
+        puts("error: unable to send\n");
+        gnrc_pktbuf_release(pkt);
+        return;
+    }
+}
+
+void compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_len)
+{
+    compas_dodag_t *dodag = &ccnl->dodag;
+
+    char temp_name[COMPAS_PREFIX_LEN];
+    memcpy(temp_name, dodag->prefix, dodag->prefix_len);
+    temp_name[dodag->prefix_len] = '\0';
+
+    struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(temp_name, CCNL_SUITE_NDNTLV, NULL, 0);
+    if (!prefix) {
+        puts("Error: prefix could not be created!");
+        return;
+    }
+
+    struct ccnl_forward_s *fwd;
+    for(fwd = ccnl->fib; fwd; fwd = fwd->next) {
+        if (!ccnl_prefix_cmp(fwd->prefix, NULL, prefix, CMP_EXACT)) {
+            break;
+        }
+    }
+
+    free_prefix(prefix);
+
+    if (fwd == NULL) {
+        puts("Error: no prefix found in FIB");
+        return;
+    }
+
+    gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL, sizeof(compas_nam_t) + name_len + 2, GNRC_NETTYPE_CCN);
+
+    if (pkt == NULL) {
+        puts("error: packet buffer full");
+        return;
+    }
+
+    memset(pkt->data, 0x80, 1);
+    memset(((uint8_t *) pkt->data) + 1, CCNL_ENC_COMPAS, 1);
+    compas_nam_create(name, name_len, (compas_nam_t *) (((uint8_t *) pkt->data) + 2));
+
+    gnrc_pktsnip_t *hdr = gnrc_netif_hdr_build(NULL, 0, fwd->face->peer.linklayer.sll_addr, fwd->face->peer.linklayer.sll_halen);
+
+    if (hdr == NULL) {
+        puts("error: packet buffer full");
+        gnrc_pktbuf_release(pkt);
+        return;
+    }
+
+    LL_PREPEND(pkt, hdr);
 
     struct ccnl_if_s *ifc = NULL;
     for (int i = 0; i < ccnl->ifcount; i++) {
