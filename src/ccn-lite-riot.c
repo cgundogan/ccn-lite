@@ -339,27 +339,8 @@ void compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
 {
     compas_dodag_t *dodag = &ccnl->dodag;
 
-    char temp_name[COMPAS_PREFIX_LEN];
-    memcpy(temp_name, dodag->prefix, dodag->prefix_len);
-    temp_name[dodag->prefix_len] = '\0';
-
-    struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(temp_name, CCNL_SUITE_NDNTLV, NULL, 0);
-    if (!prefix) {
-        puts("Error: prefix could not be created!");
-        return;
-    }
-
-    struct ccnl_forward_s *fwd;
-    for(fwd = ccnl->fib; fwd; fwd = fwd->next) {
-        if (!ccnl_prefix_cmp(fwd->prefix, NULL, prefix, CMP_EXACT)) {
-            break;
-        }
-    }
-
-    free_prefix(prefix);
-
-    if (fwd == NULL) {
-        puts("Error: no prefix found in FIB");
+    if (dodag->rank == COMPAS_DODAG_UNDEF) {
+        puts("Error: not part of a DODAG");
         return;
     }
 
@@ -374,7 +355,7 @@ void compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
     memset(((uint8_t *) pkt->data) + 1, CCNL_ENC_COMPAS, 1);
     compas_nam_create(name, name_len, (compas_nam_t *) (((uint8_t *) pkt->data) + 2));
 
-    gnrc_pktsnip_t *hdr = gnrc_netif_hdr_build(NULL, 0, fwd->face->peer.linklayer.sll_addr, fwd->face->peer.linklayer.sll_halen);
+    gnrc_pktsnip_t *hdr = gnrc_netif_hdr_build(NULL, 0, dodag->parent.face_addr, dodag->parent.face_addr_len);
 
     if (hdr == NULL) {
         puts("error: packet buffer full");
@@ -623,7 +604,7 @@ void
                 printf("Send PAM\n");
                 compas_send_pam(ccnl);
                 if(!COMPAS_RUN_AS_DODAG_ROOT) {
-                    compas_send_nam(ccnl, "/HAW/test/hallo", sizeof("/HAW/test/hallo"));
+                    compas_send_nam(ccnl, "/HAW/test/hallo", sizeof("/HAW/test/hallo")-1);
                 }
                 xtimer_set_msg(&ccnl->compas_pam_timer, COMPAS_PAM_PERIOD, &ccnl->compas_pam_msg, sched_active_pid);
                 break;
