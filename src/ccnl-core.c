@@ -26,6 +26,7 @@
 
 #ifdef USE_SUITE_COMPAS
 #include "compas/routing/dodag.h"
+#include "compas/routing/nam.h"
 #include "compas/routing/pam.h"
 #endif
 
@@ -1161,19 +1162,33 @@ ccnl_core_RX(struct ccnl_relay_s *relay, int ifndx, unsigned char *data,
 
 int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, unsigned char **data, int *datalen)
 {
-    int state = compas_pam_parse(&relay->dodag, (compas_pam_t *) *data,
-                                 from->peer.linklayer.sll_addr, from->peer.linklayer.sll_halen);
+    compas_message_t *cmsg = (compas_message_t *) *data;
 
     /* mark parsing of message completed */
     *datalen = 0;
-    compas_dodag_print(&relay->dodag);
 
-    /* Joining a DODAG */
-    if (state == 0) {
-        struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(relay->dodag.prefix, CCNL_SUITE_NDNTLV, NULL, NULL);
+    if (cmsg->type == COMPAS_MSG_TYPE_PAM) {
+        int state = compas_pam_parse(&relay->dodag, (compas_pam_t *) *data,
+                                     from->peer.linklayer.sll_addr, from->peer.linklayer.sll_halen);
+
+        compas_dodag_print(&relay->dodag);
+
+        /* Joining a DODAG */
+        if (state == 0) {
+            struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(relay->dodag.prefix, CCNL_SUITE_NDNTLV, NULL, NULL);
+            ccnl_fib_add_entry(relay, prefix, from);
+            xtimer_remove(&relay->compas_pam_timer);
+            xtimer_set_msg(&relay->compas_pam_timer, COMPAS_PAM_PERIOD, &relay->compas_pam_msg, sched_active_pid);
+        }
+    }
+    else if (cmsg->type == COMPAS_MSG_TYPE_NAM) {
+        uint16_t name_len;
+        char name[COMPAS_NAME_LEN + 1];
+
+        compas_nam_parse(name, &name_len, (compas_nam_t *) *data);
+        name[name_len] = '\0';
+        struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(name, CCNL_SUITE_NDNTLV, NULL, NULL);
         ccnl_fib_add_entry(relay, prefix, from);
-        xtimer_remove(&relay->compas_pam_timer);
-        xtimer_set_msg(&relay->compas_pam_timer, COMPAS_PAM_PERIOD, &relay->compas_pam_msg, sched_active_pid);
     }
 
     return 0;
