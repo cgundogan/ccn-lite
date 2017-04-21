@@ -174,12 +174,16 @@ struct ccnl_relay_s {
 
 #ifdef USE_SUITE_COMPAS
 /**
- * Period for sending PAMs
+ * Periods for sending PAMs and NAMs
  */
 #define COMPAS_PAM_PERIOD (2 * US_PER_SEC)
+#define COMPAS_NAM_PERIOD (1 * US_PER_SEC)
     compas_dodag_t dodag;
     xtimer_t compas_pam_timer;
     msg_t compas_pam_msg;
+    xtimer_t compas_nam_timer;
+    msg_t compas_nam_msg;
+    unsigned compas_nam_timer_running;
 #endif
 
   /*

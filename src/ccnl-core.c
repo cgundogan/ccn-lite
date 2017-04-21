@@ -1182,13 +1182,23 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
         }
     }
     else if (cmsg->type == COMPAS_MSG_TYPE_NAM) {
-        uint16_t name_len;
+        uint16_t offset = 0;
+        compas_tlv_t *tlv;
         char name[COMPAS_NAME_LEN + 1];
 
-        compas_nam_parse(name, &name_len, (compas_nam_t *) *data);
-        name[name_len] = '\0';
-        struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(name, CCNL_SUITE_NDNTLV, NULL, NULL);
-        ccnl_fib_add_entry(relay, prefix, from);
+        while(compas_nam_tlv_iter((compas_nam_t *) *data, &offset, &tlv)) {
+            if (tlv->type == COMPAS_TLV_NAME) {
+                memcpy(name, tlv + 1, tlv->length);
+                name[tlv->length > COMPAS_NAME_LEN ? COMPAS_NAME_LEN : tlv->length] = '\0';
+                struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(name, CCNL_SUITE_NDNTLV, NULL, NULL);
+                ccnl_fib_add_entry(relay, prefix, from);
+            }
+        }
+
+        if ((relay->dodag.rank > COMPAS_DODAG_ROOT_RANK) && !relay->compas_nam_timer_running) {
+            xtimer_set_msg(&relay->compas_nam_timer, COMPAS_NAM_PERIOD, &relay->compas_nam_msg, sched_active_pid);
+            relay->compas_nam_timer_running = 1;
+        }
     }
 
     return 0;
