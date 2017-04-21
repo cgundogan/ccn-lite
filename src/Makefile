@@ -163,7 +163,7 @@ OMNET_DEPS = ccnl-core.c ccnl-core-fwd.c ccnl-core.h ccnl-core-util.c ccnl-defs.
 all: ${PROGS}
 	$(MAKE) -C util
 
-COMPAS_PATH := $(HOME)/i3/COMPAS
+COMPAS_PATH := $(HOME)/COMPAS
 
 libcompas.a: TARGET_ARCH:=
 libcompas.a:
