@@ -219,8 +219,10 @@ extern ccnl_isContentFunc ccnl_suite2isContentFunc(int suite);
 #define COMPAS_PAM_MSG (0xBEEF)
 #define COMPAS_NAM_MSG (0xBEFF)
 
+/*
 #define COMPAS_CUSTOM_PREFIX_LEN (4)
 static const char _compas_prefix[COMPAS_CUSTOM_PREFIX_LEN] = "/HAW";
+*/
 
 // ----------------------------------------------------------------------
 struct ccnl_buf_s*
@@ -345,7 +347,11 @@ void compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
         return;
     }
 
-    gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL, sizeof(compas_nam_t) + name_len + 2 + sizeof(compas_tlv_t), GNRC_NETTYPE_CCN);
+    gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL,
+                                          2 + sizeof(compas_nam_t) +
+                                          2 * (COMPAS_NAME_LEN + sizeof(compas_tlv_t)) +
+                                          2 * (sizeof(uint16_t) + sizeof(compas_tlv_t)),
+                                          GNRC_NETTYPE_CCN);
 
     if (pkt == NULL) {
         puts("error: packet buffer full");
@@ -356,8 +362,9 @@ void compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
     memset(((uint8_t *) pkt->data) + 1, CCNL_ENC_COMPAS, 1);
     compas_nam_t *nam = (compas_nam_t *)(((uint8_t *) pkt->data) + 2);
     compas_nam_create(nam);
-    printf("name_len: %u\n", name_len);
-    compas_nam_tlv_add_name(nam, name, name_len);
+    if (name) {
+        compas_nam_tlv_add_name(nam, name, name_len);
+    }
 
     char dodag_prefix[COMPAS_NAME_LEN + 1];
     memcpy(dodag_prefix, ccnl->dodag.prefix, ccnl->dodag.prefix_len);
@@ -367,21 +374,24 @@ void compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
     int rc = 0;
     char *s = NULL;
     for (struct ccnl_forward_s *fwd = ccnl->fib; fwd; fwd = fwd->next) {
+        if (fwd->prefix->compcnt <= prefix->compcnt) {
+            continue;
+        }
         rc = ccnl_prefix_cmp(fwd->prefix, NULL, prefix, CMP_LONGEST);
-        printf("COMPCOUNT: %u -- %u\n", rc, prefix->compcnt);
-        s = ccnl_prefix_to_path(prefix);
-        puts(s);
-        ccnl_free(s);
-        s = ccnl_prefix_to_path(fwd->prefix);
-        puts(s);
-        ccnl_free(s);
-        if (rc > prefix->compcnt) {
+        if (rc >= prefix->compcnt) {
             s = ccnl_prefix_to_path(fwd->prefix);
             compas_nam_tlv_add_name(nam, s, strlen(s));
             ccnl_free(s);
         }
     }
     free_prefix(prefix);
+
+    if (nam->len == 0) {
+        gnrc_pktbuf_release(pkt);
+        return;
+    }
+
+    gnrc_pktbuf_realloc_data(pkt, 2 + nam->len + sizeof(*nam));
 
     gnrc_pktsnip_t *hdr = gnrc_netif_hdr_build(NULL, 0, dodag->parent.face_addr, dodag->parent.face_addr_len);
 
@@ -585,11 +595,13 @@ void
     /* XXX: https://xkcd.com/221/ */
     random_init(0x4);
 
+    /*
     if(COMPAS_RUN_AS_DODAG_ROOT) {
         compas_dodag_init_root(&ccnl->dodag, _compas_prefix, COMPAS_CUSTOM_PREFIX_LEN);
         printf("dodag: %.*s\n", COMPAS_PREFIX_LEN, ccnl->dodag.prefix);
         xtimer_set_msg(&ccnl->compas_pam_timer, COMPAS_PAM_PERIOD, &ccnl->compas_pam_msg, sched_active_pid);
     }
+    */
 
     while(!ccnl->halt_flag) {
         msg_t m, reply;
@@ -630,17 +642,25 @@ void
                 xtimer_set_msg(&_ageing_timer, US_PER_SEC, &reply, sched_active_pid);
                 break;
             case COMPAS_PAM_MSG:
-                printf("Send PAM\n");
                 compas_send_pam(ccnl);
+                /*
+                static bool flag;
                 if(ccnl->dodag.rank > COMPAS_DODAG_ROOT_RANK) {
-                    compas_send_nam(ccnl, "/HAW/test/hallo", sizeof("/HAW/test/hallo")-1);
+                    if (!flag) {
+                        compas_send_nam(ccnl, "/HAW/test/hallo", strlen("/HAW/test/hallo"));
+                        flag = true;
+                    }
                 }
+                */
                 xtimer_set_msg(&ccnl->compas_pam_timer, COMPAS_PAM_PERIOD, &ccnl->compas_pam_msg, sched_active_pid);
                 break;
             case COMPAS_NAM_MSG:
-                printf("Send NAM\n");
-                /* send 1 or more NAMs from FIB here */
-                ccnl->compas_nam_timer_running = 0;
+                if (ccnl->dodag.rank > COMPAS_DODAG_ROOT_RANK) {
+                    if (ccnl->compas_nam_timer_running-- > 0) {
+                        compas_send_nam(ccnl, NULL, 0);
+                        xtimer_set_msg(&ccnl->compas_nam_timer, COMPAS_NAM_PERIOD, &ccnl->compas_nam_msg, sched_active_pid);
+                    }
+                }
                 break;
             default:
                 DEBUGMSG(WARNING, "ccn-lite: unknown message type\n");

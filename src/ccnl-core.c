@@ -1188,17 +1188,23 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
 
         while(compas_nam_tlv_iter((compas_nam_t *) *data, &offset, &tlv)) {
             if (tlv->type == COMPAS_TLV_NAME) {
+                static unsigned char _int_buf[64];
                 memcpy(name, tlv + 1, tlv->length);
                 name[tlv->length > COMPAS_NAME_LEN ? COMPAS_NAME_LEN : tlv->length] = '\0';
                 struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(name, CCNL_SUITE_NDNTLV, NULL, NULL);
                 ccnl_fib_add_entry(relay, prefix, from);
+                ccnl_send_interest(prefix, _int_buf, sizeof(_int_buf));
             }
         }
 
-        if ((relay->dodag.rank > COMPAS_DODAG_ROOT_RANK) && !relay->compas_nam_timer_running) {
-            xtimer_set_msg(&relay->compas_nam_timer, COMPAS_NAM_PERIOD, &relay->compas_nam_msg, sched_active_pid);
-            relay->compas_nam_timer_running = 1;
+        /*
+        if (relay->dodag.rank > COMPAS_DODAG_ROOT_RANK) {
+            if (relay->compas_nam_timer_running == 0) {
+                xtimer_set_msg(&relay->compas_nam_timer, COMPAS_NAM_PERIOD, &relay->compas_nam_msg, sched_active_pid);
+            }
+            relay->compas_nam_timer_running = 3;
         }
+        */
     }
 
     return 0;
@@ -1231,7 +1237,7 @@ ccnl_core_init(void)
     ccnl_core_suites[CCNL_SUITE_NDNTLV].RX       = ccnl_ndntlv_forwarder;
     ccnl_core_suites[CCNL_SUITE_NDNTLV].cMatch   = ccnl_ndntlv_cMatch;
 #endif
-#ifdef USE_SUITE_NDNTLV
+#ifdef USE_SUITE_COMPAS
     ccnl_core_suites[CCNL_SUITE_COMPAS].RX       = ccnl_compas_forwarder;
 #endif
 
