@@ -338,13 +338,13 @@ void compas_send_pam(struct ccnl_relay_s *ccnl)
     }
 }
 
-void compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_len)
+bool compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_len)
 {
     compas_dodag_t *dodag = &ccnl->dodag;
 
     if (dodag->rank == COMPAS_DODAG_UNDEF) {
         puts("Error: not part of a DODAG");
-        return;
+        return false;
     }
 
     gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL,
@@ -355,7 +355,7 @@ void compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
 
     if (pkt == NULL) {
         puts("error: packet buffer full");
-        return;
+        return false;
     }
 
     memset(pkt->data, 0x80, 1);
@@ -365,30 +365,34 @@ void compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
     if (name) {
         compas_nam_tlv_add_name(nam, name, name_len);
     }
+    else {
+        char dodag_prefix[COMPAS_NAME_LEN + 1];
+        memcpy(dodag_prefix, ccnl->dodag.prefix, ccnl->dodag.prefix_len);
+        dodag_prefix[ccnl->dodag.prefix_len] = '\0';
+        struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(dodag_prefix, CCNL_SUITE_NDNTLV, NULL, NULL);
 
-    char dodag_prefix[COMPAS_NAME_LEN + 1];
-    memcpy(dodag_prefix, ccnl->dodag.prefix, ccnl->dodag.prefix_len);
-    dodag_prefix[ccnl->dodag.prefix_len] = '\0';
-    struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(dodag_prefix, CCNL_SUITE_NDNTLV, NULL, NULL);
+        int rc = 0;
+        char *s = NULL;
 
-    int rc = 0;
-    char *s = NULL;
-    for (struct ccnl_forward_s *fwd = ccnl->fib; fwd; fwd = fwd->next) {
-        if (fwd->prefix->compcnt <= prefix->compcnt) {
-            continue;
+        for (struct ccnl_content_s *c = ccnl->contents; c; c = c->next) {
+            if (c->pkt->pfx->compcnt <= prefix->compcnt) {
+                continue;
+            }
+            rc = ccnl_prefix_cmp(c->pkt->pfx, NULL, prefix, CMP_LONGEST);
+            if (rc >= prefix->compcnt) {
+                if (c->served_cnt == 0) {
+                    s = ccnl_prefix_to_path(c->pkt->pfx);
+                    compas_nam_tlv_add_name(nam, s, strlen(s));
+                    ccnl_free(s);
+                }
+            }
         }
-        rc = ccnl_prefix_cmp(fwd->prefix, NULL, prefix, CMP_LONGEST);
-        if (rc >= prefix->compcnt) {
-            s = ccnl_prefix_to_path(fwd->prefix);
-            compas_nam_tlv_add_name(nam, s, strlen(s));
-            ccnl_free(s);
-        }
+        free_prefix(prefix);
     }
-    free_prefix(prefix);
 
     if (nam->len == 0) {
         gnrc_pktbuf_release(pkt);
-        return;
+        return false;
     }
 
     gnrc_pktbuf_realloc_data(pkt, 2 + nam->len + sizeof(*nam));
@@ -398,7 +402,7 @@ void compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
     if (hdr == NULL) {
         puts("error: packet buffer full");
         gnrc_pktbuf_release(pkt);
-        return;
+        return false;
     }
 
     LL_PREPEND(pkt, hdr);
@@ -414,8 +418,10 @@ void compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
     if (gnrc_netapi_send(ifc->if_pid, pkt) < 1) {
         puts("error: unable to send\n");
         gnrc_pktbuf_release(pkt);
-        return;
+        return false;
     }
+
+    return true;
 }
 
 /* (link layer) sending function */
@@ -643,24 +649,43 @@ void
                 break;
             case COMPAS_PAM_MSG:
                 compas_send_pam(ccnl);
-                /*
-                static bool flag;
-                if(ccnl->dodag.rank > COMPAS_DODAG_ROOT_RANK) {
-                    if (!flag) {
-                        compas_send_nam(ccnl, "/HAW/test/hallo", strlen("/HAW/test/hallo"));
-                        flag = true;
-                    }
-                }
-                */
                 xtimer_set_msg(&ccnl->compas_pam_timer, COMPAS_PAM_PERIOD, &ccnl->compas_pam_msg, sched_active_pid);
                 break;
             case COMPAS_NAM_MSG:
-                if (ccnl->dodag.rank > COMPAS_DODAG_ROOT_RANK) {
-                    if (ccnl->compas_nam_timer_running-- > 0) {
-                        compas_send_nam(ccnl, NULL, 0);
-                        xtimer_set_msg(&ccnl->compas_nam_timer, COMPAS_NAM_PERIOD, &ccnl->compas_nam_msg, sched_active_pid);
+                ccnl->compas_nam_timer_running = 0;
+
+                char dodag_prefix[COMPAS_NAME_LEN];
+                memcpy(dodag_prefix, ccnl->dodag.prefix, ccnl->dodag.prefix_len);
+                dodag_prefix[ccnl->dodag.prefix_len] = '\0';
+                struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(dodag_prefix, CCNL_SUITE_NDNTLV, NULL, NULL);
+
+                bool work_to_do = false;
+
+                static unsigned char _int_buf[64];
+                for (struct ccnl_forward_s *fwd = ccnl->fib; fwd; fwd = fwd->next) {
+                    if (fwd->prefix->compcnt <= prefix->compcnt) {
+                        continue;
+                    }
+                    if (ccnl_prefix_cmp(fwd->prefix, NULL, prefix, CMP_LONGEST) >= prefix->compcnt) {
+                        ccnl_send_interest(fwd->prefix, _int_buf, sizeof(_int_buf));
+                        work_to_do = true;
+                        if (++fwd->retries > 3) {
+                            ccnl_fib_rem_entry(ccnl, fwd->prefix, NULL);
+                        }
                     }
                 }
+
+                free_prefix(prefix);
+
+                if (ccnl->dodag.rank > COMPAS_DODAG_ROOT_RANK) {
+                    work_to_do |= compas_send_nam(ccnl, NULL, 0);
+                }
+
+                if (work_to_do) {
+                    xtimer_set_msg(&ccnl->compas_nam_timer, COMPAS_NAM_PERIOD, &ccnl->compas_nam_msg, sched_active_pid);
+                    ccnl->compas_nam_timer_running = 1;
+                }
+
                 break;
             default:
                 DEBUGMSG(WARNING, "ccn-lite: unknown message type\n");

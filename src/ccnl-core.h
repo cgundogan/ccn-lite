@@ -177,7 +177,7 @@ struct ccnl_relay_s {
  * Periods for sending PAMs and NAMs
  */
 #define COMPAS_PAM_PERIOD (2 * US_PER_SEC)
-#define COMPAS_NAM_PERIOD (1 * US_PER_SEC)
+#define COMPAS_NAM_PERIOD (2 * US_PER_SEC)
     compas_dodag_t dodag;
     xtimer_t compas_pam_timer;
     msg_t compas_pam_msg;
@@ -266,6 +266,9 @@ struct ccnl_forward_s {
     tapCallback tap;
     struct ccnl_face_s *face;
     char suite;
+#ifdef USE_SUITE_COMPAS
+    int retries;
+#endif
 };
 
 struct ccnl_interest_s {
