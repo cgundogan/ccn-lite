@@ -277,6 +277,14 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         } else {
             ccnl_app_RX(relay, c);
         }
+
+#ifdef USE_SUITE_COMPAS
+        if (!memcmp(relay->dodag.parent.face_addr, from->peer.linklayer.sll_addr,
+                   from->peer.linklayer.sll_halen)) {
+            c->flags |= CCNL_COMPAS_CONTENT_REQUESTED;
+        }
+#endif
+
         return 0; // we are done
     }
 

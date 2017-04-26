@@ -380,7 +380,7 @@ bool compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
             }
             rc = ccnl_prefix_cmp(c->pkt->pfx, NULL, prefix, CMP_LONGEST);
             if (rc >= prefix->compcnt) {
-                if (c->served_cnt == 0) {
+                if (!(c->flags & CCNL_COMPAS_CONTENT_REQUESTED)) {
                     s = ccnl_prefix_to_path(c->pkt->pfx);
                     compas_nam_tlv_add_name(nam, s, strlen(s));
                     ccnl_free(s);
