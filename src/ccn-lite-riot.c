@@ -601,14 +601,6 @@ void
     /* XXX: https://xkcd.com/221/ */
     random_init(0x4);
 
-    /*
-    if(COMPAS_RUN_AS_DODAG_ROOT) {
-        compas_dodag_init_root(&ccnl->dodag, _compas_prefix, COMPAS_CUSTOM_PREFIX_LEN);
-        printf("dodag: %.*s\n", COMPAS_PREFIX_LEN, ccnl->dodag.prefix);
-        xtimer_set_msg(&ccnl->compas_pam_timer, COMPAS_PAM_PERIOD, &ccnl->compas_pam_msg, sched_active_pid);
-    }
-    */
-
     while(!ccnl->halt_flag) {
         msg_t m, reply;
         /* start periodic timer */
