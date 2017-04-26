@@ -787,6 +787,8 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
     ccnl_fib_rem_entry(ccnl, c->pkt->pfx, NULL);
 #endif
 
+    ccnl_cs_dump(ccnl);
+
     return c;
 }
 
