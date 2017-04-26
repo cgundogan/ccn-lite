@@ -485,7 +485,7 @@ ccnl_interest_append_pending(struct ccnl_interest_s *i,
 void
 ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
 {
-    struct ccnl_forward_s *fwd, *longest_fwd;
+    struct ccnl_forward_s *fwd, *longest_fwd = ccnl->fib;
     int rc = 0, longest_rc = 0;
 #if defined(USE_NACK) || defined(USE_RONR)
     int matching_face = 0;
@@ -1192,6 +1192,7 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
         /* Joining a DODAG */
         if (state == 0) {
             struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(relay->dodag.prefix, CCNL_SUITE_NDNTLV, NULL, NULL);
+            ccnl_fib_rem_entry(relay, prefix, from);
             ccnl_fib_add_entry(relay, prefix, from);
             xtimer_remove(&relay->compas_pam_timer);
             xtimer_set_msg(&relay->compas_pam_timer, COMPAS_PAM_PERIOD, &relay->compas_pam_msg, sched_active_pid);
