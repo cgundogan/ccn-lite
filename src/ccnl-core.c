@@ -485,8 +485,8 @@ ccnl_interest_append_pending(struct ccnl_interest_s *i,
 void
 ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
 {
-    struct ccnl_forward_s *fwd;
-    int rc = 0;
+    struct ccnl_forward_s *fwd, *longest_fwd;
+    int rc = 0, longest_rc = 0;
 #if defined(USE_NACK) || defined(USE_RONR)
     int matching_face = 0;
 #endif
@@ -517,36 +517,44 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
         if (rc < fwd->prefix->compcnt)
             continue;
 
-        DEBUGMSG_CORE(DEBUG, "  ccnl_interest_propagate, fwd==%p\n", (void*)fwd);
-        // suppress forwarding to origin of interest, except wireless
-        if (!i->from || fwd->face != i->from ||
-                                (i->from->flags & CCNL_FACE_FLAGS_REFLECT)) {
-            int nonce = 0;
-            if (i->pkt != NULL && i->pkt->s.ndntlv.nonce != NULL) {
-                if (i->pkt->s.ndntlv.nonce->datalen == 4) {
-                    memcpy(&nonce, i->pkt->s.ndntlv.nonce->data, 4);
-                }
-            }
-
-            char *s = NULL;
-            DEBUGMSG_CFWD(INFO, "  outgoing interest=<%s> nonce=%i to=%s\n",
-                          (s = ccnl_prefix_to_path(i->pkt->pfx)), nonce,
-                          fwd->face ? ccnl_addr2ascii(&fwd->face->peer)
-                                    : "<tap>");
-            ccnl_free(s);
-            ccnl_nfn_monitor(ccnl, fwd->face, i->pkt->pfx, NULL, 0);
-
-            // DEBUGMSG(DEBUG, "%p %p %p\n", (void*)i, (void*)i->pkt, (void*)i->pkt->buf);
-            if (fwd->tap)
-                (fwd->tap)(ccnl, i->from, i->pkt->pfx, i->pkt->buf);
-            if (fwd->face)
-                ccnl_face_enqueue(ccnl, fwd->face, buf_dup(i->pkt->buf));
-#if defined(USE_NACK) || defined(USE_RONR)
-            matching_face = 1;
-#endif
-        } else {
-            DEBUGMSG_CORE(DEBUG, "  no matching fib entry found\n");
+        if (rc > longest_rc) {
+            longest_rc = rc;
+            longest_fwd = fwd;
         }
+    }
+
+    rc = longest_rc;
+    fwd = longest_fwd;
+
+    DEBUGMSG_CORE(DEBUG, "  ccnl_interest_propagate, fwd==%p\n", (void*)fwd);
+    // suppress forwarding to origin of interest, except wireless
+    if (!i->from || fwd->face != i->from ||
+                            (i->from->flags & CCNL_FACE_FLAGS_REFLECT)) {
+        int nonce = 0;
+        if (i->pkt != NULL && i->pkt->s.ndntlv.nonce != NULL) {
+            if (i->pkt->s.ndntlv.nonce->datalen == 4) {
+                memcpy(&nonce, i->pkt->s.ndntlv.nonce->data, 4);
+            }
+        }
+
+        char *s = NULL;
+        DEBUGMSG_CFWD(INFO, "  outgoing interest=<%s> nonce=%i to=%s\n",
+                      (s = ccnl_prefix_to_path(fwd->prefix)), nonce,
+                      fwd->face ? ccnl_addr2ascii(&fwd->face->peer)
+                                : "<tap>");
+        ccnl_free(s);
+        ccnl_nfn_monitor(ccnl, fwd->face, i->pkt->pfx, NULL, 0);
+
+        // DEBUGMSG(DEBUG, "%p %p %p\n", (void*)i, (void*)i->pkt, (void*)i->pkt->buf);
+        if (fwd->tap)
+            (fwd->tap)(ccnl, i->from, i->pkt->pfx, i->pkt->buf);
+        if (fwd->face)
+            ccnl_face_enqueue(ccnl, fwd->face, buf_dup(i->pkt->buf));
+#if defined(USE_NACK) || defined(USE_RONR)
+        matching_face = 1;
+#endif
+    } else {
+        DEBUGMSG_CORE(DEBUG, "  no matching fib entry found\n");
     }
 
 #ifdef USE_RONR
