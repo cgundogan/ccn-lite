@@ -415,6 +415,7 @@ bool compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
         }
     }
 
+	puts("SEND NAM");
     if (gnrc_netapi_send(ifc->if_pid, pkt) < 1) {
         puts("error: unable to send\n");
         gnrc_pktbuf_release(pkt);

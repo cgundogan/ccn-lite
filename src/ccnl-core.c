@@ -1184,8 +1184,24 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
     *datalen = 0;
 
     if (cmsg->type == COMPAS_MSG_TYPE_PAM) {
+        if (relay->dodag.rank == COMPAS_DODAG_UNDEF) {
+            printf("joined,");
+        }
+        else {
+            printf("switched,previous_rank=%u,previous_parent=", (unsigned) relay->dodag.rank);
+            for (unsigned i = 0; i < relay->dodag.parent.face_addr_len - 1; i++) {
+                printf("%02x:", relay->dodag.parent.face_addr[i]);
+            }
+            printf("%02x,", relay->dodag.parent.face_addr[relay->dodag.parent.face_addr_len - 1]);
+        }
         int state = compas_pam_parse(&relay->dodag, (compas_pam_t *) *data,
                                      from->peer.linklayer.sll_addr, from->peer.linklayer.sll_halen);
+
+        printf("rank=%u,parent=", (unsigned) relay->dodag.rank);
+        for (unsigned i = 0; i < relay->dodag.parent.face_addr_len - 1; i++) {
+            printf("%02x:", relay->dodag.parent.face_addr[i]);
+        }
+        printf("%02x\n", relay->dodag.parent.face_addr[relay->dodag.parent.face_addr_len - 1]);
 
         compas_dodag_print(&relay->dodag);
 

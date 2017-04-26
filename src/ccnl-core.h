@@ -176,7 +176,7 @@ struct ccnl_relay_s {
 /**
  * Periods for sending PAMs and NAMs
  */
-#define COMPAS_PAM_PERIOD (2 * US_PER_SEC)
+#define COMPAS_PAM_PERIOD (500 * US_PER_MS)
 #define COMPAS_NAM_PERIOD (500 * US_PER_MS)
     compas_dodag_t dodag;
     xtimer_t compas_pam_timer;
