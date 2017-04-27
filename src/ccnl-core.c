@@ -1184,35 +1184,49 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
     *datalen = 0;
 
     if (cmsg->type == COMPAS_MSG_TYPE_PAM) {
-        if (relay->dodag.rank == COMPAS_DODAG_UNDEF) {
-            printf("joined,");
+        compas_pam_t *pam = (compas_pam_t *) *data;
+        printf("pamrx,mypa=%d;", compas_dodag_parent_eq(&relay->dodag, from->peer.linklayer.sll_addr, from->peer.linklayer.sll_halen));
+        printf("pam_r=%d;pam_f=%d;pam_pr=%.*s;pam_a=", pam->rank, pam->flags, pam->prefix_len, (char *)(pam + 1));
+        for (int i = 0; i < from->peer.linklayer.sll_halen - 1; i++) {
+            printf("%02x:", from->peer.linklayer.sll_addr[i]);
         }
-        else {
-            printf("switched,previous_rank=%u,previous_parent=", (unsigned) relay->dodag.rank);
-            for (unsigned i = 0; i < relay->dodag.parent.face_addr_len - 1; i++) {
-                printf("%02x:", relay->dodag.parent.face_addr[i]);
-            }
-            printf("%02x,", relay->dodag.parent.face_addr[relay->dodag.parent.face_addr_len - 1]);
-        }
-        int state = compas_pam_parse(&relay->dodag, (compas_pam_t *) *data,
-                                     from->peer.linklayer.sll_addr, from->peer.linklayer.sll_halen);
-
-        printf("rank=%u,parent=", (unsigned) relay->dodag.rank);
-        for (unsigned i = 0; i < relay->dodag.parent.face_addr_len - 1; i++) {
+        printf("%02x;", from->peer.linklayer.sll_addr[from->peer.linklayer.sll_halen - 1]);
+        printf("prev_r=%u;prev_pa=", (unsigned) relay->dodag.rank);
+        for (int i = 0; i < relay->dodag.parent.face_addr_len - 1; i++) {
             printf("%02x:", relay->dodag.parent.face_addr[i]);
         }
-        printf("%02x\n", relay->dodag.parent.face_addr[relay->dodag.parent.face_addr_len - 1]);
+        printf("%02x;", relay->dodag.parent.face_addr[relay->dodag.parent.face_addr_len - 1]);
+
+        int state = compas_pam_parse(&relay->dodag, pam,
+                                     from->peer.linklayer.sll_addr, from->peer.linklayer.sll_halen);
 
         compas_dodag_print(&relay->dodag);
 
-        /* Joining a DODAG */
-        if (state == 0) {
-            struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(relay->dodag.prefix, CCNL_SUITE_NDNTLV, NULL, NULL);
-            ccnl_fib_rem_entry(relay, prefix, from);
-            ccnl_fib_add_entry(relay, prefix, from);
-            xtimer_remove(&relay->compas_pam_timer);
-            xtimer_set_msg(&relay->compas_pam_timer, COMPAS_PAM_PERIOD, &relay->compas_pam_msg, sched_active_pid);
+        if (state >= 0) {
+            relay->compas_dodag_parent_timeout = 0;
+            xtimer_remove(&relay->compas_dodag_parent_timer);
+            xtimer_set_msg(&relay->compas_dodag_parent_timer,
+                           COMPAS_DODAG_PARENT_TIMEOUT_PERIOD,
+                           &relay->compas_dodag_parent_msg,
+                           sched_active_pid);
+            /* Setup default route to new DODAG parent */
+            if (state == 1) {
+                struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(relay->dodag.prefix, CCNL_SUITE_NDNTLV, NULL, NULL);
+                ccnl_fib_rem_entry(relay, prefix, from);
+                ccnl_fib_add_entry(relay, prefix, from);
+                xtimer_remove(&relay->compas_pam_timer);
+                xtimer_set_msg(&relay->compas_pam_timer,
+                               COMPAS_PAM_PERIOD + random_uint32_range(0,500) * US_PER_MS,
+                               &relay->compas_pam_msg, sched_active_pid);
+            }
         }
+
+        printf("f=%d;r=%u;pa=", relay->dodag.flags,(unsigned) relay->dodag.rank);
+        for (int i = 0; i < relay->dodag.parent.face_addr_len - 1; i++) {
+            printf("%02x:", relay->dodag.parent.face_addr[i]);
+        }
+        printf("%02x;", relay->dodag.parent.face_addr[relay->dodag.parent.face_addr_len - 1]);
+        printf("pa_t=%d;s=%d\n", (signed) (relay->compas_dodag_parent_timer.target - xtimer_now_usec()),state);
     }
     else if (cmsg->type == COMPAS_MSG_TYPE_NAM) {
         uint16_t offset = 0;

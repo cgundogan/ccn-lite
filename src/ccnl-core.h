@@ -173,12 +173,16 @@ struct ccnl_relay_s {
 #endif
 
 #ifdef USE_SUITE_COMPAS
-/**
- * Periods for sending PAMs and NAMs
- */
-#define COMPAS_PAM_PERIOD (500 * US_PER_MS)
+#define COMPAS_PAM_MSG (0xBEEF)
+#define COMPAS_PAM_PERIOD (1000 * US_PER_MS)
+#define COMPAS_NAM_MSG (0xBEFF)
 #define COMPAS_NAM_PERIOD (500 * US_PER_MS)
+#define COMPAS_DODAG_PARENT_TIMEOUT_MSG (0xBFFF)
+#define COMPAS_DODAG_PARENT_TIMEOUT_PERIOD (30 * US_PER_SEC)
     compas_dodag_t dodag;
+    unsigned compas_dodag_parent_timeout;
+    xtimer_t compas_dodag_parent_timer;
+    msg_t compas_dodag_parent_msg;
     xtimer_t compas_pam_timer;
     msg_t compas_pam_msg;
     xtimer_t compas_nam_timer;

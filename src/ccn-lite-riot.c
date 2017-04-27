@@ -213,17 +213,6 @@ extern ccnl_isContentFunc ccnl_suite2isContentFunc(int suite);
 #include "compas/routing/pam.h"
 #endif
 
-/**
- * MSG type for PAMs and NAMs
- */
-#define COMPAS_PAM_MSG (0xBEEF)
-#define COMPAS_NAM_MSG (0xBEFF)
-
-/*
-#define COMPAS_CUSTOM_PREFIX_LEN (4)
-static const char _compas_prefix[COMPAS_CUSTOM_PREFIX_LEN] = "/HAW";
-*/
-
 // ----------------------------------------------------------------------
 struct ccnl_buf_s*
 ccnl_buf_new(void *data, int len)
@@ -598,6 +587,7 @@ void
 
     ccnl->compas_pam_msg.type = COMPAS_PAM_MSG;
     ccnl->compas_nam_msg.type = COMPAS_NAM_MSG;
+    ccnl->compas_dodag_parent_msg.type = COMPAS_DODAG_PARENT_TIMEOUT_MSG;
 
     /* XXX: https://xkcd.com/221/ */
     random_init(0x4);
@@ -642,7 +632,10 @@ void
                 break;
             case COMPAS_PAM_MSG:
                 compas_send_pam(ccnl);
-                xtimer_set_msg(&ccnl->compas_pam_timer, COMPAS_PAM_PERIOD, &ccnl->compas_pam_msg, sched_active_pid);
+                printf("pamtx;r=%d\n", ccnl->dodag.rank);
+                xtimer_set_msg(&ccnl->compas_pam_timer,
+                               COMPAS_PAM_PERIOD + random_uint32_range(0,500) * US_PER_MS,
+                               &ccnl->compas_pam_msg, sched_active_pid);
                 break;
             case COMPAS_NAM_MSG:
                 ccnl->compas_nam_timer_running = 0;
@@ -670,7 +663,7 @@ void
 
                 free_prefix(prefix);
 
-                if (ccnl->dodag.rank > COMPAS_DODAG_ROOT_RANK) {
+                if (ccnl->dodag.rank > COMPAS_DODAG_ROOT_RANK && !ccnl->compas_dodag_parent_timeout) {
                     work_to_do |= compas_send_nam(ccnl, NULL, 0);
                 }
 
@@ -679,6 +672,19 @@ void
                     ccnl->compas_nam_timer_running = 1;
                 }
 
+                break;
+            case COMPAS_DODAG_PARENT_TIMEOUT_MSG:
+                ccnl->compas_dodag_parent_timeout = 1;
+                ccnl->dodag.flags |= COMPAS_DODAG_FLAGS_FLOATING;
+                printf("timeout;flags=%d;rank=%u;parent=",ccnl->dodag.flags, (unsigned) ccnl->dodag.rank);
+                for (int i = 0; i < ccnl->dodag.parent.face_addr_len - 1; i++) {
+                    printf("%02x:", ccnl->dodag.parent.face_addr[i]);
+                }
+                printf("%02x\n", ccnl->dodag.parent.face_addr[ccnl->dodag.parent.face_addr_len - 1]);
+                xtimer_set_msg(&ccnl->compas_dodag_parent_timer,
+                               COMPAS_DODAG_PARENT_TIMEOUT_PERIOD,
+                               &ccnl->compas_dodag_parent_msg,
+                               sched_active_pid);
                 break;
             default:
                 DEBUGMSG(WARNING, "ccn-lite: unknown message type\n");
