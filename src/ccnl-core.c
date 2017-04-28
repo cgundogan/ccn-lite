@@ -1183,20 +1183,12 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
     /* mark parsing of message completed */
     *datalen = 0;
 
+    if (!relay->compas_started) {
+        return 0;
+    }
+
     if (cmsg->type == COMPAS_MSG_TYPE_PAM) {
         compas_pam_t *pam = (compas_pam_t *) *data;
-        printf("pamrx,mypa=%d;", compas_dodag_parent_eq(&relay->dodag, from->peer.linklayer.sll_addr, from->peer.linklayer.sll_halen));
-        printf("pam_r=%d;pam_f=%d;pam_pr=%.*s;pam_a=", pam->rank, pam->flags, pam->prefix_len, (char *)(pam + 1));
-        for (int i = 0; i < from->peer.linklayer.sll_halen - 1; i++) {
-            printf("%02x:", from->peer.linklayer.sll_addr[i]);
-        }
-        printf("%02x;", from->peer.linklayer.sll_addr[from->peer.linklayer.sll_halen - 1]);
-        printf("prev_r=%u;prev_pa=", (unsigned) relay->dodag.rank);
-        for (int i = 0; i < relay->dodag.parent.face_addr_len - 1; i++) {
-            printf("%02x:", relay->dodag.parent.face_addr[i]);
-        }
-        printf("%02x;", relay->dodag.parent.face_addr[relay->dodag.parent.face_addr_len - 1]);
-
         int state = compas_pam_parse(&relay->dodag, pam,
                                      from->peer.linklayer.sll_addr, from->peer.linklayer.sll_halen);
 
@@ -1216,17 +1208,20 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                 ccnl_fib_add_entry(relay, prefix, from);
                 xtimer_remove(&relay->compas_pam_timer);
                 xtimer_set_msg(&relay->compas_pam_timer,
-                               COMPAS_PAM_PERIOD + random_uint32_range(0,500) * US_PER_MS,
+                               COMPAS_PAM_PERIOD + random_uint32_range(0,200) * US_PER_MS,
                                &relay->compas_pam_msg, sched_active_pid);
+                printf("pamrx;%d;%u;%d,%d;%d;", state, (unsigned) relay->dodag.rank, relay->dodag.flags, pam->rank, pam->flags);
+                for (int i = 0; i < from->peer.linklayer.sll_halen - 1; i++) {
+                    printf("%02x:", from->peer.linklayer.sll_addr[i]);
+                }
+                printf("%02x;", from->peer.linklayer.sll_addr[from->peer.linklayer.sll_halen - 1]);
+                for (int i = 0; i < relay->dodag.parent.face_addr_len - 1; i++) {
+                    printf("%02x:", relay->dodag.parent.face_addr[i]);
+                }
+                printf("%02x;%d\n", relay->dodag.parent.face_addr[relay->dodag.parent.face_addr_len - 1], (signed) (relay->compas_dodag_parent_timer.target - xtimer_now_usec()));
             }
         }
 
-        printf("f=%d;r=%u;pa=", relay->dodag.flags,(unsigned) relay->dodag.rank);
-        for (int i = 0; i < relay->dodag.parent.face_addr_len - 1; i++) {
-            printf("%02x:", relay->dodag.parent.face_addr[i]);
-        }
-        printf("%02x;", relay->dodag.parent.face_addr[relay->dodag.parent.face_addr_len - 1]);
-        printf("pa_t=%d;s=%d\n", (signed) (relay->compas_dodag_parent_timer.target - xtimer_now_usec()),state);
     }
     else if (cmsg->type == COMPAS_MSG_TYPE_NAM) {
         uint16_t offset = 0;

@@ -632,9 +632,9 @@ void
                 break;
             case COMPAS_PAM_MSG:
                 compas_send_pam(ccnl);
-                printf("pamtx;r=%d\n", ccnl->dodag.rank);
+                //printf("pamtx;%d\n", ccnl->dodag.rank);
                 xtimer_set_msg(&ccnl->compas_pam_timer,
-                               COMPAS_PAM_PERIOD + random_uint32_range(0,500) * US_PER_MS,
+                               COMPAS_PAM_PERIOD + random_uint32_range(0,200) * US_PER_MS,
                                &ccnl->compas_pam_msg, sched_active_pid);
                 break;
             case COMPAS_NAM_MSG:
@@ -676,7 +676,7 @@ void
             case COMPAS_DODAG_PARENT_TIMEOUT_MSG:
                 ccnl->compas_dodag_parent_timeout = 1;
                 ccnl->dodag.flags |= COMPAS_DODAG_FLAGS_FLOATING;
-                printf("timeout;flags=%d;rank=%u;parent=",ccnl->dodag.flags, (unsigned) ccnl->dodag.rank);
+                printf("timeout;%d;%u;",ccnl->dodag.flags, (unsigned) ccnl->dodag.rank);
                 for (int i = 0; i < ccnl->dodag.parent.face_addr_len - 1; i++) {
                     printf("%02x:", ccnl->dodag.parent.face_addr[i]);
                 }
