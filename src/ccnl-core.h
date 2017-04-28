@@ -180,7 +180,7 @@ struct ccnl_relay_s {
 #define COMPAS_DODAG_PARENT_TIMEOUT_MSG (0xBFFF)
 #define COMPAS_DODAG_PARENT_TIMEOUT_PERIOD (30 * US_PER_SEC)
     compas_dodag_t dodag;
-    unsigned compas_started;
+    uint64_t compas_started;
     unsigned compas_dodag_parent_timeout;
     xtimer_t compas_dodag_parent_timer;
     msg_t compas_dodag_parent_msg;

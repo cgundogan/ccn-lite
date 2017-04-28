@@ -588,6 +588,7 @@ void
     ccnl->compas_pam_msg.type = COMPAS_PAM_MSG;
     ccnl->compas_nam_msg.type = COMPAS_NAM_MSG;
     ccnl->compas_dodag_parent_msg.type = COMPAS_DODAG_PARENT_TIMEOUT_MSG;
+    ccnl->compas_started = 0;
 
     /* XXX: https://xkcd.com/221/ */
     random_init(0x4);

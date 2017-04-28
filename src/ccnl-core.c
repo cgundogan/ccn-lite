@@ -1210,7 +1210,9 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                 xtimer_set_msg(&relay->compas_pam_timer,
                                COMPAS_PAM_PERIOD + random_uint32_range(0,200) * US_PER_MS,
                                &relay->compas_pam_msg, sched_active_pid);
-                printf("pamrx;%d;%u;%d,%d;%d;", state, (unsigned) relay->dodag.rank, relay->dodag.flags, pam->rank, pam->flags);
+                printf("pamrx;%d;%u;%lu;%d,%d;%d;", state, (unsigned) relay->dodag.rank,
+                        (unsigned long) (xtimer_now_usec64() - relay->compas_started),
+                        relay->dodag.flags, pam->rank, pam->flags);
                 for (int i = 0; i < from->peer.linklayer.sll_halen - 1; i++) {
                     printf("%02x:", from->peer.linklayer.sll_addr[i]);
                 }
