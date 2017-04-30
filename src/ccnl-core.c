@@ -1023,6 +1023,20 @@ ccnl_do_ageing(void *ptr, void *dummy)
 //                 i = i->next;
 #else // USE_TIMEOUT
                 DEBUGMSG_AGEING("AGING: REMOVE INTEREST", "timeout: remove interest");
+                char *s = NULL;
+                printf("rmint:%u,%s\n", relay->dodag.rank, (s = ccnl_prefix_to_path(i->pkt->pfx)));
+                ccnl_free(s);
+#ifdef USE_SUITE_COMPAS
+                for (struct ccnl_forward_s *fwd = relay->fib; fwd; fwd = fwd->next) {
+                    if (fwd->prefix->compcnt < i->pkt->pfx->compcnt) {
+                        continue;
+                    }
+                    if (ccnl_prefix_cmp(fwd->prefix, NULL, i->pkt->pfx, CMP_LONGEST) >= i->pkt->pfx->compcnt) {
+                        ccnl_fib_rem_entry(relay, fwd->prefix, NULL);
+                        break;
+                    }
+                }
+#endif
                 i = ccnl_nfn_interest_remove(relay, i);
 #endif
         } else {
@@ -1207,11 +1221,12 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                 ccnl_fib_rem_entry(relay, prefix, from);
                 ccnl_fib_add_entry(relay, prefix, from);
                 xtimer_remove(&relay->compas_pam_timer);
-                xtimer_set_msg(&relay->compas_pam_timer,
-                               COMPAS_PAM_PERIOD + random_uint32_range(0,200) * US_PER_MS,
+                xtimer_set_msg(&relay->compas_pam_timer, COMPAS_PAM_PERIOD,
                                &relay->compas_pam_msg, sched_active_pid);
-                printf("pamrx;%d;%u;%lu;%d,%d;%d;", state, (unsigned) relay->dodag.rank,
+                /*
+                printf("pamrx;%d;%u;%lu;%lu;%d;%d;%d;", state, (unsigned) relay->dodag.rank,
                         (unsigned long) (xtimer_now_usec64() - relay->compas_started),
+                        (unsigned long) (xtimer_now_usec64()),
                         relay->dodag.flags, pam->rank, pam->flags);
                 for (int i = 0; i < from->peer.linklayer.sll_halen - 1; i++) {
                     printf("%02x:", from->peer.linklayer.sll_addr[i]);
@@ -1221,6 +1236,7 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                     printf("%02x:", relay->dodag.parent.face_addr[i]);
                 }
                 printf("%02x;%d\n", relay->dodag.parent.face_addr[relay->dodag.parent.face_addr_len - 1], (signed) (relay->compas_dodag_parent_timer.target - xtimer_now_usec()));
+                */
             }
         }
 

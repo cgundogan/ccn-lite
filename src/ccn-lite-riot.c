@@ -351,7 +351,9 @@ bool compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
     memset(((uint8_t *) pkt->data) + 1, CCNL_ENC_COMPAS, 1);
     compas_nam_t *nam = (compas_nam_t *)(((uint8_t *) pkt->data) + 2);
     compas_nam_create(nam);
+    printf("sendnam;%u", ccnl->dodag.rank);
     if (name) {
+        printf(";%.*s\n", name_len, name);
         compas_nam_tlv_add_name(nam, name, name_len);
     }
     else {
@@ -371,11 +373,13 @@ bool compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
             if (rc >= prefix->compcnt) {
                 if (!(c->flags & CCNL_COMPAS_CONTENT_REQUESTED)) {
                     s = ccnl_prefix_to_path(c->pkt->pfx);
+                    printf(";%s", s);
                     compas_nam_tlv_add_name(nam, s, strlen(s));
                     ccnl_free(s);
                 }
             }
         }
+        printf("\n");
         free_prefix(prefix);
     }
 
@@ -650,15 +654,20 @@ void
 
                 static unsigned char _int_buf[64];
                 for (struct ccnl_forward_s *fwd = ccnl->fib; fwd; fwd = fwd->next) {
-                    if (fwd->prefix->compcnt <= prefix->compcnt) {
+                    if (fwd->prefix->compcnt < prefix->compcnt) {
                         continue;
                     }
-                    if (ccnl_prefix_cmp(fwd->prefix, NULL, prefix, CMP_LONGEST) >= prefix->compcnt) {
+                    if (!fwd->retries && (ccnl_prefix_cmp(fwd->prefix, NULL, prefix, CMP_LONGEST) >= prefix->compcnt)) {
+                        char *s1 = NULL;
+                        char *s2 = NULL;
+                        printf("sendint;%u;%u;%s;%s\n", ccnl->dodag.rank, fwd->retries,
+                                                        (s1 = ccnl_prefix_to_path(prefix)),
+                                                        (s2 = ccnl_prefix_to_path(fwd->prefix)));
+                        ccnl_free(s1);
+                        ccnl_free(s2);
                         ccnl_send_interest(fwd->prefix, _int_buf, sizeof(_int_buf));
                         work_to_do = true;
-                        if (++fwd->retries > 3) {
-                            ccnl_fib_rem_entry(ccnl, fwd->prefix, NULL);
-                        }
+                        fwd->retries = 1;
                     }
                 }
 

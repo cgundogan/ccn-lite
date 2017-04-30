@@ -174,7 +174,7 @@ struct ccnl_relay_s {
 
 #ifdef USE_SUITE_COMPAS
 #define COMPAS_PAM_MSG (0xBEEF)
-#define COMPAS_PAM_PERIOD (1000 * US_PER_MS)
+#define COMPAS_PAM_PERIOD ((750 * US_PER_MS) + random_uint32_range(0, 250 * US_PER_MS))
 #define COMPAS_NAM_MSG (0xBEFF)
 #define COMPAS_NAM_PERIOD (500 * US_PER_MS)
 #define COMPAS_DODAG_PARENT_TIMEOUT_MSG (0xBFFF)
