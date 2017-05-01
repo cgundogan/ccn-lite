@@ -787,6 +787,9 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
     }
     if ((ccnl->max_cache_entries <= 0) ||
          (ccnl->contentcnt <= ccnl->max_cache_entries)) {
+            printf("add2cache;%u;%s\n", (unsigned) ccnl->dodag.rank, (s = ccnl_prefix_to_path(c->pkt->pfx)));
+            ccnl_free(s);
+            c->retries = 3;
             DBL_LINKED_LIST_ADD(ccnl->contents, c);
             ccnl->contentcnt++;
     }
@@ -954,12 +957,13 @@ ccnl_do_ageing(void *ptr, void *dummy)
 {
     (void) dummy;
     struct ccnl_relay_s *relay = (struct ccnl_relay_s*) ptr;
-    struct ccnl_content_s *c = relay->contents;
+    //struct ccnl_content_s *c = relay->contents;
     struct ccnl_interest_s *i = relay->pit;
     struct ccnl_face_s *f = relay->faces;
     time_t t = CCNL_NOW();
     DEBUGMSG_CORE(VERBOSE, "ageing t=%d\n", (int)t);
 
+/*
     while (c) {
         if ((c->last_used + CCNL_CONTENT_TIMEOUT) <= t &&
                                 !(c->flags & CCNL_CONTENT_FLAGS_STATIC)){
@@ -983,6 +987,7 @@ ccnl_do_ageing(void *ptr, void *dummy)
         else
             c = c->next;
     }
+*/
     while (i) { // CONFORM: "Entries in the PIT MUST timeout rather
                 // than being held indefinitely."
         if ((i->last_used + CCNL_INTEREST_TIMEOUT) <= t ||
@@ -1023,9 +1028,9 @@ ccnl_do_ageing(void *ptr, void *dummy)
 //                 i = i->next;
 #else // USE_TIMEOUT
                 DEBUGMSG_AGEING("AGING: REMOVE INTEREST", "timeout: remove interest");
-                char *s = NULL;
-                printf("rmint:%u,%s\n", relay->dodag.rank, (s = ccnl_prefix_to_path(i->pkt->pfx)));
-                ccnl_free(s);
+                char *s1 = NULL;
+                printf("rmint:%u,%s\n", relay->dodag.rank, (s1 = ccnl_prefix_to_path(i->pkt->pfx)));
+                ccnl_free(s1);
 #ifdef USE_SUITE_COMPAS
                 for (struct ccnl_forward_s *fwd = relay->fib; fwd; fwd = fwd->next) {
                     if (fwd->prefix->compcnt < i->pkt->pfx->compcnt) {
@@ -1209,7 +1214,18 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
         compas_dodag_print(&relay->dodag);
 
         if (state >= 0) {
+            if (relay->compas_dodag_parent_timeout) {
+                if (relay->compas_nam_timer_running == 0) {
+                    relay->compas_nam_timer_running = 1;
+                    xtimer_set_msg(&relay->compas_nam_timer, COMPAS_NAM_PERIOD, &relay->compas_nam_msg, sched_active_pid);
+                }
+            }
             relay->compas_dodag_parent_timeout = 0;
+            for (struct ccnl_content_s *c = relay->contents; c; c = c->next) {
+                if (!(c->flags & CCNL_COMPAS_CONTENT_REQUESTED)) {
+                    c->retries = 3;
+                }
+            }
             xtimer_remove(&relay->compas_dodag_parent_timer);
             xtimer_set_msg(&relay->compas_dodag_parent_timer,
                            COMPAS_DODAG_PARENT_TIMEOUT_PERIOD,
@@ -1248,12 +1264,15 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
 
         while(compas_nam_tlv_iter((compas_nam_t *) *data, &offset, &tlv)) {
             if (tlv->type == COMPAS_TLV_NAME) {
-                //static unsigned char _int_buf[64];
+                static unsigned char _int_buf[64];
                 memcpy(name, tlv + 1, tlv->length);
                 name[tlv->length > COMPAS_NAME_LEN ? COMPAS_NAME_LEN : tlv->length] = '\0';
                 struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(name, CCNL_SUITE_NDNTLV, NULL, NULL);
                 ccnl_fib_add_entry(relay, prefix, from);
-                // ccnl_send_interest(prefix, _int_buf, sizeof(_int_buf));
+                char *s1 = NULL;
+                printf("sendint;%u;%u;%s\n", relay->dodag.rank, relay->compas_dodag_parent_timeout, (s1 = ccnl_prefix_to_path(prefix)));
+                ccnl_free(s1);
+                ccnl_send_interest(prefix, _int_buf, sizeof(_int_buf));
             }
         }
 

@@ -351,9 +351,8 @@ bool compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
     memset(((uint8_t *) pkt->data) + 1, CCNL_ENC_COMPAS, 1);
     compas_nam_t *nam = (compas_nam_t *)(((uint8_t *) pkt->data) + 2);
     compas_nam_create(nam);
-    printf("sendnam;%u", ccnl->dodag.rank);
     if (name) {
-        printf(";%.*s\n", name_len, name);
+        printf("sendnam;%u;%u;%.*s\n", ccnl->dodag.rank, ccnl->compas_dodag_parent_timeout, name_len, name);
         compas_nam_tlv_add_name(nam, name, name_len);
     }
     else {
@@ -371,15 +370,23 @@ bool compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
             }
             rc = ccnl_prefix_cmp(c->pkt->pfx, NULL, prefix, CMP_LONGEST);
             if (rc >= prefix->compcnt) {
-                if (!(c->flags & CCNL_COMPAS_CONTENT_REQUESTED)) {
-                    s = ccnl_prefix_to_path(c->pkt->pfx);
-                    printf(";%s", s);
-                    compas_nam_tlv_add_name(nam, s, strlen(s));
-                    ccnl_free(s);
+                if (!(c->flags & CCNL_COMPAS_CONTENT_REQUESTED) && c->retries) {
+                    if (c->retries--) {
+                        s = ccnl_prefix_to_path(c->pkt->pfx);
+                        printf("sendnam;%u;%u;%s\n", ccnl->dodag.rank, ccnl->compas_dodag_parent_timeout, s);
+                        compas_nam_tlv_add_name(nam, s, strlen(s));
+                        ccnl_free(s);
+                    }
+                    else {
+                        xtimer_remove(&ccnl->compas_dodag_parent_timer);
+                        xtimer_set_msg(&ccnl->compas_dodag_parent_timer,
+                                       100 * US_PER_MS,
+                                       &ccnl->compas_dodag_parent_msg,
+                                       sched_active_pid);
+                    }
                 }
             }
         }
-        printf("\n");
         free_prefix(prefix);
     }
 
@@ -408,7 +415,6 @@ bool compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
         }
     }
 
-	puts("SEND NAM");
     if (gnrc_netapi_send(ifc->if_pid, pkt) < 1) {
         puts("error: unable to send\n");
         gnrc_pktbuf_release(pkt);
@@ -571,6 +577,11 @@ _receive(struct ccnl_relay_s *ccnl, msg_t *m)
     LL_SEARCH_SCALAR(pkt, ccn_pkt, type, GNRC_NETTYPE_CCN);
     LL_SEARCH_SCALAR(pkt, netif_pkt, type, GNRC_NETTYPE_NETIF);
     gnrc_netif_hdr_t *nethdr = (gnrc_netif_hdr_t *)netif_pkt->data;
+    if (nethdr->lqi < 200) {
+        //printf("dropped;%u\n", nethdr->lqi);
+        gnrc_pktbuf_release(pkt);
+        return;
+    }
     sockunion su;
     memset(&su, 0, sizeof(su));
     su.sa.sa_family = AF_PACKET;
@@ -648,30 +659,8 @@ void
                 char dodag_prefix[COMPAS_NAME_LEN];
                 memcpy(dodag_prefix, ccnl->dodag.prefix, ccnl->dodag.prefix_len);
                 dodag_prefix[ccnl->dodag.prefix_len] = '\0';
-                struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(dodag_prefix, CCNL_SUITE_NDNTLV, NULL, NULL);
 
                 bool work_to_do = false;
-
-                static unsigned char _int_buf[64];
-                for (struct ccnl_forward_s *fwd = ccnl->fib; fwd; fwd = fwd->next) {
-                    if (fwd->prefix->compcnt < prefix->compcnt) {
-                        continue;
-                    }
-                    if (!fwd->retries && (ccnl_prefix_cmp(fwd->prefix, NULL, prefix, CMP_LONGEST) >= prefix->compcnt)) {
-                        char *s1 = NULL;
-                        char *s2 = NULL;
-                        printf("sendint;%u;%u;%s;%s\n", ccnl->dodag.rank, fwd->retries,
-                                                        (s1 = ccnl_prefix_to_path(prefix)),
-                                                        (s2 = ccnl_prefix_to_path(fwd->prefix)));
-                        ccnl_free(s1);
-                        ccnl_free(s2);
-                        ccnl_send_interest(fwd->prefix, _int_buf, sizeof(_int_buf));
-                        work_to_do = true;
-                        fwd->retries = 1;
-                    }
-                }
-
-                free_prefix(prefix);
 
                 if (ccnl->dodag.rank > COMPAS_DODAG_ROOT_RANK && !ccnl->compas_dodag_parent_timeout) {
                     work_to_do |= compas_send_nam(ccnl, NULL, 0);
@@ -686,15 +675,19 @@ void
             case COMPAS_DODAG_PARENT_TIMEOUT_MSG:
                 ccnl->compas_dodag_parent_timeout = 1;
                 ccnl->dodag.flags |= COMPAS_DODAG_FLAGS_FLOATING;
-                printf("timeout;%d;%u;",ccnl->dodag.flags, (unsigned) ccnl->dodag.rank);
+                printf("timeout;%u;%u;%d;", (unsigned) ccnl->dodag.rank, ccnl->compas_dodag_parent_timeout, ccnl->dodag.flags);
                 for (int i = 0; i < ccnl->dodag.parent.face_addr_len - 1; i++) {
                     printf("%02x:", ccnl->dodag.parent.face_addr[i]);
                 }
-                printf("%02x\n", ccnl->dodag.parent.face_addr[ccnl->dodag.parent.face_addr_len - 1]);
-                xtimer_set_msg(&ccnl->compas_dodag_parent_timer,
-                               COMPAS_DODAG_PARENT_TIMEOUT_PERIOD,
-                               &ccnl->compas_dodag_parent_msg,
-                               sched_active_pid);
+                printf("%02x", ccnl->dodag.parent.face_addr[ccnl->dodag.parent.face_addr_len - 1]);
+                for (struct ccnl_content_s *c = ccnl->contents; c; c = c->next) {
+                    if (!(c->flags & CCNL_COMPAS_CONTENT_REQUESTED)) {
+                        char *s = ccnl_prefix_to_path(c->pkt->pfx);
+                        printf(";%s", s);
+                        ccnl_free(s);
+                    }
+                }
+                printf("\n");
                 break;
             default:
                 DEBUGMSG(WARNING, "ccn-lite: unknown message type\n");

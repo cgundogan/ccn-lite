@@ -174,11 +174,11 @@ struct ccnl_relay_s {
 
 #ifdef USE_SUITE_COMPAS
 #define COMPAS_PAM_MSG (0xBEEF)
-#define COMPAS_PAM_PERIOD ((750 * US_PER_MS) + random_uint32_range(0, 250 * US_PER_MS))
+#define COMPAS_PAM_PERIOD ((1000 * US_PER_MS) + random_uint32_range(0, 500 * US_PER_MS))
 #define COMPAS_NAM_MSG (0xBEFF)
 #define COMPAS_NAM_PERIOD (500 * US_PER_MS)
 #define COMPAS_DODAG_PARENT_TIMEOUT_MSG (0xBFFF)
-#define COMPAS_DODAG_PARENT_TIMEOUT_PERIOD (30 * US_PER_SEC)
+#define COMPAS_DODAG_PARENT_TIMEOUT_PERIOD (15 * US_PER_SEC)
     compas_dodag_t dodag;
     uint64_t compas_started;
     unsigned compas_dodag_parent_timeout;
@@ -307,6 +307,7 @@ struct ccnl_content_s {
 #define CCNL_COMPAS_CONTENT_REQUESTED 0x04
     // NON-CONFORM: "The [ContentSTore] MUST also implement the Staleness Bit."
     // >> CCNL: currently no stale bit, old content is fully removed <<
+    uint8_t retries;
     int last_used;
     int served_cnt;
 };
