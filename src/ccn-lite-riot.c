@@ -371,7 +371,10 @@ bool compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
     compas_nam_t *nam = (compas_nam_t *)(((uint8_t *) pkt->data) + 2);
     compas_nam_create(nam);
     if (name) {
-        printf("sendnam;%u;%u;%.*s\n", ccnl->dodag.rank, ccnl->compas_dodag_parent_timeout, name_len, name);
+        printf("sendnam;%u;%u;%u;%lu;%lu;%.*s\n", COMPAS_NAM_PERIOD_BASE, ccnl->dodag.rank, ccnl->compas_dodag_parent_timeout,
+                                                  (unsigned long) (xtimer_now_usec64() - ccnl->compas_started),
+                                                  (unsigned long) (xtimer_now_usec64()),
+                                                  name_len, name);
         compas_nam_tlv_add_name(nam, name, name_len);
     }
     else {
@@ -393,7 +396,10 @@ bool compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
                     if (c->retries) {
                         c->retries--;
                         s = ccnl_prefix_to_path(c->pkt->pfx);
-                        printf("sendnam;%u;%u;%u;%s\n", ccnl->dodag.rank, ccnl->compas_dodag_parent_timeout, c->retries, s);
+                        printf("sendnam;%u;%u;%u;%u;%lu;%lu;%s\n", COMPAS_NAM_PERIOD_BASE, ccnl->dodag.rank, ccnl->compas_dodag_parent_timeout, c->retries,
+                                                                   (unsigned long) (xtimer_now_usec64() - ccnl->compas_started),
+                                                                   (unsigned long) (xtimer_now_usec64()),
+                                                                   s);
                         compas_nam_tlv_add_name(nam, s, strlen(s));
                         ccnl_free(s);
                     }
@@ -595,11 +601,13 @@ _receive(struct ccnl_relay_s *ccnl, msg_t *m)
     LL_SEARCH_SCALAR(pkt, ccn_pkt, type, GNRC_NETTYPE_CCN);
     LL_SEARCH_SCALAR(pkt, netif_pkt, type, GNRC_NETTYPE_NETIF);
     gnrc_netif_hdr_t *nethdr = (gnrc_netif_hdr_t *)netif_pkt->data;
+    /*
     if (nethdr->lqi < 215) {
         //printf("dropped;%u\n", nethdr->lqi);
         gnrc_pktbuf_release(pkt);
         return;
     }
+    */
     sockunion su;
     memset(&su, 0, sizeof(su));
     su.sa.sa_family = AF_PACKET;

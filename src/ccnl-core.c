@@ -787,7 +787,10 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
     }
     if ((ccnl->max_cache_entries <= 0) ||
          (ccnl->contentcnt <= ccnl->max_cache_entries)) {
-            printf("add2cache;%u;%s\n", (unsigned) ccnl->dodag.rank, (s = ccnl_prefix_to_path(c->pkt->pfx)));
+            printf("add2cache;%u;%u;%lu;%lu;%s\n", (unsigned) ccnl->dodag.rank, ccnl->compas_dodag_parent_timeout,
+                                                   (unsigned long) (xtimer_now_usec64() - ccnl->compas_started),
+                                                   (unsigned long) (xtimer_now_usec64()),
+                                                   (s = ccnl_prefix_to_path(c->pkt->pfx)));
             if (ccnl->compas_nam_timer_running == 0) {
                 ccnl->compas_nam_timer_running = 1;
                 xtimer_set_msg(&ccnl->compas_nam_timer, COMPAS_NAM_PERIOD, &ccnl->compas_nam_msg, ccnl->pid);
@@ -1033,7 +1036,10 @@ ccnl_do_ageing(void *ptr, void *dummy)
 #else // USE_TIMEOUT
                 DEBUGMSG_AGEING("AGING: REMOVE INTEREST", "timeout: remove interest");
                 char *s1 = NULL;
-                printf("rmint:%u,%s\n", relay->dodag.rank, (s1 = ccnl_prefix_to_path(i->pkt->pfx)));
+                printf("rmint;%u;%u;%lu;%lu;%s\n", relay->dodag.rank, relay->compas_dodag_parent_timeout,
+                                                   (unsigned long) (xtimer_now_usec64() - relay->compas_started),
+                                                   (unsigned long) (xtimer_now_usec64()),
+                                                   (s1 = ccnl_prefix_to_path(i->pkt->pfx)));
                 ccnl_free(s1);
 #ifdef USE_SUITE_COMPAS
                 for (struct ccnl_forward_s *fwd = relay->fib; fwd; fwd = fwd->next) {
@@ -1243,7 +1249,6 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                 xtimer_remove(&relay->compas_pam_timer);
                 xtimer_set_msg(&relay->compas_pam_timer, COMPAS_PAM_PERIOD,
                                &relay->compas_pam_msg, sched_active_pid);
-                /*
                 printf("pamrx;%u;%u;%d;%u;%lu;%lu;%d;%d;%d;", COMPAS_PAM_PERIOD_BASE, COMPAS_PAM_PERIOD_JITTER,
                         state, (unsigned) relay->dodag.rank,
                         (unsigned long) (xtimer_now_usec64() - relay->compas_started),
@@ -1257,7 +1262,6 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                     printf("%02x:", relay->dodag.parent.face_addr[i]);
                 }
                 printf("%02x;%d\n", relay->dodag.parent.face_addr[relay->dodag.parent.face_addr_len - 1], (signed) (relay->compas_dodag_parent_timer.target - xtimer_now_usec()));
-                */
             }
         }
 
@@ -1275,7 +1279,10 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                 struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(name, CCNL_SUITE_NDNTLV, NULL, NULL);
                 ccnl_fib_add_entry(relay, prefix, from);
                 char *s1 = NULL;
-                printf("sendint;%u;%u;%s\n", relay->dodag.rank, relay->compas_dodag_parent_timeout, (s1 = ccnl_prefix_to_path(prefix)));
+                printf("sendint;%u;%u;%lu;%lu;%s\n", relay->dodag.rank, relay->compas_dodag_parent_timeout,
+                                                     (unsigned long) (xtimer_now_usec64() - relay->compas_started),
+                                                     (unsigned long) (xtimer_now_usec64()),
+                                                     (s1 = ccnl_prefix_to_path(prefix)));
                 ccnl_free(s1);
                 for (struct ccnl_content_s *c = relay->contents, *tmp = NULL; c; c = tmp) {
 #ifdef USE_SUITE_COMPAS
