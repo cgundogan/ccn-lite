@@ -327,6 +327,25 @@ void compas_send_pam(struct ccnl_relay_s *ccnl)
     }
 }
 
+static void _compas_dodag_parent_timeout(struct ccnl_relay_s *ccnl)
+{
+    ccnl->compas_dodag_parent_timeout = 1;
+    ccnl->dodag.flags |= COMPAS_DODAG_FLAGS_FLOATING;
+    printf("timeout;%u;%u;%d;", (unsigned) ccnl->dodag.rank, ccnl->compas_dodag_parent_timeout, ccnl->dodag.flags);
+    for (int i = 0; i < ccnl->dodag.parent.face_addr_len - 1; i++) {
+        printf("%02x:", ccnl->dodag.parent.face_addr[i]);
+    }
+    printf("%02x", ccnl->dodag.parent.face_addr[ccnl->dodag.parent.face_addr_len - 1]);
+    for (struct ccnl_content_s *c = ccnl->contents; c; c = c->next) {
+        if (!(c->flags & CCNL_COMPAS_CONTENT_REQUESTED)) {
+            char *s = ccnl_prefix_to_path(c->pkt->pfx);
+            printf(";%s", s);
+            ccnl_free(s);
+        }
+    }
+    printf("\n");
+}
+
 bool compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_len)
 {
     compas_dodag_t *dodag = &ccnl->dodag;
@@ -370,19 +389,18 @@ bool compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
             }
             rc = ccnl_prefix_cmp(c->pkt->pfx, NULL, prefix, CMP_LONGEST);
             if (rc >= prefix->compcnt) {
-                if (!(c->flags & CCNL_COMPAS_CONTENT_REQUESTED) && c->retries) {
-                    if (c->retries--) {
+                if (!(c->flags & CCNL_COMPAS_CONTENT_REQUESTED)) {
+                    if (c->retries) {
+                        c->retries--;
                         s = ccnl_prefix_to_path(c->pkt->pfx);
-                        printf("sendnam;%u;%u;%s\n", ccnl->dodag.rank, ccnl->compas_dodag_parent_timeout, s);
+                        printf("sendnam;%u;%u;%u;%s\n", ccnl->dodag.rank, ccnl->compas_dodag_parent_timeout, c->retries, s);
                         compas_nam_tlv_add_name(nam, s, strlen(s));
                         ccnl_free(s);
                     }
                     else {
-                        xtimer_remove(&ccnl->compas_dodag_parent_timer);
-                        xtimer_set_msg(&ccnl->compas_dodag_parent_timer,
-                                       100 * US_PER_MS,
-                                       &ccnl->compas_dodag_parent_msg,
-                                       sched_active_pid);
+                        nam->len = 0;
+                        _compas_dodag_parent_timeout(ccnl);
+                        break;
                     }
                 }
             }
@@ -577,7 +595,7 @@ _receive(struct ccnl_relay_s *ccnl, msg_t *m)
     LL_SEARCH_SCALAR(pkt, ccn_pkt, type, GNRC_NETTYPE_CCN);
     LL_SEARCH_SCALAR(pkt, netif_pkt, type, GNRC_NETTYPE_NETIF);
     gnrc_netif_hdr_t *nethdr = (gnrc_netif_hdr_t *)netif_pkt->data;
-    if (nethdr->lqi < 200) {
+    if (nethdr->lqi < 215) {
         //printf("dropped;%u\n", nethdr->lqi);
         gnrc_pktbuf_release(pkt);
         return;
@@ -673,21 +691,7 @@ void
 
                 break;
             case COMPAS_DODAG_PARENT_TIMEOUT_MSG:
-                ccnl->compas_dodag_parent_timeout = 1;
-                ccnl->dodag.flags |= COMPAS_DODAG_FLAGS_FLOATING;
-                printf("timeout;%u;%u;%d;", (unsigned) ccnl->dodag.rank, ccnl->compas_dodag_parent_timeout, ccnl->dodag.flags);
-                for (int i = 0; i < ccnl->dodag.parent.face_addr_len - 1; i++) {
-                    printf("%02x:", ccnl->dodag.parent.face_addr[i]);
-                }
-                printf("%02x", ccnl->dodag.parent.face_addr[ccnl->dodag.parent.face_addr_len - 1]);
-                for (struct ccnl_content_s *c = ccnl->contents; c; c = c->next) {
-                    if (!(c->flags & CCNL_COMPAS_CONTENT_REQUESTED)) {
-                        char *s = ccnl_prefix_to_path(c->pkt->pfx);
-                        printf(";%s", s);
-                        ccnl_free(s);
-                    }
-                }
-                printf("\n");
+                _compas_dodag_parent_timeout(ccnl);
                 break;
             default:
                 DEBUGMSG(WARNING, "ccn-lite: unknown message type\n");
@@ -708,7 +712,7 @@ ccnl_start(void)
     ccnl_relay.max_cache_entries = CCNL_CACHE_SIZE;
     ccnl_relay.max_pit_entries = CCNL_DEFAULT_MAX_PIT_ENTRIES;
     /* start the CCN-Lite event-loop */
-    _ccnl_event_loop_pid =  thread_create(_ccnl_stack, sizeof(_ccnl_stack),
+    ccnl_relay.pid = _ccnl_event_loop_pid =  thread_create(_ccnl_stack, sizeof(_ccnl_stack),
                                           THREAD_PRIORITY_MAIN - 1,
                                           THREAD_CREATE_STACKTEST, _ccnl_event_loop,
                                           &ccnl_relay, "ccnl");

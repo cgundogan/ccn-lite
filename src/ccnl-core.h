@@ -174,11 +174,14 @@ struct ccnl_relay_s {
 
 #ifdef USE_SUITE_COMPAS
 #define COMPAS_PAM_MSG (0xBEEF)
-#define COMPAS_PAM_PERIOD ((1000 * US_PER_MS) + random_uint32_range(0, 500 * US_PER_MS))
+#define COMPAS_PAM_PERIOD_BASE (1000)
+#define COMPAS_PAM_PERIOD_JITTER (500)
+#define COMPAS_PAM_PERIOD (COMPAS_PAM_PERIOD_BASE * US_PER_MS + random_uint32_range(0, COMPAS_PAM_PERIOD_JITTER * US_PER_MS))
 #define COMPAS_NAM_MSG (0xBEFF)
-#define COMPAS_NAM_PERIOD (500 * US_PER_MS)
+#define COMPAS_NAM_PERIOD_BASE (500)
+#define COMPAS_NAM_PERIOD (COMPAS_NAM_PERIOD_BASE * US_PER_MS)
 #define COMPAS_DODAG_PARENT_TIMEOUT_MSG (0xBFFF)
-#define COMPAS_DODAG_PARENT_TIMEOUT_PERIOD (15 * US_PER_SEC)
+#define COMPAS_DODAG_PARENT_TIMEOUT_PERIOD (30 * US_PER_SEC)
     compas_dodag_t dodag;
     uint64_t compas_started;
     unsigned compas_dodag_parent_timeout;
@@ -189,6 +192,7 @@ struct ccnl_relay_s {
     xtimer_t compas_nam_timer;
     msg_t compas_nam_msg;
     unsigned compas_nam_timer_running;
+    kernel_pid_t pid;
 #endif
 
   /*
@@ -304,7 +308,8 @@ struct ccnl_content_s {
     unsigned short flags;
 #define CCNL_CONTENT_FLAGS_STATIC  0x01
 #define CCNL_CONTENT_FLAGS_STALE   0x02
-#define CCNL_COMPAS_CONTENT_REQUESTED 0x04
+#define CCNL_COMPAS_CONTENT 0x04
+#define CCNL_COMPAS_CONTENT_REQUESTED 0x08
     // NON-CONFORM: "The [ContentSTore] MUST also implement the Staleness Bit."
     // >> CCNL: currently no stale bit, old content is fully removed <<
     uint8_t retries;
