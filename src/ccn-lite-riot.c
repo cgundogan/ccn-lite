@@ -402,6 +402,7 @@ bool compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
                                                                    s);
                         compas_nam_tlv_add_name(nam, s, strlen(s));
                         ccnl_free(s);
+                        break;
                     }
                     else {
                         nam->len = 0;

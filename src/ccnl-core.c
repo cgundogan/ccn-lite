@@ -1066,6 +1066,12 @@ ccnl_do_ageing(void *ptr, void *dummy)
 #endif
                 DEBUGMSG_CORE(TRACE, "AGING: PROPAGATING INTEREST %p\n", (void*) i);
                 ccnl_interest_propagate(relay, i);
+                char *s1 = NULL;
+                printf("reint;%u;%u;%lu;%lu;%s\n", relay->dodag.rank, relay->compas_dodag_parent_timeout,
+                                                   (unsigned long) (xtimer_now_usec64() - relay->compas_started),
+                                                   (unsigned long) (xtimer_now_usec64()),
+                                                   (s1 = ccnl_prefix_to_path(i->pkt->pfx)));
+                ccnl_free(s1);
 #ifdef USE_NFN
             }
 #endif
@@ -1229,6 +1235,11 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                     relay->compas_nam_timer_running = 1;
                     xtimer_set_msg(&relay->compas_nam_timer, COMPAS_NAM_PERIOD, &relay->compas_nam_msg, sched_active_pid);
                 }
+                for (struct ccnl_content_s *c = relay->contents; c; c = c->next) {
+                    if (!(c->flags & CCNL_COMPAS_CONTENT_REQUESTED)) {
+                        c->retries = 3;
+                    }
+                }
             }
             relay->compas_dodag_parent_timeout = 0;
             xtimer_remove(&relay->compas_dodag_parent_timer);
@@ -1238,12 +1249,10 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                            sched_active_pid);
             /* Setup default route to new DODAG parent */
             if (state == 1) {
-                for (struct ccnl_content_s *c = relay->contents; c; c = c->next) {
-                    if (!(c->flags & CCNL_COMPAS_CONTENT_REQUESTED)) {
-                        c->retries = 3;
-                    }
-                }
-                struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(relay->dodag.prefix, CCNL_SUITE_NDNTLV, NULL, NULL);
+                char dodag_prfx[COMPAS_PREFIX_LEN];
+                memcpy(dodag_prfx, relay->dodag.prefix, relay->dodag.prefix_len);
+                dodag_prfx[relay->dodag.prefix_len] = '\0';
+                struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(dodag_prfx, CCNL_SUITE_NDNTLV, NULL, NULL);
                 ccnl_fib_rem_entry(relay, prefix, from);
                 ccnl_fib_add_entry(relay, prefix, from);
                 xtimer_remove(&relay->compas_pam_timer);
