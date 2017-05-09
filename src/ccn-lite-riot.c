@@ -392,7 +392,7 @@ bool compas_send_nam(struct ccnl_relay_s *ccnl, const char *name, uint16_t name_
             }
             rc = ccnl_prefix_cmp(c->pkt->pfx, NULL, prefix, CMP_LONGEST);
             if (rc >= prefix->compcnt) {
-                if (!(c->flags & CCNL_COMPAS_CONTENT_REQUESTED)) {
+                if ((c->flags & CCNL_COMPAS_CONTENT) && !(c->flags & CCNL_COMPAS_CONTENT_REQUESTED)) {
                     if (c->retries) {
                         c->retries--;
                         s = ccnl_prefix_to_path(c->pkt->pfx);

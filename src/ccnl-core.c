@@ -526,35 +526,39 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
     rc = longest_rc;
     fwd = longest_fwd;
 
-    DEBUGMSG_CORE(DEBUG, "  ccnl_interest_propagate, fwd==%p\n", (void*)fwd);
-    // suppress forwarding to origin of interest, except wireless
-    if (!i->from || fwd->face != i->from ||
-                            (i->from->flags & CCNL_FACE_FLAGS_REFLECT)) {
-        int nonce = 0;
-        if (i->pkt != NULL && i->pkt->s.ndntlv.nonce != NULL) {
-            if (i->pkt->s.ndntlv.nonce->datalen == 4) {
-                memcpy(&nonce, i->pkt->s.ndntlv.nonce->data, 4);
+    if (fwd) {
+
+        DEBUGMSG_CORE(DEBUG, "  ccnl_interest_propagate, fwd==%p\n", (void*)fwd);
+        // suppress forwarding to origin of interest, except wireless
+        if (!i->from || fwd->face != i->from ||
+                                (i->from->flags & CCNL_FACE_FLAGS_REFLECT)) {
+            int nonce = 0;
+            if (i->pkt != NULL && i->pkt->s.ndntlv.nonce != NULL) {
+                if (i->pkt->s.ndntlv.nonce->datalen == 4) {
+                    memcpy(&nonce, i->pkt->s.ndntlv.nonce->data, 4);
+                }
             }
+
+            char *s = NULL;
+            DEBUGMSG_CFWD(INFO, "  outgoing interest=<%s> nonce=%i to=%s\n",
+                          (s = ccnl_prefix_to_path(fwd->prefix)), nonce,
+                          fwd->face ? ccnl_addr2ascii(&fwd->face->peer)
+                                    : "<tap>");
+            ccnl_free(s);
+            ccnl_nfn_monitor(ccnl, fwd->face, i->pkt->pfx, NULL, 0);
+
+            // DEBUGMSG(DEBUG, "%p %p %p\n", (void*)i, (void*)i->pkt, (void*)i->pkt->buf);
+            if (fwd->tap)
+                (fwd->tap)(ccnl, i->from, i->pkt->pfx, i->pkt->buf);
+            if (fwd->face)
+                ccnl_face_enqueue(ccnl, fwd->face, buf_dup(i->pkt->buf));
+#if defined(USE_NACK) || defined(USE_RONR)
+            matching_face = 1;
+#endif
+        } else {
+            DEBUGMSG_CORE(DEBUG, "  no matching fib entry found\n");
         }
 
-        char *s = NULL;
-        DEBUGMSG_CFWD(INFO, "  outgoing interest=<%s> nonce=%i to=%s\n",
-                      (s = ccnl_prefix_to_path(fwd->prefix)), nonce,
-                      fwd->face ? ccnl_addr2ascii(&fwd->face->peer)
-                                : "<tap>");
-        ccnl_free(s);
-        ccnl_nfn_monitor(ccnl, fwd->face, i->pkt->pfx, NULL, 0);
-
-        // DEBUGMSG(DEBUG, "%p %p %p\n", (void*)i, (void*)i->pkt, (void*)i->pkt->buf);
-        if (fwd->tap)
-            (fwd->tap)(ccnl, i->from, i->pkt->pfx, i->pkt->buf);
-        if (fwd->face)
-            ccnl_face_enqueue(ccnl, fwd->face, buf_dup(i->pkt->buf));
-#if defined(USE_NACK) || defined(USE_RONR)
-        matching_face = 1;
-#endif
-    } else {
-        DEBUGMSG_CORE(DEBUG, "  no matching fib entry found\n");
     }
 
 #ifdef USE_RONR
@@ -791,10 +795,12 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
                                                    (unsigned long) (xtimer_now_usec64() - ccnl->compas_started),
                                                    (unsigned long) (xtimer_now_usec64()),
                                                    (s = ccnl_prefix_to_path(c->pkt->pfx)));
+            /*
             if (ccnl->compas_nam_timer_running == 0) {
                 ccnl->compas_nam_timer_running = 1;
                 xtimer_set_msg(&ccnl->compas_nam_timer, COMPAS_NAM_PERIOD, &ccnl->compas_nam_msg, ccnl->pid);
             }
+            */
             ccnl_free(s);
             c->retries = 3;
             DBL_LINKED_LIST_ADD(ccnl->contents, c);
@@ -802,7 +808,13 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
     }
 
 #ifdef USE_SUITE_COMPAS
-    ccnl_fib_rem_entry(ccnl, c->pkt->pfx, NULL);
+    if(0 == ccnl_fib_rem_entry(ccnl, c->pkt->pfx, NULL)) {
+        c->flags |= CCNL_COMPAS_CONTENT;
+        if (ccnl->compas_nam_timer_running == 0) {
+            ccnl->compas_nam_timer_running = 1;
+            xtimer_set_msg(&ccnl->compas_nam_timer, COMPAS_NAM_PERIOD, &ccnl->compas_nam_msg, ccnl->pid);
+        }
+    }
 #endif
 
 #if defined(COMPAS_DEBUG) && COMPAS_DEBUG
@@ -1043,6 +1055,11 @@ ccnl_do_ageing(void *ptr, void *dummy)
                 ccnl_free(s1);
 #ifdef USE_SUITE_COMPAS
                 for (struct ccnl_forward_s *fwd = relay->fib; fwd; fwd = fwd->next) {
+                   s1 = ccnl_prefix_to_path(fwd->prefix);
+                   if (!memcmp(s1, relay->dodag.prefix, relay->dodag.prefix_len)) {
+                       ccnl_free(s1);
+                       continue;
+                   }
                     if (fwd->prefix->compcnt < i->pkt->pfx->compcnt) {
                         continue;
                     }
@@ -1236,7 +1253,7 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                     xtimer_set_msg(&relay->compas_nam_timer, COMPAS_NAM_PERIOD, &relay->compas_nam_msg, sched_active_pid);
                 }
                 for (struct ccnl_content_s *c = relay->contents; c; c = c->next) {
-                    if (!(c->flags & CCNL_COMPAS_CONTENT_REQUESTED)) {
+                    if ((c->flags & CCNL_COMPAS_CONTENT) && !(c->flags & CCNL_COMPAS_CONTENT_REQUESTED)) {
                         c->retries = 3;
                     }
                 }
@@ -1293,15 +1310,15 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                                                      (unsigned long) (xtimer_now_usec64()),
                                                      (s1 = ccnl_prefix_to_path(prefix)));
                 ccnl_free(s1);
-                for (struct ccnl_content_s *c = relay->contents, *tmp = NULL; c; c = tmp) {
 #ifdef USE_SUITE_COMPAS
+                for (struct ccnl_content_s *c = relay->contents, *tmp = NULL; c; c = tmp) {
                     tmp = c->next;
                     /* delete content */
                     if(!ccnl_prefix_cmp(prefix, NULL, c->pkt->pfx, CMP_EXACT)) {
                         tmp = ccnl_content_remove(relay, c);
                     }
-#endif
                 }
+#endif
                 ccnl_send_interest(prefix, _int_buf, sizeof(_int_buf));
             }
         }

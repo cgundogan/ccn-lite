@@ -278,6 +278,8 @@ struct ccnl_forward_s {
     char suite;
 #ifdef USE_SUITE_COMPAS
     int retries;
+    int flags;
+#define CCNL_COMPAS_FIB_FLAG    (1 << 0)
 #endif
 };
 
@@ -309,8 +311,8 @@ struct ccnl_content_s {
     unsigned short flags;
 #define CCNL_CONTENT_FLAGS_STATIC  0x01
 #define CCNL_CONTENT_FLAGS_STALE   0x02
-#define CCNL_COMPAS_CONTENT 0x04
-#define CCNL_COMPAS_CONTENT_REQUESTED 0x08
+#define CCNL_COMPAS_CONTENT_REQUESTED 0x04
+#define CCNL_COMPAS_CONTENT 0x08
     // NON-CONFORM: "The [ContentSTore] MUST also implement the Staleness Bit."
     // >> CCNL: currently no stale bit, old content is fully removed <<
     uint8_t retries;
