@@ -126,12 +126,19 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 #ifdef USE_TIMEOUT_KEEPALIVE
     if (!ccnl_nfnprefix_isKeepalive(c->pkt->pfx)) {
 #endif
-        if (relay->max_cache_entries != 0) { // it's set to -1 or a limit
+        if (false) {
+        //if (relay->max_cache_entries != 0) { // it's set to -1 or a limit
             DEBUGMSG_CFWD(DEBUG, "  adding content to cache\n");
             ccnl_content_add2cache(relay, c);
             DEBUGMSG_CFWD(INFO, "data after creating packet %.*s\n", c->pkt->contlen, c->pkt->content);
         } else {
+            char *s = NULL;
             DEBUGMSG_CFWD(DEBUG, "  content not added to cache\n");
+            printf("ignorecache;%u;%u;%lu;%lu;%s\n", (unsigned) relay->dodag.rank, relay->compas_dodag_parent_timeout,
+                                                   (unsigned long) (xtimer_now_usec64() - relay->compas_started),
+                                                   (unsigned long) (xtimer_now_usec64()),
+                                                   (s = ccnl_prefix_to_path(c->pkt->pfx)));
+            ccnl_free(s);
             free_content(c);
         }
 #ifdef USE_TIMEOUT_KEEPALIVE
