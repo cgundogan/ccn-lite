@@ -1128,7 +1128,7 @@ ccnl_cs_dump(struct ccnl_relay_s *ccnl)
         printf("CS[%u]: %s [%d]: %s\n", i++,
                (s = ccnl_prefix_to_path(c->pkt->pfx)),
                (c->pkt->pfx->chunknum)? *(c->pkt->pfx->chunknum) : -1,
-               c->pkt->contlen, c->pkt->content);
+               c->pkt->content);
         c = c->next;
         ccnl_free(s);
     }
