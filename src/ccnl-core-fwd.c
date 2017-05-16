@@ -126,19 +126,20 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 #ifdef USE_TIMEOUT_KEEPALIVE
     if (!ccnl_nfnprefix_isKeepalive(c->pkt->pfx)) {
 #endif
-        if (false) {
-        //if (relay->max_cache_entries != 0) { // it's set to -1 or a limit
+        if (relay->max_cache_entries != 0) { // it's set to -1 or a limit
             DEBUGMSG_CFWD(DEBUG, "  adding content to cache\n");
             ccnl_content_add2cache(relay, c);
             DEBUGMSG_CFWD(INFO, "data after creating packet %.*s\n", c->pkt->contlen, c->pkt->content);
         } else {
-            char *s = NULL;
             DEBUGMSG_CFWD(DEBUG, "  content not added to cache\n");
+#ifdef USE_SUITE_COMPAS
+            char *s = NULL;
             printf("ignorecache;%u;%u;%lu;%lu;%s\n", (unsigned) relay->dodag.rank, relay->compas_dodag_parent_timeout,
                                                    (unsigned long) (xtimer_now_usec64() - relay->compas_started),
                                                    (unsigned long) (xtimer_now_usec64()),
                                                    (s = ccnl_prefix_to_path(c->pkt->pfx)));
             ccnl_free(s);
+#endif
             free_content(c);
         }
 #ifdef USE_TIMEOUT_KEEPALIVE
@@ -284,14 +285,6 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         } else {
             ccnl_app_RX(relay, c);
         }
-
-#ifdef USE_SUITE_COMPAS
-        if ((c->flags & CCNL_COMPAS_CONTENT) && !memcmp(relay->dodag.parent.face_addr, from->peer.linklayer.sll_addr,
-                   from->peer.linklayer.sll_halen)) {
-            c->flags |= CCNL_COMPAS_CONTENT_REQUESTED;
-        }
-#endif
-
         return 0; // we are done
     }
 

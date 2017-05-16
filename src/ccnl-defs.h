@@ -61,13 +61,14 @@
 
 #define CCNL_CONTENT_TIMEOUT            300 // sec
 #define CCNL_INTEREST_TIMEOUT           40  // sec
-#define CCNL_MAX_INTEREST_RETRANSMIT    20 //20
+#define CCNL_MAX_INTEREST_RETRANSMIT    3 //20
 
 // #define CCNL_FACE_TIMEOUT    60 // sec
 #define CCNL_FACE_TIMEOUT       150 // sec
 
 #define CCNL_DEFAULT_MAX_CACHE_ENTRIES  0   // means: no content caching
 #define CCNL_MAX_NONCES                 256 // for detected dups
+
 
 enum {
 #ifdef USE_SUITE_CCNB

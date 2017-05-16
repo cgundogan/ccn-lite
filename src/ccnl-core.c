@@ -485,8 +485,8 @@ ccnl_interest_append_pending(struct ccnl_interest_s *i,
 void
 ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
 {
-    struct ccnl_forward_s *fwd, *longest_fwd = ccnl->fib;
-    int rc = 0, longest_rc = 0;
+    struct ccnl_forward_s *fwd;
+    int rc = 0;
 #if defined(USE_NACK) || defined(USE_RONR)
     int matching_face = 0;
 #endif
@@ -517,17 +517,6 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
         if (rc < fwd->prefix->compcnt)
             continue;
 
-        if (rc > longest_rc) {
-            longest_rc = rc;
-            longest_fwd = fwd;
-        }
-    }
-
-    rc = longest_rc;
-    fwd = longest_fwd;
-
-    if (fwd) {
-
         DEBUGMSG_CORE(DEBUG, "  ccnl_interest_propagate, fwd==%p\n", (void*)fwd);
         // suppress forwarding to origin of interest, except wireless
         if (!i->from || fwd->face != i->from ||
@@ -541,7 +530,7 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
 
             char *s = NULL;
             DEBUGMSG_CFWD(INFO, "  outgoing interest=<%s> nonce=%i to=%s\n",
-                          (s = ccnl_prefix_to_path(fwd->prefix)), nonce,
+                          (s = ccnl_prefix_to_path(i->pkt->pfx)), nonce,
                           fwd->face ? ccnl_addr2ascii(&fwd->face->peer)
                                     : "<tap>");
             ccnl_free(s);
@@ -558,7 +547,6 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
         } else {
             DEBUGMSG_CORE(DEBUG, "  no matching fib entry found\n");
         }
-
     }
 
 #ifdef USE_RONR
@@ -791,35 +779,15 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
     }
     if ((ccnl->max_cache_entries <= 0) ||
          (ccnl->contentcnt <= ccnl->max_cache_entries)) {
+#ifdef USE_SUITE_COMPAS
             printf("add2cache;%u;%u;%lu;%lu;%s\n", (unsigned) ccnl->dodag.rank, ccnl->compas_dodag_parent_timeout,
                                                    (unsigned long) (xtimer_now_usec64() - ccnl->compas_started),
                                                    (unsigned long) (xtimer_now_usec64()),
                                                    (s = ccnl_prefix_to_path(c->pkt->pfx)));
-            /*
-            if (ccnl->compas_nam_timer_running == 0) {
-                ccnl->compas_nam_timer_running = 1;
-                xtimer_set_msg(&ccnl->compas_nam_timer, COMPAS_NAM_PERIOD, &ccnl->compas_nam_msg, ccnl->pid);
-            }
-            */
-            ccnl_free(s);
-            c->retries = 3;
+#endif
             DBL_LINKED_LIST_ADD(ccnl->contents, c);
             ccnl->contentcnt++;
     }
-
-#ifdef USE_SUITE_COMPAS
-    if(0 == ccnl_fib_rem_entry(ccnl, c->pkt->pfx, NULL)) {
-        c->flags |= CCNL_COMPAS_CONTENT;
-        if (ccnl->compas_nam_timer_running == 0) {
-            ccnl->compas_nam_timer_running = 1;
-            xtimer_set_msg(&ccnl->compas_nam_timer, COMPAS_NAM_PERIOD, &ccnl->compas_nam_msg, ccnl->pid);
-        }
-    }
-#endif
-
-#if defined(COMPAS_DEBUG) && COMPAS_DEBUG
-    ccnl_cs_dump(ccnl);
-#endif
 
     return c;
 }
@@ -976,13 +944,15 @@ ccnl_do_ageing(void *ptr, void *dummy)
 {
     (void) dummy;
     struct ccnl_relay_s *relay = (struct ccnl_relay_s*) ptr;
-    //struct ccnl_content_s *c = relay->contents;
+#ifndef USE_SUITE_COMPAS
+    struct ccnl_content_s *c = relay->contents;
+#endif
     struct ccnl_interest_s *i = relay->pit;
     struct ccnl_face_s *f = relay->faces;
     time_t t = CCNL_NOW();
     DEBUGMSG_CORE(VERBOSE, "ageing t=%d\n", (int)t);
 
-/*
+#ifndef USE_SUITE_COMPAS
     while (c) {
         if ((c->last_used + CCNL_CONTENT_TIMEOUT) <= t &&
                                 !(c->flags & CCNL_CONTENT_FLAGS_STATIC)){
@@ -1006,7 +976,7 @@ ccnl_do_ageing(void *ptr, void *dummy)
         else
             c = c->next;
     }
-*/
+#endif
     while (i) { // CONFORM: "Entries in the PIT MUST timeout rather
                 // than being held indefinitely."
         if ((i->last_used + CCNL_INTEREST_TIMEOUT) <= t ||
@@ -1047,27 +1017,13 @@ ccnl_do_ageing(void *ptr, void *dummy)
 //                 i = i->next;
 #else // USE_TIMEOUT
                 DEBUGMSG_AGEING("AGING: REMOVE INTEREST", "timeout: remove interest");
+#ifdef USE_SUITE_COMPAS
                 char *s1 = NULL;
                 printf("rmint;%u;%u;%lu;%lu;%s\n", relay->dodag.rank, relay->compas_dodag_parent_timeout,
                                                    (unsigned long) (xtimer_now_usec64() - relay->compas_started),
                                                    (unsigned long) (xtimer_now_usec64()),
                                                    (s1 = ccnl_prefix_to_path(i->pkt->pfx)));
                 ccnl_free(s1);
-#ifdef USE_SUITE_COMPAS
-                for (struct ccnl_forward_s *fwd = relay->fib; fwd; fwd = fwd->next) {
-                   s1 = ccnl_prefix_to_path(fwd->prefix);
-                   if (!memcmp(s1, relay->dodag.prefix, relay->dodag.prefix_len)) {
-                       ccnl_free(s1);
-                       continue;
-                   }
-                    if (fwd->prefix->compcnt < i->pkt->pfx->compcnt) {
-                        continue;
-                    }
-                    if (ccnl_prefix_cmp(fwd->prefix, NULL, i->pkt->pfx, CMP_LONGEST) >= i->pkt->pfx->compcnt) {
-                        ccnl_fib_rem_entry(relay, fwd->prefix, NULL);
-                        break;
-                    }
-                }
 #endif
                 i = ccnl_nfn_interest_remove(relay, i);
 #endif
@@ -1083,12 +1039,14 @@ ccnl_do_ageing(void *ptr, void *dummy)
 #endif
                 DEBUGMSG_CORE(TRACE, "AGING: PROPAGATING INTEREST %p\n", (void*) i);
                 ccnl_interest_propagate(relay, i);
+#ifdef USE_SUITE_COMPAS
                 char *s1 = NULL;
                 printf("reint;%u;%u;%lu;%lu;%s\n", relay->dodag.rank, relay->compas_dodag_parent_timeout,
                                                    (unsigned long) (xtimer_now_usec64() - relay->compas_started),
                                                    (unsigned long) (xtimer_now_usec64()),
                                                    (s1 = ccnl_prefix_to_path(i->pkt->pfx)));
                 ccnl_free(s1);
+#endif
 #ifdef USE_NFN
             }
 #endif
@@ -1228,6 +1186,7 @@ ccnl_core_RX(struct ccnl_relay_s *relay, int ifndx, unsigned char *data,
 
 // ----------------------------------------------------------------------
 
+#ifdef USE_SUITE_COMPAS
 int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, unsigned char **data, int *datalen)
 {
     compas_message_t *cmsg = (compas_message_t *) *data;
@@ -1246,29 +1205,28 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
 
         compas_dodag_print(&relay->dodag);
 
-        if (state >= 0) {
+        if ((state == COMPAS_PAM_RET_CODE_CURRPARENT) || (state == COMPAS_PAM_RET_CODE_NEWPARENT)) {
             if (relay->compas_dodag_parent_timeout) {
+                relay->compas_dodag_parent_timeout = 0;
                 if (relay->compas_nam_timer_running == 0) {
                     relay->compas_nam_timer_running = 1;
                     xtimer_set_msg(&relay->compas_nam_timer, COMPAS_NAM_PERIOD, &relay->compas_nam_msg, sched_active_pid);
                 }
-                for (struct ccnl_content_s *c = relay->contents; c; c = c->next) {
-                    if ((c->flags & CCNL_COMPAS_CONTENT) && !(c->flags & CCNL_COMPAS_CONTENT_REQUESTED)) {
-                        c->retries = 3;
-                    }
+                for (struct compas_nam_cache_entry_t *n = relay->dodag.nam_cache;
+                     n < relay->dodag.nam_cache + COMPAS_DODAG_NAM_CACHE_LEN; ++n) {
+                    n->retries = COMPAS_DODAG_NAM_CACHE_RETRIES;
                 }
             }
-            relay->compas_dodag_parent_timeout = 0;
             xtimer_remove(&relay->compas_dodag_parent_timer);
             xtimer_set_msg(&relay->compas_dodag_parent_timer,
                            COMPAS_DODAG_PARENT_TIMEOUT_PERIOD,
                            &relay->compas_dodag_parent_msg,
                            sched_active_pid);
             /* Setup default route to new DODAG parent */
-            if (state == 1) {
+            if (state == COMPAS_PAM_RET_CODE_NEWPARENT) {
                 char dodag_prfx[COMPAS_PREFIX_LEN];
-                memcpy(dodag_prfx, relay->dodag.prefix, relay->dodag.prefix_len);
-                dodag_prfx[relay->dodag.prefix_len] = '\0';
+                memcpy(dodag_prfx, relay->dodag.prefix.prefix, relay->dodag.prefix.prefix_len);
+                dodag_prfx[relay->dodag.prefix.prefix_len] = '\0';
                 struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(dodag_prfx, CCNL_SUITE_NDNTLV, NULL, NULL);
                 ccnl_fib_rem_entry(relay, prefix, from);
                 ccnl_fib_add_entry(relay, prefix, from);
@@ -1284,10 +1242,10 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                     printf("%02x:", from->peer.linklayer.sll_addr[i]);
                 }
                 printf("%02x;", from->peer.linklayer.sll_addr[from->peer.linklayer.sll_halen - 1]);
-                for (int i = 0; i < relay->dodag.parent.face_addr_len - 1; i++) {
-                    printf("%02x:", relay->dodag.parent.face_addr[i]);
+                for (int i = 0; i < relay->dodag.parent.face.face_addr_len - 1; i++) {
+                    printf("%02x:", relay->dodag.parent.face.face_addr[i]);
                 }
-                printf("%02x;%d\n", relay->dodag.parent.face_addr[relay->dodag.parent.face_addr_len - 1], (signed) (relay->compas_dodag_parent_timer.target - xtimer_now_usec()));
+                printf("%02x;%d\n", relay->dodag.parent.face.face_addr[relay->dodag.parent.face.face_addr_len - 1], (signed) (relay->compas_dodag_parent_timer.target - xtimer_now_usec()));
             }
         }
 
@@ -1303,23 +1261,30 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                 memcpy(name, tlv + 1, tlv->length);
                 name[tlv->length > COMPAS_NAME_LEN ? COMPAS_NAME_LEN : tlv->length] = '\0';
                 struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(name, CCNL_SUITE_NDNTLV, NULL, NULL);
-                ccnl_fib_add_entry(relay, prefix, from);
                 char *s1 = NULL;
                 printf("sendint;%u;%u;%lu;%lu;%s\n", relay->dodag.rank, relay->compas_dodag_parent_timeout,
                                                      (unsigned long) (xtimer_now_usec64() - relay->compas_started),
                                                      (unsigned long) (xtimer_now_usec64()),
                                                      (s1 = ccnl_prefix_to_path(prefix)));
                 ccnl_free(s1);
-#ifdef USE_SUITE_COMPAS
-                for (struct ccnl_content_s *c = relay->contents, *tmp = NULL; c; c = tmp) {
-                    tmp = c->next;
-                    /* delete content */
-                    if(!ccnl_prefix_cmp(prefix, NULL, c->pkt->pfx, CMP_EXACT)) {
-                        tmp = ccnl_content_remove(relay, c);
-                    }
+
+                ccnl_mkInterestFunc mkInterest;
+                mkInterest = ccnl_suite2mkInterestFunc(CCNL_SUITE_NDNTLV);
+                int nonce = random_uint32(), typ, int_len;
+                int len = mkInterest(prefix, &nonce, _int_buf, sizeof(_int_buf));
+
+                unsigned char *data = _int_buf;
+                struct ccnl_pkt_s *pkt;
+
+                if (ccnl_ndntlv_dehead(&data, &len, (int*) &typ, &int_len) || (int) int_len > len) {
+                    return ret;
                 }
-#endif
-                ccnl_send_interest(prefix, _int_buf, sizeof(_int_buf));
+
+                pkt = ccnl_ndntlv_bytes2pkt(NDN_TLV_Interest, _int_buf, &data, &len);
+                struct ccnl_interest_s *i = ccnl_interest_new(relay, from, pkt);
+                ccnl_interest_append_pending(i, from);
+                ccnl_interest_propagate(relay, i);
+                free_packet(pkt);
             }
         }
 
@@ -1331,6 +1296,7 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
 
     return 0;
 }
+#endif
 
 void
 ccnl_core_init(void)

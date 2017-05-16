@@ -51,11 +51,10 @@
 #endif
 // ----------------------------------------------------------------------
 
+#ifdef USE_SUITE_COMPAS
 #ifdef CCNL_RIOT
 #include "xtimer.h"
 #endif
-
-#ifdef USE_SUITE_COMPAS
 #include "compas/routing/dodag.h"
 #endif
 
@@ -276,11 +275,6 @@ struct ccnl_forward_s {
     tapCallback tap;
     struct ccnl_face_s *face;
     char suite;
-#ifdef USE_SUITE_COMPAS
-    int retries;
-    int flags;
-#define CCNL_COMPAS_FIB_FLAG    (1 << 0)
-#endif
 };
 
 struct ccnl_interest_s {
@@ -311,11 +305,8 @@ struct ccnl_content_s {
     unsigned short flags;
 #define CCNL_CONTENT_FLAGS_STATIC  0x01
 #define CCNL_CONTENT_FLAGS_STALE   0x02
-#define CCNL_COMPAS_CONTENT_REQUESTED 0x04
-#define CCNL_COMPAS_CONTENT 0x08
     // NON-CONFORM: "The [ContentSTore] MUST also implement the Staleness Bit."
     // >> CCNL: currently no stale bit, old content is fully removed <<
-    uint8_t retries;
     int last_used;
     int served_cnt;
 };
