@@ -123,6 +123,17 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         return 0;
     }
 
+#ifdef USE_SUITE_COMPAS
+            char *spref = ccnl_prefix_to_path(c->pkt->pfx);
+            compas_name_t cname;
+            compas_name_init(&cname, spref, strlen(spref));
+            compas_nam_cache_entry_t *n = compas_nam_cache_find(&relay->dodag, &cname);
+            if (n) {
+                memset(n, 0, sizeof(*n));
+            }
+            ccnl_free(spref);
+#endif
+
 #ifdef USE_TIMEOUT_KEEPALIVE
     if (!ccnl_nfnprefix_isKeepalive(c->pkt->pfx)) {
 #endif
@@ -267,6 +278,20 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     }
 #endif
 
+#ifdef USE_SUITE_COMPAS
+    compas_face_t face;
+    compas_face_init(&face, from->peer.linklayer.sll_addr, from->peer.linklayer.sll_halen);
+    if (compas_dodag_parent_eq(&relay->dodag, &face)) {
+        char *spref = ccnl_prefix_to_path((*pkt)->pfx);
+        compas_name_t cname;
+        compas_name_init(&cname, spref, strlen(spref));
+        compas_nam_cache_entry_t *n = compas_nam_cache_find(&relay->dodag, &cname);
+        if (n) {
+            n->flags |= COMPAS_NAM_CACHE_FLAGS_REQUESTED;
+        }
+        ccnl_free(spref);
+    }
+#endif
 
     // Step 1: search in content store
     DEBUGMSG_CFWD(DEBUG, "  searching in CS\n");
@@ -285,6 +310,16 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         } else {
             ccnl_app_RX(relay, c);
         }
+#ifdef USE_SUITE_COMPAS
+        char *spref = ccnl_prefix_to_path(c->pkt->pfx);
+        compas_name_t cname;
+        compas_name_init(&cname, spref, strlen(spref));
+        compas_nam_cache_entry_t *n = compas_nam_cache_find(&relay->dodag, &cname);
+        if (n) {
+            memset(n, 0, sizeof(*n));
+        }
+        ccnl_free(spref);
+#endif
         return 0; // we are done
     }
 

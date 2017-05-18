@@ -507,23 +507,22 @@ void
             case COMPAS_PAM_MSG:
                 ccnl_compas_send_pam(ccnl);
                 //printf("pamtx;%d\n", ccnl->dodag.rank);
-                xtimer_set_msg(&ccnl->compas_pam_timer,
-                               COMPAS_PAM_PERIOD + random_uint32_range(0,200) * US_PER_MS,
+                xtimer_set_msg(&ccnl->compas_pam_timer, COMPAS_PAM_PERIOD,
                                &ccnl->compas_pam_msg, sched_active_pid);
                 break;
             case COMPAS_NAM_MSG:
                 if ((ccnl->dodag.rank > COMPAS_DODAG_ROOT_RANK) && !ccnl->compas_dodag_parent_timeout) {
                     bool work_to_do = false;
                     for (compas_nam_cache_entry_t *n = ccnl->dodag.nam_cache;
-                         n < ccnl->dodag.nam_cache + COMPAS_DODAG_NAM_CACHE_LEN;
+                         n < ccnl->dodag.nam_cache + COMPAS_NAM_CACHE_LEN;
                          ++n) {
-                        if (n->in_use) {
-                            if (--n->retries) {
+                        if (n->in_use && !compas_nam_cache_requested(n->flags)) {
+                            if (n->retries--) {
                                 compas_send_nam(ccnl, &n->name);
                                 work_to_do = true;
                             }
                             else {
-                                n->retries = COMPAS_DODAG_NAM_CACHE_RETRIES;
+                                n->retries = COMPAS_NAM_CACHE_RETRIES;
                                 compas_dodag_parent_timeout(ccnl);
                                 work_to_do = false;
                                 break;

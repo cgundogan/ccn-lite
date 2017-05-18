@@ -41,12 +41,8 @@ void compas_dodag_parent_timeout(struct ccnl_relay_s *ccnl)
         printf("%02x:", ccnl->dodag.parent.face.face_addr[i]);
     }
     printf("%02x", ccnl->dodag.parent.face.face_addr[ccnl->dodag.parent.face.face_addr_len - 1]);
-    for (struct ccnl_content_s *c = ccnl->contents; c; c = c->next) {
-        if (!(c->flags & CCNL_COMPAS_CONTENT_REQUESTED)) {
-            char *s = ccnl_prefix_to_path(c->pkt->pfx);
-            printf(";%s", s);
-            ccnl_free(s);
-        }
+    for (compas_nam_cache_entry_t *n = ccnl->dodag.nam_cache; n < ccnl->dodag.nam_cache + COMPAS_NAM_CACHE_LEN; ++n) {
+        printf(";%.*s", n->name.name_len, n->name.name);
     }
     printf("\n");
 }
@@ -104,7 +100,7 @@ bool compas_send_nam(struct ccnl_relay_s *ccnl, const compas_name_t *name)
 
     gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL,
                                           2 + sizeof(compas_nam_t) +
-                                          name->name_len + sizeof(compas_tlv_t)
+                                          name->name_len + sizeof(compas_tlv_t),
                                           GNRC_NETTYPE_CCN);
 
     if (pkt == NULL) {

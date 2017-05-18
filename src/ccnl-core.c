@@ -883,8 +883,8 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 
         //Hook for add content to cache by callback:
         if(i && ! i->pending){
-            DEBUGMSG_CORE(WARNING, "releasing interest 0x%p OK?\n", (void*)i);
-            c->flags |= CCNL_CONTENT_FLAGS_STATIC;
+            //DEBUGMSG_CORE(WARNING, "releasing interest 0x%p OK?\n", (void*)i);
+            //c->flags |= CCNL_CONTENT_FLAGS_STATIC;
             i = ccnl_interest_remove(ccnl, i);
             return 1;
         }
@@ -892,6 +892,20 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         // CONFORM: "Data MUST only be transmitted in response to
         // an Interest that matches the Data."
         for (pi = i->pending; pi; pi = pi->next) {
+/*
+#ifdef USE_SUITE_COMPAS
+            char *spref = ccnl_prefix_to_path(i->pkt->pfx);
+            compas_name_t cname;
+            compas_name_init(&cname, spref, strlen(spref));
+            compas_nam_cache_entry_t *n = compas_nam_cache_find(&ccnl->dodag, &cname);
+            puts("HERE");
+            if (n) {
+                puts("DELETED");
+                memset(n, 0, sizeof(*n));
+            }
+            ccnl_free(spref);
+#endif
+*/
             if (pi->face->flags & CCNL_FACE_FLAGS_SERVED)
             continue;
             pi->face->flags |= CCNL_FACE_FLAGS_SERVED;
@@ -1024,6 +1038,20 @@ ccnl_do_ageing(void *ptr, void *dummy)
                                                    (unsigned long) (xtimer_now_usec64()),
                                                    (s1 = ccnl_prefix_to_path(i->pkt->pfx)));
                 ccnl_free(s1);
+#endif
+#ifdef USE_SUITE_COMPAS
+                compas_face_t face;
+                compas_face_init(&face, i->from->peer.linklayer.sll_addr, i->from->peer.linklayer.sll_halen);
+                if (compas_dodag_parent_eq(&relay->dodag, &face)) {
+                    char *spref = ccnl_prefix_to_path(i->pkt->pfx);
+                    compas_name_t cname;
+                    compas_name_init(&cname, spref, strlen(spref));
+                    compas_nam_cache_entry_t *n = compas_nam_cache_find(&relay->dodag, &cname);
+                    if (n) {
+                        n->flags &= ~COMPAS_NAM_CACHE_FLAGS_REQUESTED;
+                    }
+                    ccnl_free(spref);
+                }
 #endif
                 i = ccnl_nfn_interest_remove(relay, i);
 #endif
@@ -1212,9 +1240,9 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                     relay->compas_nam_timer_running = 1;
                     xtimer_set_msg(&relay->compas_nam_timer, COMPAS_NAM_PERIOD, &relay->compas_nam_msg, sched_active_pid);
                 }
-                for (struct compas_nam_cache_entry_t *n = relay->dodag.nam_cache;
-                     n < relay->dodag.nam_cache + COMPAS_DODAG_NAM_CACHE_LEN; ++n) {
-                    n->retries = COMPAS_DODAG_NAM_CACHE_RETRIES;
+                for (compas_nam_cache_entry_t *n = relay->dodag.nam_cache;
+                     n < relay->dodag.nam_cache + COMPAS_NAM_CACHE_LEN; ++n) {
+                    n->retries = COMPAS_NAM_CACHE_RETRIES;
                 }
             }
             xtimer_remove(&relay->compas_dodag_parent_timer);
@@ -1224,7 +1252,7 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                            sched_active_pid);
             /* Setup default route to new DODAG parent */
             if (state == COMPAS_PAM_RET_CODE_NEWPARENT) {
-                char dodag_prfx[COMPAS_PREFIX_LEN];
+                char dodag_prfx[COMPAS_PREFIX_LEN + 1];
                 memcpy(dodag_prfx, relay->dodag.prefix.prefix, relay->dodag.prefix.prefix_len);
                 dodag_prfx[relay->dodag.prefix.prefix_len] = '\0';
                 struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(dodag_prfx, CCNL_SUITE_NDNTLV, NULL, NULL);
@@ -1257,7 +1285,7 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
 
         while(compas_nam_tlv_iter((compas_nam_t *) *data, &offset, &tlv)) {
             if (tlv->type == COMPAS_TLV_NAME) {
-                static unsigned char _int_buf[64];
+                unsigned char _int_buf[64];
                 memcpy(name, tlv + 1, tlv->length);
                 name[tlv->length > COMPAS_NAME_LEN ? COMPAS_NAME_LEN : tlv->length] = '\0';
                 struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(name, CCNL_SUITE_NDNTLV, NULL, NULL);
@@ -1268,29 +1296,32 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                                                      (s1 = ccnl_prefix_to_path(prefix)));
                 ccnl_free(s1);
 
-                ccnl_mkInterestFunc mkInterest;
-                mkInterest = ccnl_suite2mkInterestFunc(CCNL_SUITE_NDNTLV);
-                int nonce = random_uint32(), typ, int_len;
-                int len = mkInterest(prefix, &nonce, _int_buf, sizeof(_int_buf));
+                int nonce = random_uint32(), typ, int_len, offset;
+                offset = sizeof(_int_buf);
+                int len = ccnl_ndntlv_prependInterest(prefix, -1, &nonce, &offset, _int_buf);
+                if (len > 0)
+                    memmove(_int_buf, _int_buf + offset, len);
 
                 unsigned char *data = _int_buf;
                 struct ccnl_pkt_s *pkt;
 
                 if (ccnl_ndntlv_dehead(&data, &len, (int*) &typ, &int_len) || (int) int_len > len) {
-                    return ret;
+                    return 0;
                 }
 
                 pkt = ccnl_ndntlv_bytes2pkt(NDN_TLV_Interest, _int_buf, &data, &len);
-                struct ccnl_interest_s *i = ccnl_interest_new(relay, from, pkt);
-                ccnl_interest_append_pending(i, from);
-                ccnl_interest_propagate(relay, i);
+                struct ccnl_interest_s *i = ccnl_interest_new(relay, from, &pkt);
+                // ccnl_interest_append_pending(i, from); SHOULD be loop back
+                ccnl_face_enqueue(relay, i->from, buf_dup(i->pkt->buf));
                 free_packet(pkt);
             }
         }
 
-        if (relay->compas_nam_timer_running == 0) {
-            relay->compas_nam_timer_running = 1;
-            xtimer_set_msg(&relay->compas_nam_timer, COMPAS_NAM_PERIOD, &relay->compas_nam_msg, sched_active_pid);
+        if (relay->dodag.rank != COMPAS_DODAG_ROOT_RANK) {
+            if (relay->compas_nam_timer_running == 0) {
+                relay->compas_nam_timer_running = 1;
+                xtimer_set_msg(&relay->compas_nam_timer, COMPAS_NAM_PERIOD, &relay->compas_nam_msg, sched_active_pid);
+            }
         }
     }
 
