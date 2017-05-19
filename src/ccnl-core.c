@@ -784,6 +784,7 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
                                                    (unsigned long) (xtimer_now_usec64() - ccnl->compas_started),
                                                    (unsigned long) (xtimer_now_usec64()),
                                                    (s = ccnl_prefix_to_path(c->pkt->pfx)));
+            ccnl_free(s);
 #endif
             DBL_LINKED_LIST_ADD(ccnl->contents, c);
             ccnl->contentcnt++;
@@ -1035,6 +1036,10 @@ ccnl_do_ageing(void *ptr, void *dummy)
                     compas_nam_cache_entry_t *n = compas_nam_cache_find(&relay->dodag, &cname);
                     if (n) {
                         n->flags &= ~COMPAS_NAM_CACHE_FLAGS_REQUESTED;
+                        if (relay->compas_nam_timer_running == 0) {
+                            relay->compas_nam_timer_running = 1;
+                            xtimer_set_msg(&relay->compas_nam_timer, COMPAS_NAM_PERIOD, &relay->compas_nam_msg, sched_active_pid);
+                        }
                     }
                     ccnl_free(spref);
                 }
@@ -1208,9 +1213,11 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
     /* mark parsing of message completed */
     *datalen = 0;
 
+    /*
     if (!relay->compas_started) {
         return 0;
     }
+    */
 
     if (cmsg->type == COMPAS_MSG_TYPE_PAM) {
         compas_pam_t *pam = (compas_pam_t *) *data;
@@ -1277,9 +1284,15 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                 memcpy(name, cname.name, cname.name_len);
                 name[cname.name_len] = '\0';
 
-                compas_nam_cache_entry_t *n = compas_nam_cache_find(&relay->dodag, &cname);
-                if (!n) {
-                    compas_nam_cache_add(&relay->dodag, &cname, NULL);
+                if (relay->dodag.rank != COMPAS_DODAG_ROOT_RANK) {
+                    compas_nam_cache_entry_t *n = compas_nam_cache_find(&relay->dodag, &cname);
+                    if (!n) {
+                        compas_nam_cache_add(&relay->dodag, &cname, NULL);
+                    }
+                    if (relay->compas_nam_timer_running == 0) {
+                        relay->compas_nam_timer_running = 1;
+                        xtimer_set_msg(&relay->compas_nam_timer, COMPAS_NAM_PERIOD, &relay->compas_nam_msg, sched_active_pid);
+                    }
                 }
 
                 struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(name, CCNL_SUITE_NDNTLV, NULL, NULL);
@@ -1293,6 +1306,7 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                 int nonce = random_uint32(), typ, int_len, offset;
                 offset = sizeof(_int_buf);
                 int len = ccnl_ndntlv_prependInterest(prefix, -1, &nonce, &offset, _int_buf);
+
                 if (len > 0)
                     memmove(_int_buf, _int_buf + offset, len);
 
@@ -1300,6 +1314,8 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                 struct ccnl_pkt_s *pkt;
 
                 if (ccnl_ndntlv_dehead(&data, &len, (int*) &typ, &int_len) || (int) int_len > len) {
+                    free_prefix(prefix);
+                    free_packet(pkt);
                     return 0;
                 }
 
@@ -1307,14 +1323,8 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
                 struct ccnl_interest_s *i = ccnl_interest_new(relay, from, &pkt);
                 // ccnl_interest_append_pending(i, from); SHOULD be loop back
                 ccnl_face_enqueue(relay, i->from, buf_dup(i->pkt->buf));
+                free_prefix(prefix);
                 free_packet(pkt);
-            }
-        }
-
-        if (relay->dodag.rank != COMPAS_DODAG_ROOT_RANK) {
-            if (relay->compas_nam_timer_running == 0) {
-                relay->compas_nam_timer_running = 1;
-                xtimer_set_msg(&relay->compas_nam_timer, COMPAS_NAM_PERIOD, &relay->compas_nam_msg, sched_active_pid);
             }
         }
     }

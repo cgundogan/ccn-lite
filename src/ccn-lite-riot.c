@@ -516,16 +516,36 @@ void
                     for (compas_nam_cache_entry_t *n = ccnl->dodag.nam_cache;
                          n < ccnl->dodag.nam_cache + COMPAS_NAM_CACHE_LEN;
                          ++n) {
-                        if (n->in_use && !compas_nam_cache_requested(n->flags)) {
-                            if (n->retries--) {
-                                compas_send_nam(ccnl, &n->name);
-                                work_to_do = true;
+                        if (n->in_use) {
+                            char tmp[COMPAS_NAME_LEN + 1];
+                            memcpy(tmp, n->name.name, n->name.name_len);
+                            tmp[n->name.name_len] = '\0';
+                            struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(tmp, CCNL_SUITE_NDNTLV, NULL, NULL);
+
+                            bool found = false;
+                            for (struct ccnl_content_s *c = ccnl->contents; c; c = c->next) {
+                                if (!ccnl_prefix_cmp(c->pkt->pfx, NULL, prefix, CMP_EXACT)) {
+                                    found = true;
+                                    break;
+                                }
                             }
-                            else {
-                                n->retries = COMPAS_NAM_CACHE_RETRIES;
-                                compas_dodag_parent_timeout(ccnl);
-                                work_to_do = false;
-                                break;
+                            free_prefix(prefix);
+                            if (!found) {
+                                memset(n, 0, sizeof(*n));
+                                continue;
+                            }
+
+                            if (!compas_nam_cache_requested(n->flags)) {
+                                if (n->retries--) {
+                                    compas_send_nam(ccnl, &n->name);
+                                    work_to_do = true;
+                                }
+                                else {
+                                    n->retries = COMPAS_NAM_CACHE_RETRIES;
+                                    compas_dodag_parent_timeout(ccnl);
+                                    work_to_do = false;
+                                    break;
+                                }
                             }
                         }
                     }
