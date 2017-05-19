@@ -47,37 +47,27 @@ void compas_dodag_parent_timeout(struct ccnl_relay_s *ccnl)
     printf("\n");
 }
 
-void ccnl_compas_send_pam(struct ccnl_relay_s *relay)
+bool compas_send(struct ccnl_relay_s *ccnl, gnrc_pktsnip_t *pkt, uint8_t *addr, uint8_t addr_len)
 {
-    compas_dodag_t *dodag = &relay->dodag;
-    gnrc_pktsnip_t *hdr = NULL;
-    gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL, compas_pam_len(dodag) + 2, GNRC_NETTYPE_CCN);
-
-    if (pkt == NULL) {
-        puts("error: packet buffer full");
-        return;
-    }
-
-    memset(pkt->data, 0x80, 1);
-    memset(((uint8_t *) pkt->data) + 1, CCNL_ENC_COMPAS, 1);
-    compas_pam_create(dodag, (compas_pam_t *) (((uint8_t *) pkt->data) + 2));
-
-    hdr = gnrc_netif_hdr_build(NULL, 0, NULL, 0);
+    gnrc_pktsnip_t *hdr = gnrc_netif_hdr_build(NULL, 0, addr, addr_len);
 
     if (hdr == NULL) {
         puts("error: packet buffer full");
         gnrc_pktbuf_release(pkt);
-        return;
+        return false;
     }
 
     LL_PREPEND(pkt, hdr);
-    gnrc_netif_hdr_t *nethdr = (gnrc_netif_hdr_t *)hdr->data;
-    nethdr->flags = GNRC_NETIF_HDR_FLAGS_BROADCAST;
+
+    if (!addr) {
+        gnrc_netif_hdr_t *nethdr = (gnrc_netif_hdr_t *)hdr->data;
+        nethdr->flags = GNRC_NETIF_HDR_FLAGS_BROADCAST;
+    }
 
     struct ccnl_if_s *ifc = NULL;
-    for (int i = 0; i < relay->ifcount; i++) {
-        if (relay->ifs[i].if_pid != 0) {
-            ifc = &relay->ifs[i];
+    for (int i = 0; i < ccnl->ifcount; i++) {
+        if (ccnl->ifs[i].if_pid != 0) {
+            ifc = &ccnl->ifs[i];
             break;
         }
     }
@@ -85,8 +75,26 @@ void ccnl_compas_send_pam(struct ccnl_relay_s *relay)
     if (gnrc_netapi_send(ifc->if_pid, pkt) < 1) {
         puts("error: unable to send\n");
         gnrc_pktbuf_release(pkt);
+        return false;
+    }
+    return true;
+}
+
+void ccnl_compas_send_pam(struct ccnl_relay_s *ccnl)
+{
+    compas_dodag_t *dodag = &ccnl->dodag;
+    gnrc_pktsnip_t *pkt = gnrc_pktbuf_add(NULL, NULL, compas_pam_len(dodag) + 2, GNRC_NETTYPE_CCN);
+
+    if (pkt == NULL) {
+        puts("error: packet buffer full");
         return;
     }
+
+    ((uint8_t *) pkt->data)[0] = 0x80;
+    ((uint8_t *) pkt->data)[1] = CCNL_ENC_COMPAS;
+    compas_pam_create(dodag, (compas_pam_t *) (((uint8_t *) pkt->data) + 2));
+
+    compas_send(ccnl, pkt, NULL, 0);
 }
 
 bool compas_send_nam(struct ccnl_relay_s *ccnl, const compas_name_t *name)
@@ -125,29 +133,5 @@ bool compas_send_nam(struct ccnl_relay_s *ccnl, const compas_name_t *name)
 
     gnrc_pktbuf_realloc_data(pkt, 2 + nam->len + sizeof(*nam));
 
-    gnrc_pktsnip_t *hdr = gnrc_netif_hdr_build(NULL, 0, dodag->parent.face.face_addr, dodag->parent.face.face_addr_len);
-
-    if (hdr == NULL) {
-        puts("error: packet buffer full");
-        gnrc_pktbuf_release(pkt);
-        return false;
-    }
-
-    LL_PREPEND(pkt, hdr);
-
-    struct ccnl_if_s *ifc = NULL;
-    for (int i = 0; i < ccnl->ifcount; i++) {
-        if (ccnl->ifs[i].if_pid != 0) {
-            ifc = &ccnl->ifs[i];
-            break;
-        }
-    }
-
-    if (gnrc_netapi_send(ifc->if_pid, pkt) < 1) {
-        puts("error: unable to send\n");
-        gnrc_pktbuf_release(pkt);
-        return false;
-    }
-
-    return true;
+    return compas_send(ccnl, pkt, dodag->parent.face.face_addr, dodag->parent.face.face_addr_len);
 }
