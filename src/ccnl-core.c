@@ -892,20 +892,6 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         // CONFORM: "Data MUST only be transmitted in response to
         // an Interest that matches the Data."
         for (pi = i->pending; pi; pi = pi->next) {
-/*
-#ifdef USE_SUITE_COMPAS
-            char *spref = ccnl_prefix_to_path(i->pkt->pfx);
-            compas_name_t cname;
-            compas_name_init(&cname, spref, strlen(spref));
-            compas_nam_cache_entry_t *n = compas_nam_cache_find(&ccnl->dodag, &cname);
-            puts("HERE");
-            if (n) {
-                puts("DELETED");
-                memset(n, 0, sizeof(*n));
-            }
-            ccnl_free(spref);
-#endif
-*/
             if (pi->face->flags & CCNL_FACE_FLAGS_SERVED)
             continue;
             pi->face->flags |= CCNL_FACE_FLAGS_SERVED;
@@ -1286,8 +1272,16 @@ int ccnl_compas_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from, 
         while(compas_nam_tlv_iter((compas_nam_t *) *data, &offset, &tlv)) {
             if (tlv->type == COMPAS_TLV_NAME) {
                 unsigned char _int_buf[64];
-                memcpy(name, tlv + 1, tlv->length);
-                name[tlv->length > COMPAS_NAME_LEN ? COMPAS_NAME_LEN : tlv->length] = '\0';
+                compas_name_t cname;
+                compas_name_init(&cname, (const char *) (tlv + 1), tlv->length);
+                memcpy(name, cname.name, cname.name_len);
+                name[cname.name_len] = '\0';
+
+                compas_nam_cache_entry_t *n = compas_nam_cache_find(&relay->dodag, &cname);
+                if (!n) {
+                    compas_nam_cache_add(&relay->dodag, &cname, NULL);
+                }
+
                 struct ccnl_prefix_s *prefix = ccnl_URItoPrefix(name, CCNL_SUITE_NDNTLV, NULL, NULL);
                 char *s1 = NULL;
                 printf("sendint;%u;%u;%lu;%lu;%s\n", relay->dodag.rank, relay->compas_dodag_parent_timeout,

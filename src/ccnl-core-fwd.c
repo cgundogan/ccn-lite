@@ -123,17 +123,6 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         return 0;
     }
 
-#ifdef USE_SUITE_COMPAS
-            char *spref = ccnl_prefix_to_path(c->pkt->pfx);
-            compas_name_t cname;
-            compas_name_init(&cname, spref, strlen(spref));
-            compas_nam_cache_entry_t *n = compas_nam_cache_find(&relay->dodag, &cname);
-            if (n) {
-                memset(n, 0, sizeof(*n));
-            }
-            ccnl_free(spref);
-#endif
-
 #ifdef USE_TIMEOUT_KEEPALIVE
     if (!ccnl_nfnprefix_isKeepalive(c->pkt->pfx)) {
 #endif
@@ -311,12 +300,16 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
             ccnl_app_RX(relay, c);
         }
 #ifdef USE_SUITE_COMPAS
-        char *spref = ccnl_prefix_to_path(c->pkt->pfx);
+        char *spref = ccnl_prefix_to_path((*pkt)->pfx);
         compas_name_t cname;
         compas_name_init(&cname, spref, strlen(spref));
-        compas_nam_cache_entry_t *n = compas_nam_cache_find(&relay->dodag, &cname);
-        if (n) {
-            memset(n, 0, sizeof(*n));
+        if (compas_dodag_parent_eq(&relay->dodag, &face)) {
+            compas_nam_cache_entry_t *n = compas_nam_cache_find(&relay->dodag, &cname);
+            if (n) {
+                if (compas_nam_cache_requested(n->flags)) {
+                    memset(n, 0, sizeof(*n));
+                }
+            }
         }
         ccnl_free(spref);
 #endif

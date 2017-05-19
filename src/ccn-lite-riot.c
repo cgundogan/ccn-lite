@@ -511,7 +511,7 @@ void
                                &ccnl->compas_pam_msg, sched_active_pid);
                 break;
             case COMPAS_NAM_MSG:
-                if ((ccnl->dodag.rank > COMPAS_DODAG_ROOT_RANK) && !ccnl->compas_dodag_parent_timeout) {
+                if ((ccnl->dodag.rank != COMPAS_DODAG_ROOT_RANK) && !ccnl->compas_dodag_parent_timeout) {
                     bool work_to_do = false;
                     for (compas_nam_cache_entry_t *n = ccnl->dodag.nam_cache;
                          n < ccnl->dodag.nam_cache + COMPAS_NAM_CACHE_LEN;
