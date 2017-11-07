@@ -137,6 +137,13 @@ ccnl_ndntlv_prependContent(struct ccnl_prefix_s *name,
                            unsigned char *payload, int paylen,
                            int *contentpos, unsigned int *final_block_id,
                            int *offset, unsigned char *buf);
+int
+ccnl_ndntlv_prependSignedContent(struct ccnl_prefix_s *name,
+                           unsigned char *payload, int paylen,
+                           unsigned int *final_block_id, int *contentpos,
+                           unsigned char *keyval, // 64B
+                           unsigned char *keydigest, // 32B
+                           int *offset, unsigned char *buf);
 
 int
 ccnl_ndntlv_prependTL(int type, unsigned int len,

@@ -69,15 +69,15 @@ ccnl_isFragment(unsigned char *buf, int len, int suite);
 
 struct ccnl_content_s *
 ccnl_mkContentObject(struct ccnl_prefix_s *name,
-                     unsigned char *payload, int paylen);
+                     unsigned char *payload, int paylen, unsigned char *keyval, unsigned char *keyid);
 
 struct ccnl_buf_s*
 ccnl_mkSimpleContent(struct ccnl_prefix_s *name,
-                     unsigned char *payload, int paylen, int *payoffset);
+                     unsigned char *payload, int paylen, int *payoffset, unsigned char *keyval, unsigned char *keyid);
 
 void
 ccnl_mkContent(struct ccnl_prefix_s *name, unsigned char *payload, int paylen, unsigned char *tmp,
-               int *len, int *contentpos, int *offs);
+               int *len, int *contentpos, int *offs, unsigned char *keyval, unsigned char *keyid);
 
 
 struct ccnl_interest_s *

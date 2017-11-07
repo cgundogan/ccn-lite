@@ -45,4 +45,6 @@
 #include "ccnl-prefix.h"
 #include "ccnl-sched.h"
 
+void ccnl_hmac256_keyval(unsigned char *key, int klen, unsigned char *keyval);
+void ccnl_hmac256_keyid(unsigned char *key, int klen, unsigned char *keyid);
 #endif // CCNL_CORE_H

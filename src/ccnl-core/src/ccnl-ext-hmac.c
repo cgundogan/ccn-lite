@@ -28,7 +28,7 @@
 #include "ccnl-pkt-localrpc.h"
 #include "ccnl-pkt-ndntlv.h"
 #include "ccnl-pkt-switch.h"
-#include "lib-sha256.c"
+#include "lib-sha256.h"
 
 #ifdef USE_HMAC256
 
