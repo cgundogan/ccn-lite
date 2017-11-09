@@ -85,7 +85,11 @@ void ccnl_SHA256_Transform(SHA256_CTX_t* context, const sha2_word32* data) {
 	do {
 #if BYTE_ORDER == LITTLE_ENDIAN
 		/* Copy data while converting to host byte order */
-		REVERSE32(*data++,W256[j]);
+        sha2_word32 tmp;
+        memcpy(&tmp, data, sizeof(sha2_word32));
+        tmp = (tmp >> 16) | (tmp << 16);
+        W256[j] = ((tmp & 0xff00ff00UL) >> 8) | ((tmp & 0x00ff00ffUL) << 8);
+        data++;
 		/* Apply the SHA-256 compression function to update a..h */
 		T1 = h + Sigma1_256(e) + Ch(e, f, g) + K256_(j) + W256[j];
 #else /* BYTE_ORDER == LITTLE_ENDIAN */
