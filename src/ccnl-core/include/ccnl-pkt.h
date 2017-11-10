@@ -81,6 +81,14 @@ struct ccnl_pkt_s {
     char suite;
 };
 
+#ifdef USE_HMAC256
+struct ccnl_signature_s {
+    unsigned data_start;
+    unsigned data_len;
+    unsigned sig_start;
+};
+#endif
+
 /**
  * @brief Free a pkt data structure
  *

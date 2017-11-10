@@ -316,7 +316,11 @@ ccnl_mkContentObject(struct ccnl_prefix_s *name,
 {
     int dataoffset;
     struct ccnl_pkt_s *c_p = ccnl_calloc(1, sizeof(struct ccnl_pkt_s));
-    c_p->buf = ccnl_mkSimpleContent(name, payload, paylen, &dataoffset, keyval, keyid);
+    struct ccnl_signature_s sig;
+    c_p->buf = ccnl_mkSimpleContent(name, payload, paylen, &dataoffset, keyval, keyid, &sig);
+    c_p->hmacStart = c_p->buf->data + sig.data_start;
+    c_p->hmacLen = sig.data_len;
+    c_p->hmacSignature = c_p->buf->data + sig.sig_start;
     c_p->pfx = ccnl_prefix_dup(name);
     c_p->content = c_p->buf->data + dataoffset;
     c_p->contlen = paylen;
@@ -326,7 +330,7 @@ ccnl_mkContentObject(struct ccnl_prefix_s *name,
 
 struct ccnl_buf_s*
 ccnl_mkSimpleContent(struct ccnl_prefix_s *name,
-                     unsigned char *payload, int paylen, int *payoffset, unsigned char *keyval, unsigned char *keyid)
+                     unsigned char *payload, int paylen, int *payoffset, unsigned char *keyval, unsigned char *keyid, struct ccnl_signature_s *sig)
 {
     struct ccnl_buf_s *buf = NULL;
     unsigned char *tmp;
@@ -342,7 +346,7 @@ ccnl_mkSimpleContent(struct ccnl_prefix_s *name,
     tmp = (unsigned char*) ccnl_malloc(CCNL_MAX_PACKET_SIZE);
     offs = CCNL_MAX_PACKET_SIZE;
 
-    ccnl_mkContent(name, payload, paylen, tmp, &len, &contentpos, &offs, keyval, keyid);
+    ccnl_mkContent(name, payload, paylen, tmp, &len, &contentpos, &offs, keyval, keyid, sig);
 
     if (len) {
         buf = ccnl_buf_new(tmp + offs, len);
@@ -356,7 +360,7 @@ ccnl_mkSimpleContent(struct ccnl_prefix_s *name,
 
 void
 ccnl_mkContent(struct ccnl_prefix_s *name, unsigned char *payload, int paylen, unsigned char *tmp,
-int *len, int *contentpos, int *offs, unsigned char *keyval, unsigned char *keyid) {
+int *len, int *contentpos, int *offs, unsigned char *keyval, unsigned char *keyid, struct ccnl_signature_s *sig) {
     switch (name->suite) {
 #ifdef USE_SUITE_CCNB
         case CCNL_SUITE_CCNB:
@@ -396,7 +400,7 @@ case CCNL_SUITE_NDNTLV:
 #ifndef USE_SUITE_COMPRESSED
 #ifdef USE_HMAC256
         (*len) = ccnl_ndntlv_prependSignedContent(name, payload, paylen,
-                   NULL, contentpos, keyval, keyid, offs, tmp);
+                   NULL, contentpos, keyval, keyid, offs, tmp, sig);
 #else
         (void) keyval;
         (void) keyid;

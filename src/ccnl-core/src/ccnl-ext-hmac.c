@@ -181,7 +181,7 @@ ccnl_ndntlv_prependSignedContent(struct ccnl_prefix_s *name,
                            unsigned int *final_block_id, int *contentpos,
                            unsigned char *keyval, // 64B
                            unsigned char *keydigest, // 32B
-                           int *offset, unsigned char *buf)
+                           int *offset, unsigned char *buf, struct ccnl_signature_s *sig)
 {
     int oldoffset = *offset, oldoffset2, mdoffset, endofsign, mdlength = 32;
     unsigned char signatureType[1] = { NDN_SigTypeVal_SignatureHmacWithSha256 };
@@ -254,8 +254,11 @@ ccnl_ndntlv_prependSignedContent(struct ccnl_prefix_s *name,
     if (contentpos)
         *contentpos -= *offset;
 
-    ccnl_hmac256_sign(keyval, 64, buf + *offset, endofsign - *offset,
-                      buf + mdoffset, &mdlength);
+    sig->data_start = 0;
+    sig->data_len = endofsign - *offset;
+    sig->sig_start = (mdoffset - *offset);
+    ccnl_hmac256_sign(keyval, 64, (buf + *offset), endofsign - *offset,
+                      (buf + mdoffset), &mdlength);
 
     return oldoffset - *offset;
 }

@@ -143,7 +143,7 @@ ccnl_ndntlv_prependSignedContent(struct ccnl_prefix_s *name,
                            unsigned int *final_block_id, int *contentpos,
                            unsigned char *keyval, // 64B
                            unsigned char *keydigest, // 32B
-                           int *offset, unsigned char *buf);
+                           int *offset, unsigned char *buf, struct ccnl_signature_s *sig);
 
 int
 ccnl_ndntlv_prependTL(int type, unsigned int len,

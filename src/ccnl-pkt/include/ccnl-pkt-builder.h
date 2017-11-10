@@ -73,11 +73,11 @@ ccnl_mkContentObject(struct ccnl_prefix_s *name,
 
 struct ccnl_buf_s*
 ccnl_mkSimpleContent(struct ccnl_prefix_s *name,
-                     unsigned char *payload, int paylen, int *payoffset, unsigned char *keyval, unsigned char *keyid);
+                     unsigned char *payload, int paylen, int *payoffset, unsigned char *keyval, unsigned char *keyid, struct ccnl_signature_s *sig);
 
 void
 ccnl_mkContent(struct ccnl_prefix_s *name, unsigned char *payload, int paylen, unsigned char *tmp,
-               int *len, int *contentpos, int *offs, unsigned char *keyval, unsigned char *keyid);
+               int *len, int *contentpos, int *offs, unsigned char *keyval, unsigned char *keyid, struct ccnl_signature_s *sig);
 
 
 struct ccnl_interest_s *
