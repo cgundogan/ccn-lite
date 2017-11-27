@@ -67,6 +67,9 @@ ccnl_enc2suite(int enc)
 #ifdef USE_SUITE_LOCALRPC
     case CCNL_ENC_LOCALRPC:  return CCNL_SUITE_LOCALRPC;
 #endif
+#ifdef USE_SUITE_PUBSUB
+    case CCNL_ENC_PUBSUB:    return CCNL_SUITE_PUBSUB;
+#endif
     default:
         break;
     }
