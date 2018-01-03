@@ -120,6 +120,7 @@
 
 #define ccnl_app_RX(x,y)                do{}while(0)
 
+//#define callback_content_add(...)      0
 #define cache_strategy_remove(...)      0
 
 
@@ -130,6 +131,17 @@ static int ccnl_eth_RX(struct sk_buff *skb, struct net_device *indev,
                       struct packet_type *pt, struct net_device *outdev);
 
 void ccnl_udp_data_ready(struct sock *sk);
+
+int
+local_producer(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
+               struct ccnl_pkt_s *pkt){
+    return 0;
+}
+
+int
+callback_content_add(struct ccnl_relay_s *relay, struct ccnl_pkt_s *p) {
+    return 0;
+}
 
 // ----------------------------------------------------------------------
 
