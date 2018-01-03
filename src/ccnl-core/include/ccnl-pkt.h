@@ -100,6 +100,7 @@ struct ccnl_pkt_s {
         struct ccnl_pktdetail_ccntlv_s ccntlv;
         struct ccnl_pktdetail_ndntlv_s ndntlv;
     } s;                           /**< suite specific packet details */
+    struct ccnl_face_s *to;
 #ifdef USE_HMAC256
     uint8_t *hmacStart;
     size_t hmacLen;

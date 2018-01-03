@@ -22,6 +22,40 @@
 
 #include "ccnl-callbacks.h"
 
+static ccnl_cb_on_data2 _cb_rx_on_data2 = NULL;
+void
+ccnl_set_cb_rx_on_data2(ccnl_cb_on_data2 func)
+{
+    _cb_rx_on_data2 = func;
+}
+int
+ccnl_callback_rx_on_data2(struct ccnl_relay_s *relay,
+                         struct ccnl_content_s *c)
+{
+    if (_cb_rx_on_data2) {
+        return _cb_rx_on_data2(relay, c);
+    }
+
+    return 0;
+}
+
+static ccnl_cb_on_data2 _cb_tx_on_data2 = NULL;
+void
+ccnl_set_cb_tx_on_data2(ccnl_cb_on_data2 func)
+{
+    _cb_tx_on_data2 = func;
+}
+int
+ccnl_callback_tx_on_data2(struct ccnl_relay_s *relay,
+                         struct ccnl_content_s *c)
+{
+    if (_cb_tx_on_data2) {
+        return _cb_tx_on_data2(relay, c);
+    }
+
+    return 0;
+}
+
 /**
  * callback function for inbound on-data events
  */
