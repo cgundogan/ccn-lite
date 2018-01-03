@@ -114,6 +114,9 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         ccnl_content_add2cache(relay, c);
         int contlen = (int) (c->pkt->contlen > INT_MAX ? INT_MAX : c->pkt->contlen);
         DEBUGMSG_CFWD(INFO, "data after creating packet %.*s\n", contlen, c->pkt->content);
+        if (ccnl_callback_rx_on_data2(relay, c)) {
+            return 0;
+        }
     } else {
         DEBUGMSG_CFWD(DEBUG, "  content not added to cache\n");
         ccnl_content_free(c);
@@ -256,6 +259,9 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         if (from) {
             if (from->ifndx >= 0) {
                 ccnl_send_pkt(relay, from, c->pkt);
+                if (ccnl_callback_tx_on_data2(relay, c)) {
+                    return 0;
+                }
             } else {
 #ifdef CCNL_APP_RX 
                 ccnl_app_RX(relay, c);

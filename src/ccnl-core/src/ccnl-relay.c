@@ -390,6 +390,11 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
     // transmit an Interest Message on all listed dest faces in sequence."
     // CCNL strategy: we forward on all FWD entries with a prefix match
 
+    if (i->pkt->to) {
+        ccnl_send_pkt(ccnl, i->pkt->to, i->pkt);
+        return;
+    }
+
     for (fwd = ccnl->fib; fwd; fwd = fwd->next) {
         printf("fwd: %p\n", (void*)fwd);
         if (!fwd->prefix) {

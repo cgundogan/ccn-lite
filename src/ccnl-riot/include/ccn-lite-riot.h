@@ -138,6 +138,11 @@ extern kernel_pid_t ccnl_event_loop_pid;
 #define CCNL_MSG_FACE_TIMEOUT   (0x1708)
 
 /**
+ * Message type for when PIT was removed
+ */
+#define CCNL_MSG_REMOVED_PIT    (0x1709)
+
+/**
  * Maximum number of elements that can be cached
  */
 #ifndef CCNL_CACHE_SIZE
@@ -202,7 +207,7 @@ int ccnl_open_netif(kernel_pid_t if_pid, gnrc_nettype_t netreg_type);
  */
 int ccnl_send_interest(struct ccnl_prefix_s *prefix,
                        unsigned char *buf, int buf_len,
-                       ccnl_interest_opts_u *int_opts);
+                       ccnl_interest_opts_u *int_opts, struct ccnl_face_s *to);
 
 /**
  * @brief Wait for incoming content chunk

@@ -31,6 +31,9 @@ typedef int (*ccnl_cb_on_data)(struct ccnl_relay_s *relay,
                                struct ccnl_face_s *face,
                                struct ccnl_pkt_s *pkt);
 
+typedef int (*ccnl_cb_on_data2)(struct ccnl_relay_s *relay,
+                               struct ccnl_content_s *c);
+
 /**
  * @brief Set an inbound on-data event callback function
  *
@@ -84,5 +87,10 @@ int ccnl_callback_rx_on_data(struct ccnl_relay_s *relay,
 int ccnl_callback_tx_on_data(struct ccnl_relay_s *relay,
                              struct ccnl_face_s *to,
                              struct ccnl_pkt_s *pkt);
+
+void ccnl_set_cb_rx_on_data2(ccnl_cb_on_data2 func);
+int ccnl_callback_rx_on_data2(struct ccnl_relay_s *relay, struct ccnl_content_s *c);
+void ccnl_set_cb_tx_on_data2(ccnl_cb_on_data2 func);
+int ccnl_callback_tx_on_data2(struct ccnl_relay_s *relay, struct ccnl_content_s *c);
 
 #endif  /* CCNL_CALLBACKS_H */
