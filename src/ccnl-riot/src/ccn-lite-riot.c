@@ -45,6 +45,8 @@
 #include "ccnl-producer.h"
 #include "ccnl-pkt-builder.h"
 
+int callback_content_add(struct ccnl_relay_s *relay, struct ccnl_pkt_s *p);
+
 /**
  * @brief May be defined for a particular caching strategy
  */
@@ -70,6 +72,8 @@ static char _ccnl_stack[CCNL_STACK_SIZE];
  */
 static xtimer_t _ageing_timer = { .target = 0, .long_target = 0 };
 
+
+static ccnl_callback_content_add_func _content_add_func = NULL;
 
 /**
  * caching strategy removal function
@@ -166,7 +170,7 @@ extern int ccnl_isContent(unsigned char *buf, int len, int suite);
 struct ccnl_buf_s*
 ccnl_buf_new(void *data, int len)
 {
-    struct ccnl_buf_s *b = ccnl_malloc(sizeof(struct ccnl_buf_s) + len);
+    struct ccnl_buf_s *b = ccnl_calloc(1, sizeof(struct ccnl_buf_s) + len);
 
     if (!b)
         return NULL;
@@ -396,9 +400,18 @@ _receive(struct ccnl_relay_s *ccnl, msg_t *m)
     su.linklayer.sll_halen = nethdr->src_l2addr_len;
     memcpy(su.linklayer.sll_addr, gnrc_netif_hdr_get_src_addr(nethdr), nethdr->src_l2addr_len);
 
-    /* call CCN-lite callback and free memory in packet buffer */
-    ccnl_core_RX(ccnl, i, ccn_pkt->data, ccn_pkt->size, &su.sa, sizeof(su.sa));
-    gnrc_pktbuf_release(pkt);
+    if ((((uint8_t *)ccn_pkt->data)[0] == 0x80) && (((uint8_t *)ccn_pkt->data)[1] == 0x08)) {
+        if (gnrc_netapi_dispatch_receive(GNRC_NETTYPE_CCN_HOPP,
+                                         GNRC_NETREG_DEMUX_CTX_ALL,
+                                         pkt) == 0) {
+            gnrc_pktbuf_release(pkt);
+        }
+    }
+    else {
+        /* call CCN-lite callback and free memory in packet buffer */
+        ccnl_core_RX(ccnl, i, ccn_pkt->data, ccn_pkt->size, &su.sa, sizeof(su.sa));
+        gnrc_pktbuf_release(pkt);
+    }
 }
 
 /* the main event-loop */
@@ -433,7 +446,7 @@ void
                 }
                 else {
                     ccnl_interest_t *i = (ccnl_interest_t*) pkt->data;
-                    ccnl_send_interest(i->prefix, i->buf, i->buflen, NULL);
+                    ccnl_send_interest(i->prefix, i->buf, i->buflen, NULL, NULL);
                 }
                 gnrc_pktbuf_release(pkt);
                 break;
@@ -540,7 +553,7 @@ ccnl_wait_for_chunk(void *buf, size_t buf_len, uint64_t timeout)
 /* generates and send out an interest */
 int
 ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len,
-                   ccnl_interest_opts_u *int_opts)
+                   ccnl_interest_opts_u *int_opts, struct ccnl_face_s *to)
 {
     int ret = -1;
     int len = 0;
@@ -591,6 +604,8 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
 
     pkt = ccnl_ndntlv_bytes2pkt(NDN_TLV_Interest, start, &data, &len);
 
+    pkt->to = to;
+
     ret = ccnl_fwd_handleInterest(&ccnl_relay, loopback_face, &pkt, ccnl_ndntlv_cMatch);
 
     ccnl_pkt_free(pkt);
@@ -599,9 +614,24 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
 }
 
 void
+ccnl_set_callback_content_add(ccnl_callback_content_add_func func)
+{
+    _content_add_func = func;
+}
+
+void
 ccnl_set_cache_strategy_remove(ccnl_cache_strategy_func func)
 {
     _cs_remove_func = func;
+}
+
+int
+callback_content_add(struct ccnl_relay_s *relay, struct ccnl_pkt_s *p)
+{
+    if (_content_add_func) {
+        return _content_add_func(relay, p);
+    }
+    return 0;
 }
 
 int

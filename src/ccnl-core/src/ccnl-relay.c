@@ -390,6 +390,11 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
     // transmit an Interest Message on all listed dest faces in sequence."
     // CCNL strategy: we forward on all FWD entries with a prefix match
 
+    if (i->pkt->to) {
+        ccnl_send_pkt(ccnl, i->pkt->to, i->pkt);
+        return;
+    }
+
     for (fwd = ccnl->fib; fwd; fwd = fwd->next) {
         if (!fwd->prefix)
             continue;
@@ -747,7 +752,6 @@ ccnl_do_ageing(void *ptr, void *dummy)
 {
 
     struct ccnl_relay_s *relay = (struct ccnl_relay_s*) ptr;
-    struct ccnl_content_s *c = relay->contents;
     struct ccnl_interest_s *i = relay->pit;
     struct ccnl_face_s *f = relay->faces;
     time_t t = CCNL_NOW();
@@ -756,6 +760,8 @@ ccnl_do_ageing(void *ptr, void *dummy)
     char s[CCNL_MAX_PREFIX_SIZE];
     (void) s;
 
+#if 0
+    struct ccnl_content_s *c = relay->contents;
     while (c) {
         if ((c->last_used + CCNL_CONTENT_TIMEOUT) <= (uint32_t) t &&
                                 !(c->flags & CCNL_CONTENT_FLAGS_STATIC)){
@@ -773,6 +779,7 @@ ccnl_do_ageing(void *ptr, void *dummy)
             c = c->next;
         }
     }
+#endif
     while (i) { // CONFORM: "Entries in the PIT MUST timeout rather
                 // than being held indefinitely."
         if ((i->last_used + i->lifetime) <= (uint32_t) t ||

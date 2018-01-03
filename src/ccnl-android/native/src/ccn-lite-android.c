@@ -52,6 +52,8 @@ unsigned char keyid[32];
 #endif
 
 #define ccnl_app_RX(x,y)                do{}while(0)
+#define local_producer(...)             0
+#define callback_content_add(...)       0
 #define cache_strategy_remove(...)      0
 
 
