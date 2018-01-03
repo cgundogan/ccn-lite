@@ -111,6 +111,9 @@ typedef int (*ccnl_producer_func)(struct ccnl_relay_s *relay,
                                   struct ccnl_face_s *from,
                                   struct ccnl_pkt_s *pkt);
 
+typedef int (*ccnl_callback_content_add_func)(struct ccnl_relay_s *relay,
+                                              struct ccnl_content_s *c);
+
 /**
  * @brief Function pointer type for caching strategy function
  */
@@ -176,6 +179,8 @@ int ccnl_wait_for_chunk(void *buf, size_t buf_len, uint64_t timeout);
  * @param[in] func  The function to be called first for any incoming interest
  */
 void ccnl_set_local_producer(ccnl_producer_func func);
+
+void ccnl_set_callback_content_add(ccnl_callback_content_add_func func);
 
 /**
  * @brief Set a function to control the caching strategy

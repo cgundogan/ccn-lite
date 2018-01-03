@@ -41,6 +41,8 @@
 int
 local_producer(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
                    struct ccnl_pkt_s *pkt);
+int
+callback_content_add(struct ccnl_relay_s *relay, struct ccnl_content_s *c);
 
 static int lasthour = -1;
 static int inter_ccn_interval = 0; // in usec

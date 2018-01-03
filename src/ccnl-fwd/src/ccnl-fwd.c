@@ -47,6 +47,13 @@
 #include <ccnl-pkt-switch.h>
 #endif
 
+#ifndef CCNL_ANDROID
+int
+callback_content_add(struct ccnl_relay_s *relay, struct ccnl_content_s *c);
+#else
+#define callback_content_add(...) 0
+#endif
+
 //#include "ccnl-logging.h"
 
 
@@ -139,12 +146,13 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     }
 #endif
 
-    if (!ccnl_content_serve_pending(relay, c)) { // unsolicited content
-        // CONFORM: "A node MUST NOT forward unsolicited data [...]"
-        DEBUGMSG_CFWD(DEBUG, "  removed because no matching interest\n");
-        ccnl_content_free(c);
-        return 0;
-    }
+    if (!callback_content_add(relay, c)) {
+        if (!ccnl_content_serve_pending(relay, c)) { // unsolicited content
+            // CONFORM: "A node MUST NOT forward unsolicited data [...]"
+            DEBUGMSG_CFWD(DEBUG, "  removed because no matching interest\n");
+            ccnl_content_free(c);
+            return 0;
+        }
 
 #ifdef USE_NFN_REQUESTS
     if (!ccnl_nfnprefix_isRequest(c->pkt->pfx)) {
@@ -162,6 +170,7 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         DEBUGMSG_CFWD(DEBUG, "  not caching nfn request\n");
     }
 #endif
+    }
 
 #ifdef USE_RONR
     /* if we receive a chunk, we assume more chunks of this content may be
