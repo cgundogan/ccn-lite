@@ -45,6 +45,8 @@
 #include "ccnl-producer.h"
 #include "ccnl-pkt-builder.h"
 
+int callback_content_add(struct ccnl_relay_s *relay, struct ccnl_content_s *c);
+
 /**
  * @brief May be defined for a particular caching strategy
  */
@@ -75,6 +77,8 @@ static kernel_pid_t _ccnl_event_loop_pid = KERNEL_PID_UNDEF;
  */
 static xtimer_t _ageing_timer = { .target = 0, .long_target = 0 };
 
+
+static ccnl_callback_content_add_func _content_add_func = NULL;
 
 /**
  * caching strategy removal function
@@ -601,9 +605,40 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
 }
 
 void
+ccnl_set_local_producer(ccnl_producer_func func)
+{
+    _prod_func = func;
+}
+
+void
+ccnl_set_callback_content_add(ccnl_callback_content_add_func func)
+{
+    _content_add_func = func;
+}
+
+void
 ccnl_set_cache_strategy_remove(ccnl_cache_strategy_func func)
 {
     _cs_remove_func = func;
+}
+
+int
+local_producer(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
+                   struct ccnl_pkt_s *pkt)
+{
+    if (_prod_func) {
+        return _prod_func(relay, from, pkt);
+    }
+    return 0;
+}
+
+int
+callback_content_add(struct ccnl_relay_s *relay, struct ccnl_content_s *c)
+{
+    if (_content_add_func) {
+        return _content_add_func(relay, c);
+    }
+    return 0;
 }
 
 int
