@@ -155,7 +155,7 @@ ccnl_mkSimpleInterest(struct ccnl_prefix_s *name, ccnl_interest_opts_u *opts)
     struct ccnl_prefix_s *prefix;
     (void)prefix;
 
-    tmp = (unsigned char*) ccnl_malloc(CCNL_MAX_PACKET_SIZE);
+    tmp = (unsigned char*) ccnl_calloc(1, CCNL_MAX_PACKET_SIZE);
     offs = CCNL_MAX_PACKET_SIZE;
 
     ccnl_mkInterest(name, opts, tmp, &len, &offs);
@@ -233,7 +233,7 @@ ccnl_mkSimpleContent(struct ccnl_prefix_s *name,
                   ccnl_prefix_to_str(name, s, CCNL_MAX_PREFIX_SIZE),
                   paylen);
 
-    tmp = (unsigned char*) ccnl_malloc(CCNL_MAX_PACKET_SIZE);
+    tmp = (unsigned char*) ccnl_calloc(1, CCNL_MAX_PACKET_SIZE);
     offs = CCNL_MAX_PACKET_SIZE;
 
     ccnl_mkContent(name, payload, paylen, tmp, &len, &contentpos, &offs, opts);

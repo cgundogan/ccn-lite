@@ -92,6 +92,11 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         }
 #endif /* USE_SUITE_CCNB && USE_SIGNATURES*/
 
+    if (!callback_data_received(relay, *pkt, from)) {
+        *pkt = NULL;
+        return 0;
+    }
+
     // CONFORM: Step 1:
     for (c = relay->contents; c; c = c->next) {
         if (buf_equal(c->pkt->buf, (*pkt)->buf)) {
@@ -136,12 +141,12 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     }
 #endif
 
-    if (!ccnl_content_serve_pending(relay, c)) { // unsolicited content
-        // CONFORM: "A node MUST NOT forward unsolicited data [...]"
-        DEBUGMSG_CFWD(DEBUG, "  removed because no matching interest\n");
-        ccnl_content_free(c);
-        return 0;
-    }
+        if (!ccnl_content_serve_pending(relay, c)) { // unsolicited content
+            // CONFORM: "A node MUST NOT forward unsolicited data [...]"
+            DEBUGMSG_CFWD(DEBUG, "  removed because no matching interest\n");
+            ccnl_content_free(c);
+            return 0;
+        }
 
 #ifdef USE_NFN_REQUESTS
     if (!ccnl_nfnprefix_isRequest(c->pkt->pfx)) {
@@ -256,7 +261,9 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     }
 #endif
     if (local_producer(relay, from, *pkt)) {
+#if 0
         *pkt = NULL;
+#endif
         return 0;
     }
 #if defined(USE_SUITE_CCNB) && defined(USE_MGMT)
@@ -332,6 +339,11 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
             ccnl_nfn_monitor(relay, from, c->pkt->pfx, c->pkt->content,
                                  c->pkt->contlen);
 #endif
+
+            if (!callback_data_send(relay, *pkt)) {
+                continue;
+            }
+
             ccnl_send_pkt(relay, from, c->pkt);
 #ifdef USE_NFN_REQUESTS
             c->pkt = cpkt;
