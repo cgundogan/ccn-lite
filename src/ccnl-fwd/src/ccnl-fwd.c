@@ -103,6 +103,7 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 #endif /* USE_SUITE_CCNB && USE_SIGNATURES*/
 
     if (!callback_content_add(relay, *pkt)) {
+        *pkt = NULL;
         return 0;
     }
 
