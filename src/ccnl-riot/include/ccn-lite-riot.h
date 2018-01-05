@@ -112,7 +112,7 @@ typedef int (*ccnl_producer_func)(struct ccnl_relay_s *relay,
                                   struct ccnl_pkt_s *pkt);
 
 typedef int (*ccnl_callback_content_add_func)(struct ccnl_relay_s *relay,
-                                              struct ccnl_content_s *c);
+                                              struct ccnl_pkt_s *s);
 
 /**
  * @brief Function pointer type for caching strategy function
