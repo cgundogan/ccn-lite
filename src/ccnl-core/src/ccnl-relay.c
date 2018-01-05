@@ -780,13 +780,14 @@ ccnl_do_ageing(void *ptr, void *dummy)
 {
 
     struct ccnl_relay_s *relay = (struct ccnl_relay_s*) ptr;
-    struct ccnl_content_s *c = relay->contents;
     struct ccnl_interest_s *i = relay->pit;
     struct ccnl_face_s *f = relay->faces;
     time_t t = CCNL_NOW();
     DEBUGMSG_CORE(VERBOSE, "ageing t=%d\n", (int)t);
     (void) dummy;
 
+#if 0
+    struct ccnl_content_s *c = relay->contents;
     while (c) {
         if ((c->last_used + CCNL_CONTENT_TIMEOUT) <= t &&
                                 !(c->flags & CCNL_CONTENT_FLAGS_STATIC)){
@@ -796,6 +797,7 @@ ccnl_do_ageing(void *ptr, void *dummy)
         else
             c = c->next;
     }
+#endif
     while (i) { // CONFORM: "Entries in the PIT MUST timeout rather
                 // than being held indefinitely."
         if ((i->last_used + CCNL_INTEREST_TIMEOUT) <= t ||
