@@ -173,7 +173,7 @@ extern int ccnl_isContent(unsigned char *buf, int len, int suite);
 struct ccnl_buf_s*
 ccnl_buf_new(void *data, int len)
 {
-    struct ccnl_buf_s *b = ccnl_malloc(sizeof(struct ccnl_buf_s) + len);
+    struct ccnl_buf_s *b = ccnl_calloc(1, sizeof(struct ccnl_buf_s) + len);
 
     if (!b)
         return NULL;
