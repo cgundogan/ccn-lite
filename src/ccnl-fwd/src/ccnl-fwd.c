@@ -50,7 +50,7 @@
 
 #ifndef CCNL_ANDROID
 int
-callback_content_add(struct ccnl_relay_s *relay, struct ccnl_content_s *c);
+callback_content_add(struct ccnl_relay_s *relay, struct ccnl_pkt_s *p);
 #else
 #define callback_content_add(...) 0
 #endif
@@ -103,6 +103,10 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         }
 #endif /* USE_SUITE_CCNB && USE_SIGNATURES*/
 
+    if (!callback_content_add(relay, *pkt)) {
+        return 0;
+    }
+
     // CONFORM: Step 1:
     for (c = relay->contents; c; c = c->next) {
         if (buf_equal(c->pkt->buf, (*pkt)->buf)) {
@@ -147,7 +151,6 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     }
 #endif
 
-    if (!callback_content_add(relay, c)) {
         if (!ccnl_content_serve_pending(relay, c)) { // unsolicited content
             // CONFORM: "A node MUST NOT forward unsolicited data [...]"
             DEBUGMSG_CFWD(DEBUG, "  removed because no matching interest\n");
@@ -171,7 +174,6 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         DEBUGMSG_CFWD(DEBUG, "  not caching nfn request\n");
     }
 #endif
-    }
 
 #ifdef USE_RONR
     /* if we receive a chunk, we assume more chunks of this content may be

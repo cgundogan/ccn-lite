@@ -150,7 +150,7 @@ local_producer(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 }
 
 int
-callback_content_add(struct ccnl_relay_s *relay, struct ccnl_content_s *c) {
+callback_content_add(struct ccnl_relay_s *relay, struct ccnl_pkt_s *p) {
     return 0;
 }
 

@@ -45,7 +45,7 @@
 #include "ccnl-producer.h"
 #include "ccnl-pkt-builder.h"
 
-int callback_content_add(struct ccnl_relay_s *relay, struct ccnl_content_s *c);
+int callback_content_add(struct ccnl_relay_s *relay, struct ccnl_pkt_s *p);
 
 /**
  * @brief May be defined for a particular caching strategy
@@ -633,10 +633,10 @@ local_producer(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 }
 
 int
-callback_content_add(struct ccnl_relay_s *relay, struct ccnl_content_s *c)
+callback_content_add(struct ccnl_relay_s *relay, struct ccnl_pkt_s *p)
 {
     if (_content_add_func) {
-        return _content_add_func(relay, c);
+        return _content_add_func(relay, p);
     }
     return 0;
 }
