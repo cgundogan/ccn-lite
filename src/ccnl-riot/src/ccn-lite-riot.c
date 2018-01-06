@@ -457,7 +457,7 @@ void
                 }
                 else {
                     ccnl_interest_t *i = (ccnl_interest_t*) pkt->data;
-                    ccnl_send_interest(i->prefix, i->buf, i->buflen);
+                    ccnl_send_interest(i->prefix, i->buf, i->buflen, NULL);
                 }
                 gnrc_pktbuf_release(pkt);
                 break;
@@ -558,7 +558,7 @@ ccnl_wait_for_chunk(void *buf, size_t buf_len, uint64_t timeout)
 
 /* generates and send out an interest */
 int
-ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, size_t buf_len)
+ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, size_t buf_len, struct ccnl_face_s *to)
 {
     int ret = -1;
     int len = 0;
@@ -613,6 +613,8 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, size_t buf_
     pkt = ccnl_pkt_ndn_decompress(pktc);
     ccnl_pkt_free(pktc);
 #endif //USE_SUITE_COMPRESSED
+
+    pkt->to = to;
 
     ret = ccnl_fwd_handleInterest(&ccnl_relay, loopback_face, &pkt, ccnl_ndntlv_cMatch);
 
