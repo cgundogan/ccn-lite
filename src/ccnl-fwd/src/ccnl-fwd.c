@@ -283,7 +283,9 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     }
 #endif
     if (local_producer(relay, from, *pkt)) {
+#if 0
         *pkt = NULL;
+#endif
         return 0;
     }
 #if defined(USE_SUITE_CCNB) && defined(USE_MGMT)
