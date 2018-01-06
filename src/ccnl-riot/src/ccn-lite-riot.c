@@ -546,7 +546,7 @@ ccnl_wait_for_chunk(void *buf, size_t buf_len, uint64_t timeout)
 /* generates and send out an interest */
 int
 ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len,
-                   ccnl_interest_opts_u *int_opts)
+                   ccnl_interest_opts_u *int_opts, struct ccnl_face_s *to)
 {
     int ret = -1;
     int len = 0;
@@ -596,6 +596,8 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
     }
 
     pkt = ccnl_ndntlv_bytes2pkt(NDN_TLV_Interest, start, &data, &len);
+
+    pkt->to = to;
 
     ret = ccnl_fwd_handleInterest(&ccnl_relay, loopback_face, &pkt, ccnl_ndntlv_cMatch);
 
