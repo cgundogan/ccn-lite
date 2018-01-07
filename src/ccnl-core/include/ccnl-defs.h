@@ -64,7 +64,9 @@
 #define CCNL_MAX_INTEREST_RETRANSMIT    7
 
 // #define CCNL_FACE_TIMEOUT    60 // sec
+#ifndef CCNL_FACE_TIMEOUT
 #define CCNL_FACE_TIMEOUT       150 // sec
+#endif
 
 #define CCNL_DEFAULT_MAX_CACHE_ENTRIES  0   // means: no content caching
 #ifdef CCNL_RIOT
