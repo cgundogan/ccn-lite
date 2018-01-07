@@ -74,6 +74,7 @@
 #define CCNL_CONTENT_TIMEOUT            300 // sec
 #define CCNL_INTEREST_TIMEOUT           10  // sec
 #define CCNL_MAX_INTEREST_RETRANSMIT    7
+#endif
 
 // #define CCNL_FACE_TIMEOUT    60 // sec
 #define CCNL_FACE_TIMEOUT       30 // sec
