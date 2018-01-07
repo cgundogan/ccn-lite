@@ -57,12 +57,16 @@ extern "C" {
 /**
  * Stack size for CCN-Lite event loop
  */
+#ifndef CCNL_STACK_SIZE
 #define CCNL_STACK_SIZE (THREAD_STACKSIZE_MAIN)
+#endif
 
 /**
  * Size of the message queue of CCN-Lite's event loop
  */
+#ifndef CCNL_QUEUE_SIZE
 #define CCNL_QUEUE_SIZE     (8)
+#endif
 
 /**
  * @brief Data structure for interest packet
@@ -97,6 +101,10 @@ typedef struct {
 #endif
 #ifdef DOXYGEN
 #define CCNL_CACHE_SIZE
+#endif
+
+#ifndef CCNL_THREAD_PRIORITY
+#define CCNL_THREAD_PRIORITY (THREAD_PRIORITY_MAIN - 1)
 #endif
 
 /**
