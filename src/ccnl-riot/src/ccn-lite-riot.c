@@ -178,8 +178,10 @@ ccnl_open_netif(kernel_pid_t if_pid, gnrc_nettype_t netreg_type)
     /* advance interface counter in relay */
     ccnl_relay.ifcount++;
 
+#ifndef MODULE_ICNL
     /* configure the interface to use the specified nettype protocol */
     gnrc_netapi_set(if_pid, NETOPT_PROTO, 0, &netreg_type, sizeof(gnrc_nettype_t));
+#endif
     /* register for this nettype if not already done */
     if (_ccnl_ne.demux_ctx == 0) {
         gnrc_netreg_entry_init_pid(&_ccnl_ne, GNRC_NETREG_DEMUX_CTX_ALL,
@@ -267,11 +269,14 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
                                 nethdr->flags = GNRC_NETIF_HDR_FLAGS_BROADCAST;
                             }
 
+                            ((gnrc_netif_hdr_t *)hdr->data)->if_pid = ifc->if_pid;
+
                             /* actual sending */
-                            DEBUGMSG(DEBUG, " try to pass to GNRC (%i): %p\n", (int) ifc->if_pid, (void*) pkt);
-                            if (gnrc_netapi_send(ifc->if_pid, pkt) < 1) {
+                            DEBUGMSG(DEBUG, " try to pass to GNRC (%i): %p\n", (int) ifc->if_pid, (void*) hdr);
+
+                            if (!gnrc_netapi_dispatch_send(GNRC_NETTYPE_LOWPAN, GNRC_NETREG_DEMUX_CTX_ALL, hdr)) {
                                 puts("error: unable to send\n");
-                                gnrc_pktbuf_release(pkt);
+                                gnrc_pktbuf_release(hdr);
                                 return;
                             }
                             break;
