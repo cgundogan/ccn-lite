@@ -30,6 +30,7 @@
 #include "ccnl-pkt-ndntlv.h"
 #include "net/gnrc/netreg.h"
 #include "ccnl-dispatch.h"
+#include "ccnl-producer.h"
 //#include "ccnl-pkt-builder.h"
 
 #ifdef __cplusplus
@@ -111,13 +112,6 @@ typedef struct {
  * Struct holding CCN-Lite's central relay information
  */
 extern struct ccnl_relay_s ccnl_relay;
-
-/**
- * @brief Function pointer type for local producer function
- */
-typedef int (*ccnl_producer_func)(struct ccnl_relay_s *relay,
-                                  struct ccnl_face_s *from,
-                                  struct ccnl_pkt_s *pkt);
 
 typedef int (*ccnl_callback_content_add_func)(struct ccnl_relay_s *relay,
                                               struct ccnl_pkt_s *s);

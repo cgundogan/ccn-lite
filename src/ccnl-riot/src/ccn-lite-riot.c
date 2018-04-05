@@ -408,7 +408,7 @@ _receive(struct ccnl_relay_s *ccnl, msg_t *m)
     memcpy(su.linklayer.sll_addr, gnrc_netif_hdr_get_src_addr(nethdr), nethdr->src_l2addr_len);
 
     if ((((uint8_t *)ccn_pkt->data)[0] == 0x80) && (((uint8_t *)ccn_pkt->data)[1] == 0x08)) {
-        if (gnrc_netapi_dispatch_receive(GNRC_NETTYPE_CCN_PUBSUB,
+        if (gnrc_netapi_dispatch_receive(GNRC_NETTYPE_CCN_HOPP,
                                          GNRC_NETREG_DEMUX_CTX_ALL,
                                          pkt) == 0) {
             gnrc_pktbuf_release(pkt);
@@ -453,7 +453,7 @@ void
                 }
                 else {
                     ccnl_interest_t *i = (ccnl_interest_t*) pkt->data;
-                    ccnl_send_interest(i->prefix, i->buf, i->buflen, NULL);
+                    ccnl_send_interest(i->prefix, i->buf, i->buflen, NULL, NULL);
                 }
                 gnrc_pktbuf_release(pkt);
                 break;
@@ -616,12 +616,6 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
 }
 
 void
-ccnl_set_local_producer(ccnl_producer_func func)
-{
-    _prod_func = func;
-}
-
-void
 ccnl_set_callback_content_add(ccnl_callback_content_add_func func)
 {
     _content_add_func = func;
@@ -631,16 +625,6 @@ void
 ccnl_set_cache_strategy_remove(ccnl_cache_strategy_func func)
 {
     _cs_remove_func = func;
-}
-
-int
-local_producer(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
-                   struct ccnl_pkt_s *pkt)
-{
-    if (_prod_func) {
-        return _prod_func(relay, from, pkt);
-    }
-    return 0;
 }
 
 int
