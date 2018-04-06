@@ -103,11 +103,6 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         }
 #endif /* USE_SUITE_CCNB && USE_SIGNATURES*/
 
-    if (!callback_content_add(relay, *pkt)) {
-        *pkt = NULL;
-        return 0;
-    }
-
     // CONFORM: Step 1:
     for (c = relay->contents; c; c = c->next) {
         if (buf_equal(c->pkt->buf, (*pkt)->buf)) {
@@ -354,6 +349,11 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
             ccnl_nfn_monitor(relay, from, c->pkt->pfx, c->pkt->content,
                                  c->pkt->contlen);
 #endif
+
+            if (!callback_content_add(relay, *pkt)) {
+                continue;
+            }
+
             ccnl_send_pkt(relay, from, c->pkt);
 #ifdef USE_NFN_REQUESTS
             c->pkt = cpkt;
