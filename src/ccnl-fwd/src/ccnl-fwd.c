@@ -48,13 +48,6 @@
 #include <ccnl-pkt-switch.h>
 #endif
 
-#ifndef CCNL_ANDROID
-int
-callback_content_add(struct ccnl_relay_s *relay, struct ccnl_pkt_s *p);
-#else
-#define callback_content_add(...) 0
-#endif
-
 //#include "ccnl-logging.h"
 
 
@@ -102,6 +95,11 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
             return ccnl_crypto(relay, pkt->buf, pkt->pfx, from);
         }
 #endif /* USE_SUITE_CCNB && USE_SIGNATURES*/
+
+    if (!callback_data_received(relay, *pkt)) {
+        *pkt = NULL;
+        return 0;
+    }
 
     // CONFORM: Step 1:
     for (c = relay->contents; c; c = c->next) {
@@ -350,7 +348,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
                                  c->pkt->contlen);
 #endif
 
-            if (!callback_content_add(relay, *pkt)) {
+            if (!callback_data_send(relay, *pkt)) {
                 continue;
             }
 

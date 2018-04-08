@@ -5,6 +5,7 @@
  * Copyright (C) 2011-14, Christian Tschudin, University of Basel
  * Copyright (C) 2015, 2016, 2018, Oliver Hahm, INRIA
  * Copyright (C) 2018, Michael Frey, MSA Safety
+ * Copyright (C) 2018, Cenk Gündoğan, HAW Hamburg
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -20,6 +21,7 @@
  *
  * File history:
  * 2018-01-24 created (based on ccn-lite-riot.c)
+ * 2018-04-09 renamed to ccnl-callbacks.c
  */
 
 #include "ccnl-producer.h"
@@ -28,6 +30,8 @@
  * local producer function defined by the application
  */
 static ccnl_producer_func _prod_func = NULL;
+static ccnl_data_received_func _data_received_func = NULL;
+static ccnl_data_send_func _data_send_func = NULL;
 
 void
 ccnl_set_local_producer(ccnl_producer_func func)
@@ -41,6 +45,38 @@ local_producer(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 {
     if (_prod_func) {
         return _prod_func(relay, from, pkt);
+    }
+
+    return 0;
+}
+
+void
+ccnl_callback_set_data_received(ccnl_data_received_func func)
+{
+    _data_received_func = func;
+}
+
+int
+callback_data_received(struct ccnl_relay_s *relay, struct ccnl_pkt_s *pkt)
+{
+    if (_data_received_func) {
+        return _data_received_func(relay, pkt);
+    }
+
+    return 0;
+}
+
+void
+ccnl_callback_set_data_send(ccnl_data_send_func func)
+{
+    _data_send_func = func;
+}
+
+int
+callback_data_send(struct ccnl_relay_s *relay, struct ccnl_pkt_s *pkt)
+{
+    if (_data_send_func) {
+        return _data_send_func(relay, pkt);
     }
 
     return 0;
