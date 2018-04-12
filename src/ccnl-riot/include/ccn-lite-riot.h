@@ -31,7 +31,10 @@
 #include "net/gnrc/netreg.h"
 #include "ccnl-dispatch.h"
 #include "ccnl-producer.h"
+#include "evtimer.h"
+#include "evtimer_msg.h"
 //#include "ccnl-pkt-builder.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,6 +97,8 @@ typedef struct {
  */
 #define CCNL_MSG_AGEING         (0x1702)
 
+#define CCNL_MSG_INT_RETRANS    (0x1703)
+
 /**
  * Maximum number of elements that can be cached
  */
@@ -107,6 +112,14 @@ typedef struct {
 #ifndef CCNL_THREAD_PRIORITY
 #define CCNL_THREAD_PRIORITY (THREAD_PRIORITY_MAIN - 1)
 #endif
+
+extern evtimer_msg_t ccnl_evtimer;
+extern evtimer_msg_event_t ccnl_int_retrans_msg_evt;
+
+/**
+ * PID of the eventloop thread
+ */
+extern kernel_pid_t _ccnl_event_loop_pid;
 
 /**
  * Struct holding CCN-Lite's central relay information

@@ -68,15 +68,9 @@ static msg_t _msg_queue[CCNL_QUEUE_SIZE];
 static char _ccnl_stack[CCNL_STACK_SIZE];
 
 /**
- * PID of the eventloop thread
- */
-static kernel_pid_t _ccnl_event_loop_pid = KERNEL_PID_UNDEF;
-
-/**
  * Timer to process ageing
  */
 static xtimer_t _ageing_timer = { .target = 0, .long_target = 0 };
-
 
 static ccnl_callback_content_add_func _content_add_func = NULL;
 
@@ -89,6 +83,11 @@ static ccnl_cache_strategy_func _cs_remove_func = NULL;
  * currently configured suite
  */
 static int _ccnl_suite = CCNL_SUITE_NDNTLV;
+
+kernel_pid_t _ccnl_event_loop_pid = KERNEL_PID_UNDEF;
+
+evtimer_msg_t ccnl_evtimer;
+evtimer_msg_event_t ccnl_int_retrans_msg_evt = { .msg.type = CCNL_MSG_INT_RETRANS };
 
 /**
  * @}
@@ -417,12 +416,27 @@ _receive(struct ccnl_relay_s *ccnl, msg_t *m)
     }
 }
 
+static void
+ccnl_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccnl_int)
+{
+    if(ccnl_int->retries >= CCNL_MAX_INTEREST_RETRANSMIT) {
+        ccnl_interest_remove(relay, ccnl_int);
+        return;
+    }
+    ((evtimer_event_t *)&ccnl_int_retrans_msg_evt)->offset = MS_PER_SEC;
+    evtimer_add_msg(&ccnl_evtimer, &ccnl_int_retrans_msg_evt, sched_active_pid);
+    ccnl_int->retries++;
+    ccnl_interest_propagate(relay, ccnl_int);
+}
+
 /* the main event-loop */
 void
 *_ccnl_event_loop(void *arg)
 {
     msg_init_queue(_msg_queue, CCNL_QUEUE_SIZE);
+    evtimer_init_msg(&ccnl_evtimer);
     struct ccnl_relay_s *ccnl = (struct ccnl_relay_s*) arg;
+    struct ccnl_interest_s *ccnl_int;
 
     /* start periodic timer */
     xtimer_set_msg(&_ageing_timer, US_PER_SEC, &_ageing_reset, sched_active_pid);
@@ -463,6 +477,10 @@ void
                 ccnl_do_ageing(arg, NULL);
                 xtimer_remove(&_ageing_timer);
                 xtimer_set_msg(&_ageing_timer, US_PER_SEC, &reply, sched_active_pid);
+                break;
+            case CCNL_MSG_INT_RETRANS:
+                ccnl_int = (struct ccnl_interest_s *)m.content.ptr;
+                ccnl_interest_retransmit(ccnl, ccnl_int);
                 break;
             default:
                 DEBUGMSG(WARNING, "ccn-lite: unknown message type\n");

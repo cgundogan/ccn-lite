@@ -34,6 +34,11 @@
 #include <ccnl-logging.h>
 #endif
 
+#ifdef CCNL_RIOT
+extern kernel_pid_t _ccnl_event_loop_pid;
+#include "ccn-lite-riot.h"
+#endif
+
 //FIXME: RELEAY FUNCTION MUST BE RENAMED!
 
 /*struct ccnl_interest_s*
@@ -111,7 +116,12 @@ ccnl_interest_append_pending(struct ccnl_interest_s *i,  struct ccnl_face_s *fro
         DEBUGMSG_CORE(DEBUG, "  no mem\n");
         return -1;
     }
-
+#ifdef CCNL_RIOT
+    puts("ccnl_interest_append_pending evtimer msg");
+    ccnl_int_retrans_msg_evt.msg.content.ptr = i;
+    ((evtimer_event_t *)&ccnl_int_retrans_msg_evt)->offset = MS_PER_SEC;
+    evtimer_add_msg(&ccnl_evtimer, &ccnl_int_retrans_msg_evt, _ccnl_event_loop_pid);
+#endif
     DEBUGMSG_CORE(DEBUG, "  appending a new pendint entry %p <%s>(%p)\n",
                   (void *) pi, ccnl_prefix_to_str(i->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE),
                   (void *) i->pkt->pfx);

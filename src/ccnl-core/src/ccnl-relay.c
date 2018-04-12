@@ -31,7 +31,9 @@
 #else //CCNL_LINUXKERNEL
 #include <ccnl-core.h>
 #endif //CCNL_LINUXKERNEL
-
+#ifdef CCNL_RIOT
+#include "ccn-lite-riot.h"
+#endif
 
 
 
@@ -782,8 +784,9 @@ ccnl_do_ageing(void *ptr, void *dummy)
 #endif
     while (i) { // CONFORM: "Entries in the PIT MUST timeout rather
                 // than being held indefinitely."
-        if ((i->last_used + i->lifetime) <= (uint32_t) t ||
-                                i->retries >= CCNL_MAX_INTEREST_RETRANSMIT) {
+        if ((i->last_used + i->lifetime) <= (uint32_t) t
+            //|| i->retries >= CCNL_MAX_INTEREST_RETRANSMIT
+            ) {
 #ifdef USE_NFN_REQUESTS
                 if (!ccnl_nfnprefix_isNFN(i->pkt->pfx)) {
                     DEBUGMSG_AGEING("AGING: REMOVE CCN INTEREST", "timeout: remove interest", s, CCNL_MAX_PREFIX_SIZE);
@@ -816,10 +819,13 @@ ccnl_do_ageing(void *ptr, void *dummy)
 #ifdef USE_NFN
                 i = ccnl_nfn_interest_remove(relay, i);
 #else
+                evtimer_del((evtimer_t *)(&ccnl_evtimer), (evtimer_event_t *)&ccnl_int_retrans_msg_evt);
                 i = ccnl_interest_remove(relay, i);
 #endif
 #endif
-        } else {
+        }
+        else {
+#if 0
             // CONFORM: "A node MUST retransmit Interest Messages
             // periodically for pending PIT entries."
             DEBUGMSG_CORE(DEBUG, " retransmit %d <%s>\n", i->retries,
@@ -834,6 +840,7 @@ ccnl_do_ageing(void *ptr, void *dummy)
 #endif
 
             i->retries++;
+#endif
             i = i->next;
         }
     }
