@@ -25,7 +25,9 @@
 
 #include "ccnl-pkt.h"
 #include "ccnl-face.h"
-
+#ifdef CCNL_RIOT
+#include "evtimer_msg.h"
+#endif
 
 struct ccnl_pendint_s { // pending interest
     struct ccnl_pendint_s *next; // , *prev;
@@ -48,6 +50,10 @@ struct ccnl_interest_s {
     struct ccnl_interest_s *keepalive; // the keepalive interest dispatched for this interest
     struct ccnl_interest_s *keepalive_origin; // the interest that dispatched this keepalive interest 
 #endif
+#ifdef CCNL_RIOT
+    evtimer_msg_event_t retrans_timer;
+#endif
+
 };
 
 //struct ccnl_interest_s*
