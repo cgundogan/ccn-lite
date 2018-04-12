@@ -87,7 +87,6 @@ static int _ccnl_suite = CCNL_SUITE_NDNTLV;
 kernel_pid_t _ccnl_event_loop_pid = KERNEL_PID_UNDEF;
 
 evtimer_msg_t ccnl_evtimer;
-evtimer_msg_event_t ccnl_int_retrans_msg_evt = { .msg.type = CCNL_MSG_INT_RETRANS };
 
 /**
  * @}
@@ -423,8 +422,10 @@ ccnl_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccn
         ccnl_interest_remove(relay, ccnl_int);
         return;
     }
-    ((evtimer_event_t *)&ccnl_int_retrans_msg_evt)->offset = MS_PER_SEC;
-    evtimer_add_msg(&ccnl_evtimer, &ccnl_int_retrans_msg_evt, sched_active_pid);
+    ccnl_int->retrans_timer.msg.type = CCNL_MSG_INT_RETRANS;
+    ccnl_int->retrans_timer.msg.content.ptr = ccnl_int;
+    ((evtimer_event_t *)&ccnl_int->retrans_timer)->offset = MS_PER_SEC;
+    evtimer_add_msg(&ccnl_evtimer, &ccnl_int->retrans_timer, sched_active_pid);
     ccnl_int->retries++;
     ccnl_interest_propagate(relay, ccnl_int);
 }
