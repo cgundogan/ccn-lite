@@ -77,6 +77,11 @@ static ccnl_cache_strategy_func _cs_remove_func = NULL;
  */
 static int _ccnl_suite = CCNL_SUITE_NDNTLV;
 
+kernel_pid_t _ccnl_event_loop_pid = KERNEL_PID_UNDEF;
+
+evtimer_msg_t ccnl_evtimer;
+evtimer_msg_event_t ccnl_int_retrans_msg_evt = { .msg.type = CCNL_MSG_INT_RETRANS };
+
 /**
  * @}
  */
@@ -383,6 +388,7 @@ void
     msg_init_queue(_msg_queue, CCNL_QUEUE_SIZE);
     evtimer_init_msg(&ccnl_evtimer);
     struct ccnl_relay_s *ccnl = (struct ccnl_relay_s*) arg;
+    struct ccnl_interest_s *ccnl_int;
 
     while(!ccnl->halt_flag) {
         msg_t m, reply, mr;
@@ -456,6 +462,10 @@ void
                     !(face->flags & CCNL_FACE_FLAGS_STATIC)) {
                     ccnl_face_remove(ccnl, face);
                 }
+                break;
+            case CCNL_MSG_INT_RETRANS:
+                ccnl_int = (struct ccnl_interest_s *)m.content.ptr;
+                ccnl_interest_retransmit(ccnl, ccnl_int);
                 break;
             default:
                 DEBUGMSG(WARNING, "ccn-lite: unknown message type\n");
