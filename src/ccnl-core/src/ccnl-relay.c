@@ -355,6 +355,9 @@ ccnl_interest_remove(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
         return i->next;
 #endif
 */
+#ifdef CCNL_RIOT
+    evtimer_del((evtimer_t *)(&ccnl_evtimer), (evtimer_event_t *)&ccnl_int_retrans_msg_evt);
+#endif
     while (i->pending) {
         struct ccnl_pendint_s *tmp = i->pending->next;          \
         ccnl_free(i->pending);
@@ -819,7 +822,6 @@ ccnl_do_ageing(void *ptr, void *dummy)
 #ifdef USE_NFN
                 i = ccnl_nfn_interest_remove(relay, i);
 #else
-                evtimer_del((evtimer_t *)(&ccnl_evtimer), (evtimer_event_t *)&ccnl_int_retrans_msg_evt);
                 i = ccnl_interest_remove(relay, i);
 #endif
 #endif
