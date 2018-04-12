@@ -116,7 +116,6 @@ ccnl_interest_append_pending(struct ccnl_interest_s *i,  struct ccnl_face_s *fro
         return -1;
     }
 #ifdef CCNL_RIOT
-    puts("ccnl_interest_append_pending evtimer msg");
     ccnl_int_retrans_msg_evt.msg.content.ptr = i;
     ((evtimer_event_t *)&ccnl_int_retrans_msg_evt)->offset = MS_PER_SEC;
     evtimer_add_msg(&ccnl_evtimer, &ccnl_int_retrans_msg_evt, _ccnl_event_loop_pid);
