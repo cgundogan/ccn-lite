@@ -80,7 +80,6 @@ static int _ccnl_suite = CCNL_SUITE_NDNTLV;
 kernel_pid_t _ccnl_event_loop_pid = KERNEL_PID_UNDEF;
 
 evtimer_msg_t ccnl_evtimer;
-evtimer_msg_event_t ccnl_int_retrans_msg_evt = { .msg.type = CCNL_MSG_INT_RETRANS };
 
 /**
  * @}
