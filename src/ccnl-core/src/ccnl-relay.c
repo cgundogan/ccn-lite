@@ -356,7 +356,7 @@ ccnl_interest_remove(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
 #endif
 */
 #ifdef CCNL_RIOT
-    evtimer_del((evtimer_t *)(&ccnl_evtimer), (evtimer_event_t *)&ccnl_int_retrans_msg_evt);
+    evtimer_del((evtimer_t *)(&ccnl_evtimer), (evtimer_event_t *)&i->retrans_timer);
 #endif
     while (i->pending) {
         struct ccnl_pendint_s *tmp = i->pending->next;          \
