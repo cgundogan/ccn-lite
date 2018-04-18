@@ -555,6 +555,7 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
 {
     int ret = 0;
     int len = 0;
+    gnrc_pktsnip_t *gpkt;
     ccnl_interest_opts_u default_opts;
     default_opts.ndntlv.nonce = 0;
     default_opts.ndntlv.mustbefresh = false;
