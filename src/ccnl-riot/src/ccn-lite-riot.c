@@ -467,9 +467,7 @@ void
                 else {
                     struct ccnl_pkt_s *p = (struct ccnl_pkt_s *) pkt->data;
                     ccnl_fwd_handleInterest(ccnl, loopback_face, &p, ccnl_ndntlv_cMatch);
-                    ccnl_pkt_free(p);
-
-                }
+:               }
                 gnrc_pktbuf_release(pkt);
                 break;
 
