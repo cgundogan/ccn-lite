@@ -139,6 +139,8 @@ ccnl_ndntlv_bytes2pkt(unsigned int pkttype, unsigned char *start,
 
     /* set default lifetime, in case InterestLifetime guider is absent */
     pkt->s.ndntlv.interestlifetime = CCNL_INTEREST_TIMEOUT;
+    /* set freshness period, in case FreshnessPeriod meta info is absent */
+    pkt->s.ndntlv.freshnessperiod = CCNL_DATA_FRESHNESS_PERIOD;
 
     oldpos = *data - start;
     while (ccnl_ndntlv_dehead(data, datalen, (int*) &typ, &len) == 0) {
