@@ -465,8 +465,10 @@ void
                     DEBUGMSG(WARNING, "ccn-lite: wrong nettype\n");
                 }
                 else {
-                    ccnl_interest_t *i = (ccnl_interest_t*) pkt->data;
-                    ccnl_send_interest(i->prefix, i->buf, i->buflen, NULL, NULL);
+                    struct ccnl_pkt_s *p = (struct ccnl_pkt_s *) pkt->data;
+                    ccnl_fwd_handleInterest(ccnl, loopback_face, &p, ccnl_ndntlv_cMatch);
+                    ccnl_pkt_free(p);
+
                 }
                 gnrc_pktbuf_release(pkt);
                 break;
@@ -630,11 +632,17 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
 
     pkt->to = to;
 
-    ret = ccnl_fwd_handleInterest(&ccnl_relay, loopback_face, &pkt, ccnl_ndntlv_cMatch);
+    if ((pkt = gnrc_pktbuf_add(NULL, NULL, sizeof(struct ccnl_pkt_s *), GNRC_NETTYPE_CCN)) == NULL) {
+        puts("ccn-lite-riot: pktbuf full");
+        return -1;
+    }
 
-    ccnl_pkt_free(pkt);
+    if (!gnrc_netapi_dispatch_send(GNRC_NETTYPE_CCN, GNRC_NETREG_DEMUX_CTX_ALL, pkt)) {
+        puts("ccn-lite-riot: no subscribers");
+        gnrc_pktbuf_release(pkt);
+    }
 
-    return ret;
+    return 0;
 }
 
 void
