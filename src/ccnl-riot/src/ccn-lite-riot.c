@@ -574,6 +574,7 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
 {
     int ret = -1;
     int len = 0;
+    gnrc_pktsnip_t *gpkt;
     ccnl_interest_opts_u default_opts;
     default_opts.ndntlv.nonce = 0;
     default_opts.ndntlv.mustbefresh = false;
@@ -623,14 +624,14 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
 
     pkt->to = to;
 
-    if ((pkt = gnrc_pktbuf_add(NULL, NULL, sizeof(struct ccnl_pkt_s *), GNRC_NETTYPE_CCN)) == NULL) {
+    if ((gpkt = gnrc_pktbuf_add(NULL, NULL, sizeof(struct ccnl_pkt_s *), GNRC_NETTYPE_CCN)) == NULL) {
         puts("ccn-lite-riot: pktbuf full");
         return -1;
     }
 
-    if (!gnrc_netapi_dispatch_send(GNRC_NETTYPE_CCN, GNRC_NETREG_DEMUX_CTX_ALL, pkt)) {
+    if (!gnrc_netapi_dispatch_send(GNRC_NETTYPE_CCN, GNRC_NETREG_DEMUX_CTX_ALL, gpkt)) {
         puts("ccn-lite-riot: no subscribers");
-        gnrc_pktbuf_release(pkt);
+        gnrc_pktbuf_release(gpkt);
     }
 
     return 0;
