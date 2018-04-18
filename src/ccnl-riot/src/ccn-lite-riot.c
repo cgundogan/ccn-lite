@@ -629,7 +629,7 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
 
     gpkt->data = (void *) pkt;
 
-    if (!gnrc_netapi_send(_ccnl_event_loop_pid, gpkt)) {
+    if (gnrc_netapi_send(_ccnl_event_loop_pid, gpkt) < 1) {
         gnrc_pktbuf_release(gpkt);
     }
 
