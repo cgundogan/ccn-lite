@@ -613,7 +613,7 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
         DEBUGMSG(WARNING, "could not send Interest: %i\n", ret);
     }
 
-    return ret;
+    return 0;
 }
 
 void
