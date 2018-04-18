@@ -765,7 +765,6 @@ ccnl_do_ageing(void *ptr, void *dummy)
     char s[CCNL_MAX_PREFIX_SIZE];
     (void) s;
 
-#if 0
     struct ccnl_content_s *c = relay->contents;
     while (c) {
         if ((c->last_used + CCNL_CONTENT_TIMEOUT) <= (uint32_t) t &&
@@ -784,7 +783,6 @@ ccnl_do_ageing(void *ptr, void *dummy)
             c = c->next;
         }
     }
-#endif
     while (i) { // CONFORM: "Entries in the PIT MUST timeout rather
                 // than being held indefinitely."
         if ((i->last_used + i->lifetime) <= (uint32_t) t
