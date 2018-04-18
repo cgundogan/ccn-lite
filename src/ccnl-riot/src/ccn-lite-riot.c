@@ -631,8 +631,7 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
 
     gpkt->data = (void *) pkt;
 
-    if (!gnrc_netapi_dispatch_send(GNRC_NETTYPE_CCN, GNRC_NETREG_DEMUX_CTX_ALL, gpkt)) {
-        puts("ccn-lite-riot: no subscribers");
+    if (!gnrc_netapi_send(_ccnl_event_loop_pid, gpkt)) {
         gnrc_pktbuf_release(gpkt);
     }
 
