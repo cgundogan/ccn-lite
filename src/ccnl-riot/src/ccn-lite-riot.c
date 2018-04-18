@@ -624,10 +624,12 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
 
     pkt->to = to;
 
-    if ((gpkt = gnrc_pktbuf_add(NULL, pkt, sizeof(struct ccnl_pkt_s *), GNRC_NETTYPE_CCN)) == NULL) {
+    if ((gpkt = gnrc_pktbuf_add(NULL, NULL, sizeof(struct ccnl_pkt_s *), GNRC_NETTYPE_CCN)) == NULL) {
         puts("ccn-lite-riot: pktbuf full");
         return -1;
     }
+
+    gpkt->data = (void *) pkt;
 
     if (!gnrc_netapi_dispatch_send(GNRC_NETTYPE_CCN, GNRC_NETREG_DEMUX_CTX_ALL, gpkt)) {
         puts("ccn-lite-riot: no subscribers");
