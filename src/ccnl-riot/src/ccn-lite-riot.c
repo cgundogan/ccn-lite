@@ -388,6 +388,7 @@ void
     evtimer_init_msg(&ccnl_evtimer);
     struct ccnl_relay_s *ccnl = (struct ccnl_relay_s*) arg;
     struct ccnl_interest_s *ccnl_int;
+    struct ccnl_pkt_s *pkt;
 
     while(!ccnl->halt_flag) {
         msg_t m, reply, mr;
@@ -555,7 +556,6 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
 {
     int ret = 0;
     int len = 0;
-    gnrc_pktsnip_t *gpkt;
     ccnl_interest_opts_u default_opts;
     default_opts.ndntlv.nonce = 0;
     default_opts.ndntlv.mustbefresh = false;
