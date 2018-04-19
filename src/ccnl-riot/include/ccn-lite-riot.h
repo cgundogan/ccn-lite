@@ -99,6 +99,12 @@ typedef struct {
 
 #define CCNL_MSG_INT_RETRANS    (0x1703)
 
+#define CCNL_MSG_ADD_CS         (0x1704)
+
+#define CCNL_MSG_DEL_CS         (0x1705)
+
+#define CCNL_MSG_IN_CS          (0x1706)
+
 /**
  * Maximum number of elements that can be cached
  */
