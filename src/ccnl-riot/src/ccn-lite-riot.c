@@ -389,6 +389,8 @@ void
     struct ccnl_relay_s *ccnl = (struct ccnl_relay_s*) arg;
     struct ccnl_interest_s *ccnl_int;
     struct ccnl_pkt_s *pkt;
+    struct ccnl_content_s *ccnl_cont;
+    char *prefix;
 
     while(!ccnl->halt_flag) {
         msg_t m, reply, mr;
@@ -462,10 +464,6 @@ void
                     !(face->flags & CCNL_FACE_FLAGS_STATIC)) {
                     ccnl_face_remove(ccnl, face);
                 }
-                break;
-            case CCNL_MSG_INT_RETRANS:
-                ccnl_int = (struct ccnl_interest_s *)m.content.ptr;
-                ccnl_interest_retransmit(ccnl, ccnl_int);
                 break;
             default:
                 DEBUGMSG(WARNING, "ccn-lite: unknown message type\n");
