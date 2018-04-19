@@ -442,6 +442,7 @@ void
     evtimer_init_msg(&ccnl_evtimer);
     struct ccnl_relay_s *ccnl = (struct ccnl_relay_s*) arg;
     struct ccnl_interest_s *ccnl_int;
+    struct ccnl_pkt_s *pkt;
 
     /* start periodic timer */
     xtimer_set_msg(&_ageing_timer, US_PER_SEC, &_ageing_reset, sched_active_pid);
@@ -460,15 +461,8 @@ void
 
             case GNRC_NETAPI_MSG_TYPE_SND:
                 DEBUGMSG(DEBUG, "ccn-lite: GNRC_NETAPI_MSG_TYPE_SND received\n");
-                gnrc_pktsnip_t *pkt = (gnrc_pktsnip_t*) m.content.ptr;
-                if (pkt->type != GNRC_NETTYPE_CCN) {
-                    DEBUGMSG(WARNING, "ccn-lite: wrong nettype\n");
-                }
-                else {
-                    struct ccnl_pkt_s *p = (struct ccnl_pkt_s *) pkt->data;
-                    ccnl_fwd_handleInterest(ccnl, loopback_face, &p, ccnl_ndntlv_cMatch);
-                }
-                gnrc_pktbuf_release(pkt);
+                pkt = (struct ccnl_pkt_s *) m.content.ptr;
+                ccnl_fwd_handleInterest(ccnl, loopback_face, &pkt, ccnl_ndntlv_cMatch);
                 break;
 
             case GNRC_NETAPI_MSG_TYPE_GET:
@@ -581,7 +575,6 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
 {
     int ret = -1;
     int len = 0;
-    gnrc_pktsnip_t *gpkt;
     ccnl_interest_opts_u default_opts;
     default_opts.ndntlv.nonce = 0;
     default_opts.ndntlv.mustbefresh = false;
@@ -631,16 +624,8 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
 
     pkt->to = to;
 
-    if ((gpkt = gnrc_pktbuf_add(NULL, NULL, sizeof(struct ccnl_pkt_s *), GNRC_NETTYPE_CCN)) == NULL) {
-        puts("ccn-lite-riot: pktbuf full");
-        return -1;
-    }
-
-    gpkt->data = (void *) pkt;
-
-    if (gnrc_netapi_send(_ccnl_event_loop_pid, gpkt) < 1) {
-        gnrc_pktbuf_release(gpkt);
-    }
+    msg_t m = { .type = GNRC_NETAPI_MSG_TYPE_SND, .content.ptr = pkt };
+    msg_send(&m, _ccnl_event_loop_pid);
 
     return 0;
 }
