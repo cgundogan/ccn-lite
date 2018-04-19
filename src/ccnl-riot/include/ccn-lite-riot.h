@@ -103,6 +103,12 @@ extern kernel_pid_t ccnl_event_loop_pid;
 
 #define CCNL_MSG_INT_RETRANS    (0x1703)
 
+#define CCNL_MSG_ADD_CS         (0x1704)
+
+#define CCNL_MSG_DEL_CS         (0x1705)
+
+#define CCNL_MSG_IN_CS          (0x1706)
+
 /**
  * Message type for adding content store entries
  */

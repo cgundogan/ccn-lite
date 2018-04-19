@@ -443,6 +443,8 @@ void
     struct ccnl_relay_s *ccnl = (struct ccnl_relay_s*) arg;
     struct ccnl_interest_s *ccnl_int;
     struct ccnl_pkt_s *pkt;
+    struct ccnl_content_s *ccnl_cont;
+    char *prefix;
 
     /* start periodic timer */
     xtimer_set_msg(&_ageing_timer, US_PER_SEC, &_ageing_reset, sched_active_pid);
@@ -475,6 +477,7 @@ void
                 DEBUGMSG(VERBOSE, "ccn-lite: ageing timer\n");
                 ccnl_do_ageing(arg, NULL);
                 xtimer_remove(&_ageing_timer);
+                reply.type = CCNL_MSG_AGEING;
                 xtimer_set_msg(&_ageing_timer, US_PER_SEC, &reply, sched_active_pid);
                 break;
             case CCNL_MSG_CS_ADD:
@@ -485,6 +488,51 @@ void
             case CCNL_MSG_INT_RETRANS:
                 ccnl_int = (struct ccnl_interest_s *)m.content.ptr;
                 ccnl_interest_retransmit(ccnl, ccnl_int);
+                break;
+            case CCNL_MSG_ADD_CS:
+                ccnl_cont = (struct ccnl_content_s *)m.content.ptr;
+                reply.type = CCNL_MSG_ADD_CS;
+                reply.content.value = 0;
+                // TODO make contentn flags/opts configurable?!
+                if (ccnl_content_add2cache(ccnl, ccnl_cont)) {
+                    reply.content.value = 1;
+                    msg_reply(&m, &reply);
+                }
+                else {
+                    reply.content.value = 0;
+                    msg_reply(&m, &reply);
+                }
+                break;
+            case CCNL_MSG_DEL_CS:
+                prefix = (char *)m.content.ptr;
+                reply.type = CCNL_MSG_DEL_CS;
+                reply.content.value = 0;
+                for (struct ccnl_content_s *c = ccnl->contents; c; c = c->next) {
+                    char *spref = ccnl_prefix_to_path(c->pkt->pfx);
+                    if (memcmp(prefix, spref, strlen(spref)) == 0) {
+                        ccnl_free(spref);
+                        ccnl_content_remove(ccnl, c);
+                        reply.content.value = 1;
+                        break;
+                    }
+                    ccnl_free(spref);
+                }
+                msg_reply(&m, &reply);
+                break;
+            case CCNL_MSG_IN_CS:
+                prefix = (char *)m.content.ptr;
+                reply.type = CCNL_MSG_IN_CS;
+                reply.content.value = 0;
+                for (struct ccnl_content_s *c = ccnl->contents; c; c = c->next) {
+                    char *spref = ccnl_prefix_to_path(c->pkt->pfx);
+                    if (memcmp(prefix, spref, strlen(spref)) == 0) {
+                        ccnl_free(spref);
+                        reply.content.value = 1;
+                        break;
+                    }
+                    ccnl_free(spref);
+                }
+                msg_reply(&m, &reply);
                 break;
             default:
                 DEBUGMSG(WARNING, "ccn-lite: unknown message type\n");
