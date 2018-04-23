@@ -72,6 +72,10 @@ extern "C" {
 #define CCNL_QUEUE_SIZE     (8)
 #endif
 
+#ifndef CCNL_MAX_INTEREST_RETRANSMIT
+#define CCNL_MAX_INTEREST_RETRANSMIT MS_PER_SEC
+#endif
+
 /**
  * @brief Data structure for interest packet
  */
