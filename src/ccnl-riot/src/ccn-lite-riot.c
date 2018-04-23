@@ -424,7 +424,7 @@ ccnl_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccn
     }
     ccnl_int->retrans_timer.msg.type = CCNL_MSG_INT_RETRANS;
     ccnl_int->retrans_timer.msg.content.ptr = ccnl_int;
-    ((evtimer_event_t *)&ccnl_int->retrans_timer)->offset = MS_PER_SEC;
+    ((evtimer_event_t *)&ccnl_int->retrans_timer)->offset = CCNL_INTEREST_RETRANS_TIMEOUT;
     evtimer_add_msg(&ccnl_evtimer, &ccnl_int->retrans_timer, sched_active_pid);
     ccnl_int->retries++;
     ccnl_interest_propagate(relay, ccnl_int);
