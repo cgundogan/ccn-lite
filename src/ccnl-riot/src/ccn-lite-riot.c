@@ -45,6 +45,10 @@
 #include "ccnl-producer.h"
 #include "ccnl-pkt-builder.h"
 
+#ifdef MODULE_PKTCNT_FAST
+#include "pktcnt.h"
+#endif
+
 int callback_content_add(struct ccnl_relay_s *relay, struct ccnl_pkt_s *p);
 
 /**
@@ -369,6 +373,9 @@ ccnl_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccn
     ccnl_int->evtmsg_retrans.msg.content.ptr = ccnl_int;
     ((evtimer_event_t *)&ccnl_int->evtmsg_retrans)->offset = CCNL_INTEREST_RETRANS_TIMEOUT;
     evtimer_add_msg(&ccnl_evtimer, &ccnl_int->evtmsg_retrans, ccnl_event_loop_pid);
+#ifdef MODULE_PKTCNT_FAST
+    retransmissions++;
+#endif
     ccnl_int->retries++;
     ccnl_interest_propagate(relay, ccnl_int);
 }
