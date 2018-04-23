@@ -36,6 +36,9 @@
 #endif
 
 
+#ifdef MODULE_PKTCNT_FAST
+#include "pktcnt.h"
+#endif
 
 struct ccnl_face_s*
 ccnl_get_face_or_create(struct ccnl_relay_s *ccnl, int ifndx,
@@ -441,6 +444,9 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
             if (fwd->tap)
                 (fwd->tap)(ccnl, i->from, i->pkt->pfx, i->pkt->buf);
             if (fwd->face)
+#ifdef MODULE_PKTCNT_FAST
+                tx_interest++;
+#endif
                 ccnl_send_pkt(ccnl, fwd->face, i->pkt);
 #if defined(USE_NACK) || defined(USE_RONR)
             matching_face = 1;
@@ -716,6 +722,9 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 #ifdef USE_NFN_MONITOR
                 ccnl_nfn_monitor(ccnl, pi->face, c->pkt->pfx,
                                  c->pkt->content, c->pkt->contlen);
+#endif
+#ifdef MODULE_PKTCNT_FAST
+                tx_data++;
 #endif
 
                 ccnl_send_pkt(ccnl, pi->face, c->pkt);

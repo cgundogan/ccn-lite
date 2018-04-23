@@ -45,6 +45,9 @@
 #include <ccnl-pkt-switch.h>
 #endif
 
+#ifdef MODULE_PKTCNT_FAST
+#include "pktcnt.h"
+#endif
 //#include "ccnl-logging.h"
 
 
@@ -366,6 +369,9 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
                 continue;
             }
 
+#ifdef MODULE_PKTCNT_FAST
+                tx_data++;
+#endif
             ccnl_send_pkt(relay, from, c->pkt);
 #ifdef USE_NFN_REQUESTS
             c->pkt = cpkt;
@@ -658,10 +664,16 @@ ccnl_ndntlv_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     pkt->type = typ;
     switch (typ) {
     case NDN_TLV_Interest:
+#ifdef MODULE_PKTCNT_FAST
+            rx_interest++;
+#endif
         if (ccnl_fwd_handleInterest(relay, from, &pkt, ccnl_ndntlv_cMatch))
             goto Done;
         break;
     case NDN_TLV_Data:
+#ifdef MODULE_PKTCNT_FAST
+            rx_data++;
+#endif
         if (ccnl_fwd_handleContent(relay, from, &pkt))
             goto Done;
         break;
