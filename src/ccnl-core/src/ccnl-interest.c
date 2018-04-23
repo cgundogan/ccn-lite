@@ -118,7 +118,7 @@ ccnl_interest_append_pending(struct ccnl_interest_s *i,  struct ccnl_face_s *fro
 #ifdef CCNL_RIOT
     i->retrans_timer.msg.type = CCNL_MSG_INT_RETRANS;
     i->retrans_timer.msg.content.ptr = i;
-    ((evtimer_event_t *)&i->retrans_timer)->offset = MS_PER_SEC;
+    ((evtimer_event_t *)&i->retrans_timer)->offset = CCNL_INTEREST_RETRANS_TIMEOUT;
     evtimer_add_msg(&ccnl_evtimer, &i->retrans_timer, _ccnl_event_loop_pid);
 #endif
     DEBUGMSG_CORE(DEBUG, "  appending a new pendint entry %p <%s>(%p)\n",
