@@ -509,6 +509,8 @@ void
                 break;
             case CCNL_MSG_ADD_CS:
                 ccnl_cont = (struct ccnl_content_s *)m.content.ptr;
+                ccnl_content_add2cache(ccnl, ccnl_cont);
+#if 0
                 reply.type = CCNL_MSG_ADD_CS;
                 reply.content.value = 0;
                 // TODO make contentn flags/opts configurable?!
@@ -520,6 +522,7 @@ void
                     reply.content.value = 0;
                     msg_reply(&m, &reply);
                 }
+#endif
                 break;
             case CCNL_MSG_DEL_CS:
                 prefix = (char *)m.content.ptr;
