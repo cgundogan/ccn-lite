@@ -47,7 +47,7 @@
 
 #ifdef MODULE_PKTCNT_FAST
 #include "pktcnt.h"
-extern int i_am_root;
+extern bool i_am_root;
 #endif
 
 int callback_content_add(struct ccnl_relay_s *relay, struct ccnl_pkt_s *p);
@@ -362,7 +362,7 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
     if(i_am_root) {
         static char s[CCNL_MAX_PREFIX_SIZE];
         uint64_t now = xtimer_now_usec64();
-        printf("RECV;%s;%lu.%06lu\n", ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE),
+        printf("RECV;%s;%lu%06lu\n", ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE),
             (unsigned long)div_u64_by_1000000(now),
             (unsigned long)now % US_PER_SEC);
     }
