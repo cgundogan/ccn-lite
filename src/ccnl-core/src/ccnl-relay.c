@@ -399,6 +399,9 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
     // CCNL strategy: we forward on all FWD entries with a prefix match
 
     if (i->pkt->to) {
+#ifdef MODULE_PKTCNT_FAST
+        tx_interest++;
+#endif
         ccnl_send_pkt(ccnl, i->pkt->to, i->pkt);
         return;
     }
