@@ -38,6 +38,10 @@
 #include "pktcnt.h"
 #endif
 
+#ifdef CCNL_PITSTATS
+extern int pit_counter;
+#endif
+
 struct ccnl_face_s*
 ccnl_get_face_or_create(struct ccnl_relay_s *ccnl, int ifndx,
                        struct sockaddr *sa, int addrlen)
@@ -371,6 +375,9 @@ ccnl_interest_remove(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
     }
     i2 = i->next;
     DBL_LINKED_LIST_REMOVE(ccnl->pit, i);
+    #ifdef CCNL_PITSTATS
+        printf("PITremove3: %i\n", pit_counter--);
+    #endif
 
     if(i->pkt){
         ccnl_pkt_free(i->pkt);
