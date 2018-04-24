@@ -294,6 +294,7 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
 }
 
 /* packets delivered to the application */
+extern int i_am_root;
 int
 ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 {
@@ -307,6 +308,12 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         DEBUGMSG(WARNING, "Something went wrong allocating buffer for the chunk!\n");
         return -1;
     }
+
+#ifdef MODULE_PKTCNT_FAST
+    if(i_am_root) {
+        printf("RECV: %.*s\n", pkt->size, (char*)pkt->data);
+    }
+#endif
 
     if (!gnrc_netapi_dispatch_receive(GNRC_NETTYPE_CCN_CHUNK,
                                       GNRC_NETREG_DEMUX_CTX_ALL, pkt)) {
