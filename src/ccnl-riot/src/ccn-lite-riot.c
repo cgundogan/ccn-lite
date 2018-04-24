@@ -45,6 +45,10 @@
 #include "ccnl-producer.h"
 #include "ccnl-pkt-builder.h"
 
+#ifdef MODULE_PKTCNT_FAST
+#include "pktcnt.h"
+#endif
+
 int callback_content_add(struct ccnl_relay_s *relay, struct ccnl_pkt_s *p);
 
 /**
@@ -339,6 +343,7 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
 }
 
 /* packets delivered to the application */
+extern int i_am_root;
 int
 ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 {
@@ -352,6 +357,12 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         DEBUGMSG(WARNING, "Something went wrong allocating buffer for the chunk!\n");
         return -1;
     }
+
+#ifdef MODULE_PKTCNT_FAST
+    if(i_am_root) {
+        printf("RECV: %.*s\n", pkt->size, (char*)pkt->data);
+    }
+#endif
 
     if (!gnrc_netapi_dispatch_receive(GNRC_NETTYPE_CCN_CHUNK,
                                       GNRC_NETREG_DEMUX_CTX_ALL, pkt)) {
@@ -422,6 +433,9 @@ ccnl_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccn
         ccnl_interest_remove(relay, ccnl_int);
         return;
     }
+#ifdef MODULE_PKTCNT_FAST
+    retransmissions++;
+#endif
     ccnl_int->retrans_timer.msg.type = CCNL_MSG_INT_RETRANS;
     ccnl_int->retrans_timer.msg.content.ptr = ccnl_int;
     ((evtimer_event_t *)&ccnl_int->retrans_timer)->offset = CCNL_INTEREST_RETRANS_TIMEOUT;
