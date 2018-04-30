@@ -49,6 +49,7 @@
 #include "pktcnt.h"
 extern bool i_am_root;
 #endif
+extern bool hopp_active;
 
 int callback_content_add(struct ccnl_relay_s *relay, struct ccnl_pkt_s *p);
 
@@ -344,6 +345,12 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
     }
     (void) rc; /* just to silence a compiler warning (if USE_DEBUG is not set) */
 }
+#ifdef NDN_CINNAMON
+extern unsigned nodeid_cont_cnt[][3];
+extern uint8_t num_producer_nodes;
+extern int nodes_num;
+extern int finished_counter;
+#endif
 
 /* packets delivered to the application */
 int
@@ -362,11 +369,39 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 
 #ifdef MODULE_PKTCNT_FAST
     if(i_am_root) {
-        static char s[CCNL_MAX_PREFIX_SIZE];
-        uint64_t now = xtimer_now_usec64();
-        printf("RECV;%s;%lu%06lu\n", ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE),
-            (unsigned long)div_u64_by_1000000(now),
-            (unsigned long)now % US_PER_SEC);
+        if(!hopp_active) {
+            static char s[CCNL_MAX_PREFIX_SIZE];
+            uint64_t now = xtimer_now_usec64();
+            printf("RECV;%s;%lu%06lu\n", ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE),
+                (unsigned long)div_u64_by_1000000(now),
+                (unsigned long)now % US_PER_SEC);
+#ifdef NDN_CINNAMON
+            char testbuf[5];
+            memcpy(testbuf, c->pkt->pfx->comp[1], c->pkt->pfx->complen[1]);
+            testbuf[c->pkt->pfx->complen[1]] = '\0';
+            unsigned sender_id=atoi(testbuf);
+            //printf("sender_id string: %s\n", testbuf);
+            //printf("sender_id:%u\n", sender_id);
+
+            memset(testbuf, 0, 5);
+            memcpy(testbuf, c->pkt->pfx->comp[3], c->pkt->pfx->complen[3]);
+            testbuf[c->pkt->pfx->complen[3]] = '\0';
+            //unsigned cont_num=atoi(testbuf);
+            //printf("cont_num string: %s\n", testbuf);
+            //printf("cont_num: %u\n", cont_num);
+
+            for(unsigned i=0;i<(unsigned)num_producer_nodes;i++) {
+                if(sender_id == nodeid_cont_cnt[i][0]) {
+                    //inc so next content ID will be requested
+                    nodeid_cont_cnt[i][1]++;
+                    // set the "retransmisions" counter for that node ID to zero again
+                    nodeid_cont_cnt[i][2] = 0;
+                    finished_counter++;
+                    break;
+                }
+            }
+#endif
+        }
     }
 #endif
 
@@ -658,7 +693,7 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
     DEBUGMSG(INFO, "interest for chunk number: %u\n", (prefix->chunknum == NULL) ? 0 : *prefix->chunknum);
 
     if (!prefix) {
-        DEBUGMSG(ERROR, "prefix could not be created!\n");
+        printf("prefix could not be created!\n");
         return ret;
     }
 
@@ -686,20 +721,24 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
 
     /* TODO: support other suites */
     if (ccnl_ndntlv_dehead(&data, &len, (int*) &typ, &int_len) || (int) int_len > len) {
-        DEBUGMSG(WARNING, "  invalid packet format\n");
+        printf("  invalid packet format\n");
         return ret;
     }
 
     pkt = ccnl_ndntlv_bytes2pkt(NDN_TLV_Interest, start, &data, &len);
 
     if (!pkt) {
+        printf("ccnl_ndntlv_bytes2pkt FAILED\n");
         return ret;
     }
 
     pkt->to = to;
 
     msg_t m = { .type = GNRC_NETAPI_MSG_TYPE_SND, .content.ptr = pkt };
-    msg_send(&m, _ccnl_event_loop_pid);
+    ret = msg_send(&m, _ccnl_event_loop_pid);
+    if(ret  < 1){
+        printf("ccnl_send_interest problem: %i\n", ret);
+    }
 
     return 0;
 }
