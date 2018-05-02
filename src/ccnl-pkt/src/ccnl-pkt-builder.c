@@ -119,6 +119,8 @@ ccnl_isContent(unsigned char *buf, int len, int suite)
 int
 ccnl_isFragment(unsigned char *buf, int len, int suite)
 {
+    (void) buf;
+    (void) len;
     switch(suite) {
 #ifdef USE_SUITE_CCNTLV
     case CCNL_SUITE_CCNTLV:
