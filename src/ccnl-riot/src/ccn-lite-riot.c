@@ -270,7 +270,7 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
                                                                  GNRC_NETTYPE_CCN);
 
                             if (pkt == NULL) {
-                                printf("error: packet buffer full trying to allocate %d bytes\n", buf->datalen);
+                                //printf("error: packet buffer full trying to allocate %d bytes\n", buf->datalen);
                                 return;
                             }
 
@@ -297,7 +297,7 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
 
                             /* check if header building succeeded */
                             if (hdr == NULL) {
-                                puts("error: packet buffer full trying to allocate netif_hdr");
+                                //puts("error: packet buffer full trying to allocate netif_hdr");
                                 gnrc_pktbuf_release(pkt);
                                 return;
                             }
@@ -331,7 +331,7 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
                             /* actual sending */
                             DEBUGMSG(DEBUG, " try to pass to GNRC (%i): %p\n", (int) ifc->if_pid, (void*) pkt);
                             if (gnrc_netapi_send(ifc->if_pid, pkt) < 1) {
-                                puts("error: unable to send\n");
+                                //puts("error: unable to send\n");
                                 gnrc_pktbuf_release(pkt);
                                 return;
                             }
@@ -370,7 +370,7 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         if(!hopp_active) {
             static char s[CCNL_MAX_PREFIX_SIZE];
             uint64_t now = xtimer_now_usec64();
-            printf("RECV;%s;%lu%06lu\n", ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE),
+            //printf("RECV;%s;%lu%06lu\n", ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE),
                 (unsigned long)div_u64_by_1000000(now),
                 (unsigned long)now % US_PER_SEC);
 #ifdef NDN_CINNAMON
@@ -677,14 +677,14 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
     default_opts.ndntlv.interestlifetime = NDN_DEFAULT_INTEREST_LIFETIME;
 
     if (_ccnl_suite != CCNL_SUITE_NDNTLV) {
-        printf("Suite not supported by RIOT!\n");
+        //printf("Suite not supported by RIOT!\n");
         return ret;
     }
 
     DEBUGMSG(INFO, "interest for chunk number: %u\n", (prefix->chunknum == NULL) ? 0 : *prefix->chunknum);
 
     if (!prefix) {
-        printf("prefix could not be created!\n");
+        //printf("prefix could not be created!\n");
         return ret;
     }
 
@@ -712,14 +712,14 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
 
     /* TODO: support other suites */
     if (ccnl_ndntlv_dehead(&data, &len, (int*) &typ, &int_len) || (int) int_len > len) {
-        printf("  invalid packet format\n");
+        //printf("  invalid packet format\n");
         return ret;
     }
 
     pkt = ccnl_ndntlv_bytes2pkt(NDN_TLV_Interest, start, &data, &len);
 
     if (!pkt) {
-        printf("ccnl_ndntlv_bytes2pkt FAILED\n");
+        //printf("ccnl_ndntlv_bytes2pkt FAILED\n");
         return ret;
     }
 
@@ -728,7 +728,7 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
     msg_t m = { .type = GNRC_NETAPI_MSG_TYPE_SND, .content.ptr = pkt };
     ret = msg_send(&m, _ccnl_event_loop_pid);
     if(ret  < 1){
-        printf("ccnl_send_interest problem: %i\n", ret);
+        //printf("ccnl_send_interest problem: %i\n", ret);
     }
 
     return 0;

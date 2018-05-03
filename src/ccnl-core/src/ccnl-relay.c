@@ -373,7 +373,7 @@ ccnl_interest_remove(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
     i2 = i->next;
     DBL_LINKED_LIST_REMOVE(ccnl->pit, i);
 #ifdef CCNL_PITSTATS
-        printf("PITremove3: %i\n", --pit_counter);
+        //printf("PITremove3: %i\n", --pit_counter);
 #endif
 
     if(i->pkt){
@@ -1009,6 +1009,7 @@ ccnl_fib_rem_entry(struct ccnl_relay_s *relay, struct ccnl_prefix_s *pfx,
 #endif
 
 /* prints the current FIB */
+#if 0
 void
 ccnl_fib_show(struct ccnl_relay_s *relay)
 {
@@ -1039,6 +1040,7 @@ ccnl_fib_show(struct ccnl_relay_s *relay)
     }
 #endif
 }
+#endif
 
 void
 ccnl_cs_dump(struct ccnl_relay_s *ccnl)
