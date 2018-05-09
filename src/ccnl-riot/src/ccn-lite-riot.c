@@ -47,8 +47,8 @@
 
 #ifdef MODULE_PKTCNT_FAST
 #include "pktcnt.h"
-extern bool i_am_root;
 #endif
+extern bool i_am_root;
 extern bool hopp_active;
 
 int callback_content_add(struct ccnl_relay_s *relay, struct ccnl_pkt_s *p);
@@ -316,14 +316,16 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         return -1;
     }
 
-#ifdef MODULE_PKTCNT_FAST
+#if defined MODULE_PKTCNT_FAST || defined NDN_CINNAMON
     if(i_am_root) {
         if(!hopp_active) {
+#ifdef MODULE_PKTCNT_FAST
             static char s[CCNL_MAX_PREFIX_SIZE];
             uint64_t now = xtimer_now_usec64();
             printf("RECV;%s;%lu%06lu\n", ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE),
                 (unsigned long)div_u64_by_1000000(now),
                 (unsigned long)now % US_PER_SEC);
+#endif
 #ifdef NDN_CINNAMON
             char testbuf[5];
             memcpy(testbuf, c->pkt->pfx->comp[1], c->pkt->pfx->complen[1]);
