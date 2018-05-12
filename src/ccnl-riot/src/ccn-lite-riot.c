@@ -390,6 +390,9 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
             //printf("cont_num string: %s\n", testbuf);
             //printf("cont_num: %u\n", cont_num);
 
+// TEMPORARY FIX: do not increment content counter here => APP
+// Problem: delay subsequent content requests
+#if 0
             for(unsigned i=0;i<(unsigned)num_producer_nodes;i++) {
                 if(sender_id == nodeid_cont_cnt[i][0]) {
                     //inc so next content ID will be requested
@@ -400,6 +403,7 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
                     break;
                 }
             }
+#endif
 #endif
         }
     }
@@ -539,6 +543,8 @@ void
             case CCNL_MSG_ADD_CS:
                 ccnl_cont = (struct ccnl_content_s *)m.content.ptr;
                 ccnl_content_add2cache(ccnl, ccnl_cont);
+// TEMPORARY FIX: trigger PIT lookup
+                ccnl_content_serve_pending(ccnl, ccnl_cont);
 #if 0
                 reply.type = CCNL_MSG_ADD_CS;
                 reply.content.value = 0;
