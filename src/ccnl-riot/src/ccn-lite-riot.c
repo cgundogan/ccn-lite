@@ -381,7 +381,7 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
             char testbuf[5];
             memcpy(testbuf, c->pkt->pfx->comp[1], c->pkt->pfx->complen[1]);
             testbuf[c->pkt->pfx->complen[1]] = '\0';
-            unsigned sender_id=atoi(testbuf);
+            //unsigned sender_id=atoi(testbuf);
             //printf("sender_id string: %s\n", testbuf);
             //printf("sender_id:%u\n", sender_id);
 
