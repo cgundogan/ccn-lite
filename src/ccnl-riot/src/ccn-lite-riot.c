@@ -45,9 +45,6 @@
 #include "ccnl-producer.h"
 #include "ccnl-pkt-builder.h"
 
-#ifdef MODULE_PKTCNT_FAST
-#include "pktcnt.h"
-#endif
 extern bool i_am_root;
 extern bool hopp_active;
 
@@ -367,50 +364,6 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         return -1;
     }
 
-#if defined MODULE_PKTCNT_FAST || defined NDN_CINNAMON
-    if(i_am_root) {
-        if(!hopp_active) {
-#ifdef MODULE_PKTCNT_FAST
-            static char s[CCNL_MAX_PREFIX_SIZE];
-            uint64_t now = xtimer_now_usec64();
-            printf("RECV;%s;%lu%06lu\n", ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE),
-                (unsigned long)div_u64_by_1000000(now),
-                (unsigned long)now % US_PER_SEC);
-#endif
-#ifdef NDN_CINNAMON
-            char testbuf[5];
-            memcpy(testbuf, c->pkt->pfx->comp[1], c->pkt->pfx->complen[1]);
-            testbuf[c->pkt->pfx->complen[1]] = '\0';
-            //unsigned sender_id=atoi(testbuf);
-            //printf("sender_id string: %s\n", testbuf);
-            //printf("sender_id:%u\n", sender_id);
-
-            memset(testbuf, 0, 5);
-            memcpy(testbuf, c->pkt->pfx->comp[3], c->pkt->pfx->complen[3]);
-            testbuf[c->pkt->pfx->complen[3]] = '\0';
-            //unsigned cont_num=atoi(testbuf);
-            //printf("cont_num string: %s\n", testbuf);
-            //printf("cont_num: %u\n", cont_num);
-
-// TEMPORARY FIX: do not increment content counter here => APP
-// Problem: delay subsequent content requests
-#if 0
-            for(unsigned i=0;i<(unsigned)num_producer_nodes;i++) {
-                if(sender_id == nodeid_cont_cnt[i][0]) {
-                    //inc so next content ID will be requested
-                    nodeid_cont_cnt[i][1]++;
-                    // set the "retransmisions" counter for that node ID to zero again
-                    nodeid_cont_cnt[i][2] = 0;
-                    finished_counter++;
-                    break;
-                }
-            }
-#endif
-#endif
-        }
-    }
-#endif
-
     if (!gnrc_netapi_dispatch_receive(GNRC_NETTYPE_CCN_CHUNK,
                                       GNRC_NETREG_DEMUX_CTX_ALL, pkt)) {
         DEBUGMSG(DEBUG, "ccn-lite: unable to forward packet as no one is \
@@ -480,9 +433,6 @@ ccnl_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccn
         ccnl_interest_remove(relay, ccnl_int);
         return;
     }
-#ifdef MODULE_PKTCNT_FAST
-    retransmissions++;
-#endif
     ccnl_int->retrans_timer.msg.type = CCNL_MSG_INT_RETRANS;
     ccnl_int->retrans_timer.msg.content.ptr = ccnl_int;
     ((evtimer_event_t *)&ccnl_int->retrans_timer)->offset = CCNL_INTEREST_RETRANS_TIMEOUT;
