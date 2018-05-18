@@ -808,9 +808,6 @@ local_producer(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     (void)relay;
     (void)from;
     (void)pkt;
-    (void)lasthour;
-    (void)inter_ccn_interval;
-    (void)inter_pkt_interval;
     return 0;
 }
 
