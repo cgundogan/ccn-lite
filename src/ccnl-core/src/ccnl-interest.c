@@ -96,9 +96,6 @@ ccnl_interest_isSame(struct ccnl_interest_s *i, struct ccnl_pkt_s *pkt)
 }
 
 
-#ifdef CCNL_PITSTATS
-int pit_counter=0;
-#endif
 int
 ccnl_interest_append_pending(struct ccnl_interest_s *i,  struct ccnl_face_s *from)
 {
@@ -108,9 +105,6 @@ ccnl_interest_append_pending(struct ccnl_interest_s *i,  struct ccnl_face_s *fro
 
     for (pi = i->pending; pi; pi = pi->next) { // check whether already listed
         if (pi->face == from) {
-#ifdef CCNL_PITSTATS
-            printf("PITupdate: %i\n", pit_counter);
-#endif
             DEBUGMSG_CORE(DEBUG, "  we found a matching interest, updating time\n");
             pi->last_used = CCNL_NOW();
             return 0;
@@ -119,9 +113,6 @@ ccnl_interest_append_pending(struct ccnl_interest_s *i,  struct ccnl_face_s *fro
     }
     pi = (struct ccnl_pendint_s *) ccnl_calloc(1,sizeof(struct ccnl_pendint_s));
     if (!pi) {
-#ifdef CCNL_PITSTATS
-        printf("PITnomem: %i\n", pit_counter);
-#endif
         DEBUGMSG_CORE(DEBUG, "  no mem\n");
         return -1;
     }
@@ -136,9 +127,6 @@ ccnl_interest_append_pending(struct ccnl_interest_s *i,  struct ccnl_face_s *fro
                   (void *) i->pkt->pfx);
     pi->face = from;
     pi->last_used = CCNL_NOW();
-#ifdef CCNL_PITSTATS
-    printf("PITappend: %i\n", ++pit_counter);
-#endif
     if (last)
         last->next = pi;
     else
@@ -161,16 +149,10 @@ ccnl_interest_remove_pending(struct ccnl_interest_s *i, struct ccnl_face_s *face
                           ccnl_prefix_to_str(i->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE));
             found++;
             if (prev) {
-#ifdef CCNL_PITSTATS
-                printf("PITremove1: %i\n", --pit_counter);
-#endif
                 prev->next = pend->next;
                 ccnl_free(pend);
                 pend = prev->next;
             } else {
-#ifdef CCNL_PITSTATS
-                printf("PITremove2: %i\n", --pit_counter);
-#endif
                 i->pending = pend->next;
                 ccnl_free(pend);
                 pend = i->pending;
