@@ -342,12 +342,6 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
     }
     (void) rc; /* just to silence a compiler warning (if USE_DEBUG is not set) */
 }
-#ifdef NDN_CINNAMON
-extern unsigned nodeid_cont_cnt[][3];
-extern uint8_t num_producer_nodes;
-extern int nodes_num;
-extern int finished_counter;
-#endif
 
 /* packets delivered to the application */
 int
