@@ -269,7 +269,7 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
                                                                  GNRC_NETTYPE_CCN);
 
                             if (pkt == NULL) {
-                                printf("error: packet buffer full trying to allocate %d bytes\n", buf->datalen);
+                                puts("error: packet buffer full");
                                 return;
                             }
 
@@ -296,7 +296,7 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
 
                             /* check if header building succeeded */
                             if (hdr == NULL) {
-                                puts("error: packet buffer full trying to allocate netif_hdr");
+                                puts("error: packet buffer full");
                                 gnrc_pktbuf_release(pkt);
                                 return;
                             }
@@ -651,7 +651,7 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
     DEBUGMSG(INFO, "interest for chunk number: %u\n", (prefix->chunknum == NULL) ? 0 : *prefix->chunknum);
 
     if (!prefix) {
-        printf("prefix could not be created!\n");
+        DEBUGMSG(ERROR, "prefix could not be created!\n");
         return ret;
     }
 
@@ -679,7 +679,7 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
 
     /* TODO: support other suites */
     if (ccnl_ndntlv_dehead(&data, &len, (int*) &typ, &int_len) || (int) int_len > len) {
-        printf("  invalid packet format\n");
+        DEBUGMSG(WARNING, "  invalid packet format\n");
         return ret;
     }
 
