@@ -367,10 +367,6 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
             }
 
             ccnl_send_pkt(relay, from, c->pkt);
-            uint64_t now = xtimer_now_usec64();
-            printf("SNDDATA;%s;%lu%06lu\n", ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE),
-                (unsigned long)div_u64_by_1000000(now),
-                (unsigned long)now % US_PER_SEC);
 #ifdef USE_NFN_REQUESTS
             c->pkt = cpkt;
 #endif
@@ -416,10 +412,6 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         DEBUGMSG_CFWD(DEBUG, "  appending interest entry %p\n", (void *) i);
         ccnl_interest_append_pending(i, from);
         if(propagate) {
-            uint64_t now = xtimer_now_usec64();
-            printf("SNDINT;%s;%lu%06lu\n", ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE),
-                (unsigned long)div_u64_by_1000000(now),
-                (unsigned long)now % US_PER_SEC);
             ccnl_interest_propagate(relay, i);
         }
     }
