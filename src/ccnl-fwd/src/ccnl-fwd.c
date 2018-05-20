@@ -161,12 +161,12 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     }
 #endif
 
-        if (!ccnl_content_serve_pending(relay, c)) { // unsolicited content
-            // CONFORM: "A node MUST NOT forward unsolicited data [...]"
-            DEBUGMSG_CFWD(DEBUG, "  removed because no matching interest\n");
-            ccnl_content_free(c);
-            return 0;
-        }
+    if (!ccnl_content_serve_pending(relay, c)) { // unsolicited content
+        // CONFORM: "A node MUST NOT forward unsolicited data [...]"
+        DEBUGMSG_CFWD(DEBUG, "  removed because no matching interest\n");
+        ccnl_content_free(c);
+        return 0;
+    }
 
 #ifdef USE_NFN_REQUESTS
     if (!ccnl_nfnprefix_isRequest(c->pkt->pfx)) {
