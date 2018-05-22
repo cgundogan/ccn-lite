@@ -48,8 +48,6 @@
 extern bool i_am_root;
 extern bool hopp_active;
 
-int callback_content_add(struct ccnl_relay_s *relay, struct ccnl_pkt_s *p);
-
 /**
  * @brief May be defined for a particular caching strategy
  */
@@ -74,8 +72,6 @@ static char _ccnl_stack[CCNL_STACK_SIZE];
  * Timer to process ageing
  */
 static xtimer_t _ageing_timer = { .target = 0, .long_target = 0 };
-
-static ccnl_callback_content_add_func _content_add_func = NULL;
 
 /**
  * caching strategy removal function
@@ -696,24 +692,9 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
 }
 
 void
-ccnl_set_callback_content_add(ccnl_callback_content_add_func func)
-{
-    _content_add_func = func;
-}
-
-void
 ccnl_set_cache_strategy_remove(ccnl_cache_strategy_func func)
 {
     _cs_remove_func = func;
-}
-
-int
-callback_content_add(struct ccnl_relay_s *relay, struct ccnl_pkt_s *p)
-{
-    if (_content_add_func) {
-        return _content_add_func(relay, p);
-    }
-    return 0;
 }
 
 int

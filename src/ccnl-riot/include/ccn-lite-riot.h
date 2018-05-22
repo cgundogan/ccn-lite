@@ -155,9 +155,6 @@ extern kernel_pid_t _ccnl_event_loop_pid;
  */
 extern struct ccnl_relay_s ccnl_relay;
 
-typedef int (*ccnl_callback_content_add_func)(struct ccnl_relay_s *relay,
-                                              struct ccnl_pkt_s *s);
-
 /**
  * @brief Function pointer type for caching strategy function
  */
@@ -215,18 +212,6 @@ int ccnl_send_interest(struct ccnl_prefix_s *prefix,
  * @return -ETIMEDOUT if no chunk was received until timeout
  */
 int ccnl_wait_for_chunk(void *buf, size_t buf_len, uint64_t timeout);
-
-/**
- * @brief Set a local producer function
- *
- * Setting a local producer function allows to generate content on the fly or
- * react otherwise on any kind of incoming interest.
- *
- * @param[in] func  The function to be called first for any incoming interest
- */
-void ccnl_set_local_producer(ccnl_producer_func func);
-
-void ccnl_set_callback_content_add(ccnl_callback_content_add_func func);
 
 /**
  * @brief Set a function to control the caching strategy
