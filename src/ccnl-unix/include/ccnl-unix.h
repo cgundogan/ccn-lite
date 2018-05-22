@@ -37,13 +37,6 @@
 #include "ccnl-if.h"
 #include "ccnl-buf.h"
 
-
-int
-local_producer(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
-                   struct ccnl_pkt_s *pkt);
-int
-callback_content_add(struct ccnl_relay_s *relay, struct ccnl_pkt_s *p);
-
 #ifdef USE_LINKLAYER
 #if !(defined(__FreeBSD__) || defined(__APPLE__))
 int
