@@ -288,6 +288,7 @@ static inline void ccnl_evtimer_reset_interest_retrans(struct ccnl_interest_s *i
     i->evtmsg_retrans.msg.content.ptr = i;
     ((evtimer_event_t *)&i->evtmsg_retrans)->offset = CCNL_INTEREST_RETRANS_TIMEOUT;
     evtimer_add_msg(&ccnl_evtimer, &i->evtmsg_retrans, ccnl_event_loop_pid);
+    printf("INT2: %d\n", CCNL_INTEREST_RETRANS_TIMEOUT);
 }
 
 /**
@@ -300,6 +301,7 @@ static inline void ccnl_evtimer_reset_interest_timeout(struct ccnl_interest_s *i
     evtimer_del((evtimer_t *)(&ccnl_evtimer), (evtimer_event_t *)&i->evtmsg_timeout);
     i->evtmsg_timeout.msg.type = CCNL_MSG_INT_TIMEOUT;
     i->evtmsg_timeout.msg.content.ptr = i;
+    printf("INT: %d\n", i->lifetime);
     ((evtimer_event_t *)&i->evtmsg_timeout)->offset = i->lifetime * 1000; // ms
     evtimer_add_msg(&ccnl_evtimer, &i->evtmsg_timeout, ccnl_event_loop_pid);
 }
