@@ -271,11 +271,51 @@ ccnl_face_CTS(struct ccnl_relay_s *ccnl, struct ccnl_face_s *f)
 #endif
 }
 
+#ifdef MODULE_GNRC_ICNLOWPAN_HC
+typedef struct {
+    struct ccnl_pkt_s *pkt;
+} icnl_context_t;
+
+unsigned icnl_hopid_skip_prefix(uint8_t hop_id, void *context)
+{
+    struct ccnl_pkt_s *pkt = ((icnl_context_t *) context)->pkt;
+    uint8_t hopid_to_check = pkt->hop_id;
+
+    if (hopid_to_check == hop_id) {
+        return pkt->originator->pfx->nameptr[1];
+    }
+    return 0;
+}
+
+//unsigned icnl_context_skip_prefix(uint8_t prefix_cid, void *context)
+//{
+//    (void) prefix_cid;
+//    (void) context;
+//
+//    return 10;
+//}
+#endif
+
 int
 ccnl_send_pkt(struct ccnl_relay_s *ccnl, struct ccnl_face_s *to,
                 struct ccnl_pkt_s *pkt)
 {
+#ifdef MODULE_GNRC_ICNLOWPAN_HC
+    icnl_cb_hopid_skip_prefix = icnl_hopid_skip_prefix;
+    //icnl_cb_context_skip_prefix = icnl_context_skip_prefix;
+    icnl_context_t ctx = { .pkt = pkt };
+    uint8_t cids[] = { pkt->hop_id, 0x00 };
+    unsigned cid_len = 2;
+    if ((pkt->type == 0x00) || (pkt->type == 0x06)) {
+        cid_len = 1;
+    }
+    unsigned icnl_actual_len = icnl_encode(icnl_scratch, ICNL_PROTO_NDN_HC, pkt->buf->data, pkt->buf->datalen, cids, cid_len, &ctx);
+    printf("%d\n", icnl_actual_len);
+    return ccnl_face_enqueue(ccnl, to, ccnl_buf_new(icnl_scratch, icnl_actual_len));
+#else
+    printf("%d\n", pkt->buf->datalen);
     return ccnl_face_enqueue(ccnl, to, buf_dup(pkt->buf));
+#endif
 }
 
 int
@@ -659,6 +699,10 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
                 DEBUGMSG_CORE(VERBOSE, "    Serve to face: %d (pkt=%p)\n",
                          pi->face->faceid, (void*) c->pkt);
 
+#ifdef MODULE_GNRC_ICNLOWPAN_HC
+                c->pkt->hop_id = pi->hop_id_in;
+                c->pkt->originator = i->pkt;
+#endif
                 ccnl_send_pkt(ccnl, pi->face, c->pkt);
 
 

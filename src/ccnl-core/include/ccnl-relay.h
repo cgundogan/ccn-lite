@@ -29,6 +29,10 @@
 #include "ccnl-pkt.h"
 #include "ccnl-sched.h"
 
+#ifdef MODULE_GNRC_ICNLOWPAN_HC
+#include "icnlowpan.h"
+extern uint8_t icnl_scratch[512];
+#endif
 
 struct ccnl_relay_s {
     void (*ccnl_ll_TX_ptr)(struct ccnl_relay_s*, struct ccnl_if_s*,

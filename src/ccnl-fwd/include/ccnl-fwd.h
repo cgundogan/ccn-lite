@@ -26,11 +26,16 @@
 
 #include "ccnl-core.h"
 
+#ifdef MODULE_GNRC_ICNLOWPAN_HC
+typedef int (*dispatchFct)(struct ccnl_relay_s*, struct ccnl_face_s*,
+                           unsigned char**, int*, uint8_t);
+#else
 /**
  * @brief       Functionpointer to a CCN-lite Forwarder Function
  */
 typedef int (*dispatchFct)(struct ccnl_relay_s*, struct ccnl_face_s*, 
                            unsigned char**, int*);
+#endif
 
 /**
  * @brief       Functionpointer to a CCN-lite CS-Matching Function
@@ -104,9 +109,15 @@ ccnl_ccntlv_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
  *
  * @return      < 0 if no bytes consumed or error
  */
+#ifdef MODULE_GNRC_ICNLOWPAN_HC
+int
+ccnl_ndntlv_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
+                      unsigned char **data, int *datalen, uint8_t hopid);
+#else
 int
 ccnl_ndntlv_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
                       unsigned char **data, int *datalen);
+#endif
 #endif // USE_SUITE_NDNTLV
 
 /**
