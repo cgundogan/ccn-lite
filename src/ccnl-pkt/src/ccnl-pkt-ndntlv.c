@@ -579,10 +579,12 @@ ccnl_ndntlv_prependContent(struct ccnl_prefix_s *name,
         }
     }
 
+#ifndef MODULE_ICNL
     // mandatory (empty for now)
     if (ccnl_ndntlv_prependTL(NDN_TLV_MetaInfo, oldoffset2 - *offset,
                               offset, buf) < 0)
         return -1;
+#endif
 
     // mandatory
     if (ccnl_ndntlv_prependName(name, offset, buf))

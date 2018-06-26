@@ -172,7 +172,7 @@ ccnl_mkSimpleInterest(struct ccnl_prefix_s *name, ccnl_interest_opts_u *opts)
 
 void ccnl_mkInterest(struct ccnl_prefix_s *name, ccnl_interest_opts_u *opts,
                      unsigned char *tmp, int *len, int *offs) {
-    ccnl_interest_opts_u default_opts;
+    ccnl_interest_opts_u default_opts = { .ndntlv.interestlifetime = 0 };
 
     switch (name->suite) {
 #ifdef USE_SUITE_CCNB

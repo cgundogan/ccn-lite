@@ -129,6 +129,11 @@ int ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c);
  */
 static gnrc_netreg_entry_t _ccnl_ne;
 
+#ifdef MODULE_ICNL
+#include "icnlowpan.h"
+static uint8_t icnl_scratch[512];
+#endif
+
 /* add a netif to CCN-lite's interfaces, set the nettype, and register a receiver */
 int
 ccnl_open_netif(kernel_pid_t if_pid, gnrc_nettype_t netreg_type)
@@ -199,14 +204,22 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
     DEBUGMSG(TRACE, "ccnl_ll_TX %d bytes to %s\n", (int)(buf ? buf->datalen : -1), ccnl_addr2ascii(dest));
 
     (void) ifc;
+#ifdef MODULE_ICNL
+    unsigned icnl_actual_len = 0;
+#endif
     switch(dest->sa.sa_family) {
         /* link layer sending */
         case AF_PACKET: {
                             /* allocate memory */
                             gnrc_pktsnip_t *hdr = NULL;
+#ifdef MODULE_ICNL
+                            icnl_actual_len = icnl_encode(icnl_scratch, ICNL_PROTO_NDN_HC, buf->data, buf->datalen);
+                            gnrc_pktsnip_t *pkt= gnrc_pktbuf_add(NULL, icnl_scratch, icnl_actual_len, GNRC_NETTYPE_CCN);
+#else
                             gnrc_pktsnip_t *pkt= gnrc_pktbuf_add(NULL, buf->data,
                                                                  buf->datalen,
                                                                  GNRC_NETTYPE_CCN);
+#endif
 
                             if (pkt == NULL) {
                                 printf("error: packet buffer full trying to allocate %d bytes\n", buf->datalen);
@@ -338,8 +351,13 @@ _receive(struct ccnl_relay_s *ccnl, msg_t *m)
     su.linklayer.sll_halen = nethdr->src_l2addr_len;
     memcpy(su.linklayer.sll_addr, gnrc_netif_hdr_get_src_addr(nethdr), nethdr->src_l2addr_len);
 
+#ifdef MODULE_ICNL
+    unsigned actual_len = icnl_decode(icnl_scratch, ccn_pkt->data, ccn_pkt->size);
+    ccnl_core_RX(ccnl, i, icnl_scratch, actual_len, &su.sa, sizeof(su.sa));
+#else
     /* call CCN-lite callback and free memory in packet buffer */
     ccnl_core_RX(ccnl, i, ccn_pkt->data, ccn_pkt->size, &su.sa, sizeof(su.sa));
+#endif
     gnrc_pktbuf_release(pkt);
 }
 
@@ -538,7 +556,7 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
     ccnl_interest_opts_u default_opts;
     default_opts.ndntlv.nonce = 0;
     default_opts.ndntlv.mustbefresh = false;
-    default_opts.ndntlv.interestlifetime = CCNL_INTEREST_TIMEOUT * 1000; // ms
+    default_opts.ndntlv.interestlifetime = 0; // ms
 
     if (_ccnl_suite != CCNL_SUITE_NDNTLV) {
         DEBUGMSG(WARNING, "Suite not supported by RIOT!\n");
