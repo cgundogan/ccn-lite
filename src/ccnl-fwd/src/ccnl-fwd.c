@@ -251,6 +251,10 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 
         DEBUGMSG_CFWD(DEBUG, "  found matching content %p\n", (void *) c);
         if (from->ifndx >= 0) {
+#ifdef MODULE_ICNL
+            c->pkt->hop_id = (*pkt)->hop_id;
+            c->pkt->originator = *pkt;
+#endif
             ccnl_send_pkt(relay, from, c->pkt);
         } else {
 #ifdef CCNL_APP_RX
@@ -279,7 +283,21 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     }
     if (i) { // store the I request, for the incoming face (Step 3)
         DEBUGMSG_CFWD(DEBUG, "  appending interest entry %p\n", (void *) i);
+#ifdef MODULE_ICNL
+        ccnl_interest_append_pending(i, from, i->pkt ? i->pkt->hop_id : 0);
+#else
         ccnl_interest_append_pending(i, from);
+#endif
+#ifdef MODULE_ICNL
+        struct ccnl_pendint_s *pend = i->pending;
+        while (pend) {
+            if (from->faceid == pend->face->faceid) {
+                i->pkt->hop_id = pend->hop_id_out;
+                break;
+            }
+            pend = pend->next;
+        }
+#endif
         if(propagate) {
             ccnl_interest_propagate(relay, i);
         }
@@ -504,9 +522,15 @@ Done:
 #ifdef USE_SUITE_NDNTLV
 
 
+#ifdef MODULE_ICNL
+int
+ccnl_ndntlv_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
+                      unsigned char **data, int *datalen, uint8_t hopid)
+#else
 int
 ccnl_ndntlv_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
                       unsigned char **data, int *datalen)
+#endif
 {
     int rc = -1, len;
     unsigned int typ;
@@ -524,6 +548,9 @@ ccnl_ndntlv_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         DEBUGMSG_CFWD(INFO, "  ndntlv packet coding problem\n");
         goto Done;
     }
+#ifdef MODULE_ICNL
+    pkt->hop_id = hopid;
+#endif
     pkt->type = typ;
     switch (typ) {
     case NDN_TLV_Interest:

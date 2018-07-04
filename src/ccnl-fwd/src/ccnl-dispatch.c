@@ -38,12 +38,68 @@
 
 #include "ccnl-logging.h"
 
+#ifdef MODULE_ICNL
+uint8_t icnl_scratch[512];
+#endif
+
 struct ccnl_suite_s ccnl_core_suites[CCNL_SUITE_LAST];
+
+#ifdef MODULE_ICNL
+static uint8_t hopid;
+
+void get_hopid(uint8_t local_hopid)
+{
+    hopid = local_hopid;
+}
+
+typedef struct {
+    struct ccnl_relay_s *relay;
+} icnl_context_t;
+
+unsigned icnl_name_decompress(uint8_t *out, uint8_t hop_id, void *context)
+{
+    struct ccnl_relay_s *relay = ((icnl_context_t *) context)->relay;
+    struct ccnl_interest_s *i;
+    struct ccnl_pendint_s *pend;
+
+    bool dobreak = false;
+
+    for (i = relay->pit; i; i = i->next) {
+        pend = i->pending;
+        while (pend) {
+            if (pend->hop_id_out == hop_id) {
+                dobreak = true;
+                break;
+            }
+            pend = pend->next;
+        }
+        if (dobreak) {
+            break;
+        }
+    }
+
+    if (i) {
+        unsigned name_len = i->pkt->pfx->nameptr[1];
+        memcpy(out, i->pkt->pfx->nameptr + 2, name_len);
+        return name_len;
+    }
+
+    return 0;
+}
+#endif
 
 void
 ccnl_core_RX(struct ccnl_relay_s *relay, int ifndx, unsigned char *data,
              int datalen, struct sockaddr *sa, int addrlen)
 {
+
+#ifdef MODULE_ICNL
+    icnl_context_t ctx = { .relay = relay };
+    icnl_cb_hopid = get_hopid;
+    icnl_cb_hopid_decompress_name = icnl_name_decompress;
+    datalen = icnl_decode(icnl_scratch, data, datalen, &ctx);
+    data = icnl_scratch;
+#endif
     unsigned char *base = data;
     struct ccnl_face_s *from;
     int enc, suite = -1, skip;
@@ -89,7 +145,11 @@ ccnl_core_RX(struct ccnl_relay_s *relay, int ifndx, unsigned char *data,
                      "for suite %s does not exist.\n", ccnl_suite2str(suite));
             return;
         }
+#ifdef MODULE_ICNL
+        if (dispatch(relay, from, &data, &datalen, hopid) < 0)
+#else
         if (dispatch(relay, from, &data, &datalen) < 0)
+#endif
             break;
         if (datalen > 0) {
             DEBUGMSG_CORE(WARNING, "ccnl_core_RX: %d bytes left\n", datalen);

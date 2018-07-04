@@ -95,8 +95,13 @@ ccnl_interest_isSame(struct ccnl_interest_s *i, struct ccnl_pkt_s *pkt)
 }
 
 
+#ifdef MODULE_ICNL
+int
+ccnl_interest_append_pending(struct ccnl_interest_s *i,  struct ccnl_face_s *from, uint8_t hopid)
+#else
 int
 ccnl_interest_append_pending(struct ccnl_interest_s *i,  struct ccnl_face_s *from)
+#endif
 {
     struct ccnl_pendint_s *pi, *last = NULL;
     char s[CCNL_MAX_PREFIX_SIZE];
@@ -125,6 +130,14 @@ ccnl_interest_append_pending(struct ccnl_interest_s *i,  struct ccnl_face_s *fro
         last->next = pi;
     else
         i->pending = pi;
+
+#ifdef MODULE_ICNL
+    static uint8_t hop_id_counter = 0;
+    pi->hop_id_out = (hop_id_counter++ & 0x3F) | 0x40;
+    if (hopid & 0x40) {
+        pi->hop_id_in = hopid;
+     }
+#endif
     return 0;
 }
 

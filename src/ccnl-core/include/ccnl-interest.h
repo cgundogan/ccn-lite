@@ -35,6 +35,10 @@ struct ccnl_pendint_s { // pending interest
     struct ccnl_pendint_s *next; // , *prev;
     struct ccnl_face_s *face;
     uint32_t last_used;
+#ifdef MODULE_ICNL
+    uint8_t hop_id_in;
+    uint8_t hop_id_out;
+#endif
 };
 
 struct ccnl_interest_s {
@@ -60,8 +64,13 @@ struct ccnl_interest_s {
 int
 ccnl_interest_isSame(struct ccnl_interest_s *i, struct ccnl_pkt_s *pkt);
 
+#ifdef MODULE_ICNL
+int
+ccnl_interest_append_pending(struct ccnl_interest_s *i, struct ccnl_face_s *from, uint8_t hopid);
+#else
 int
 ccnl_interest_append_pending(struct ccnl_interest_s *i, struct ccnl_face_s *from);
+#endif
 
 int
 ccnl_interest_remove_pending(struct ccnl_interest_s *i, struct ccnl_face_s *face);

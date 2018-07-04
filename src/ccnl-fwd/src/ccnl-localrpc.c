@@ -435,7 +435,11 @@ rpc_forward(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 #endif
 #ifdef USE_SUITE_NDNTLV
         case CCNL_SUITE_NDNTLV:
+#ifdef MODULE_ICNL
+            ccnl_ndntlv_forwarder(relay, from, &ucp, &len, 0);
+#else
             ccnl_ndntlv_forwarder(relay, from, &ucp, &len);
+#endif
             break;
 #endif
         default:

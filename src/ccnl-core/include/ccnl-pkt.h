@@ -103,6 +103,10 @@ struct ccnl_pkt_s {
 #endif
     unsigned int flags;
     char suite;
+#ifdef MODULE_ICNL
+    uint8_t hop_id;
+    struct ccnl_pkt_s *originator;
+#endif
 };
 
 /**

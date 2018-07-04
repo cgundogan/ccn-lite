@@ -264,11 +264,35 @@ ccnl_face_CTS(struct ccnl_relay_s *ccnl, struct ccnl_face_s *f)
 #endif
 }
 
+#ifdef MODULE_ICNL
+typedef struct {
+    struct ccnl_pkt_s *pkt;
+} icnl_context_t;
+
+unsigned icnl_context_skip_name(uint8_t hop_id, void *context)
+{
+    struct ccnl_pkt_s *pkt = ((icnl_context_t *) context)->pkt;
+    uint8_t hopid_to_check = pkt->hop_id;
+
+    if (hopid_to_check == hop_id) {
+        return pkt->originator->pfx->nameptr[1];
+    }
+    return 0;
+}
+#endif
+
 int
 ccnl_send_pkt(struct ccnl_relay_s *ccnl, struct ccnl_face_s *to,
                 struct ccnl_pkt_s *pkt)
 {
+#ifdef MODULE_ICNL
+    icnl_cb_hopid_skip_name = icnl_context_skip_name;
+    icnl_context_t ctx = { .pkt = pkt };
+    unsigned icnl_actual_len = icnl_encode(icnl_scratch, ICNL_PROTO_NDN_HC, pkt->buf->data, pkt->buf->datalen, &(pkt->hop_id), 1, &ctx);
+    return ccnl_face_enqueue(ccnl, to, ccnl_buf_new(icnl_scratch, icnl_actual_len));
+#else
     return ccnl_face_enqueue(ccnl, to, buf_dup(pkt->buf));
+#endif
 }
 
 int
@@ -684,6 +708,10 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
                 DEBUGMSG_CORE(VERBOSE, "    Serve to face: %d (pkt=%p)\n",
                          pi->face->faceid, (void*) c->pkt);
 
+#ifdef MODULE_ICNL
+                c->pkt->hop_id = pi->hop_id_in;
+                c->pkt->originator = i->pkt;
+#endif
                 ccnl_send_pkt(ccnl, pi->face, c->pkt);
 
 
