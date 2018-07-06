@@ -289,8 +289,10 @@ ccnl_send_pkt(struct ccnl_relay_s *ccnl, struct ccnl_face_s *to,
     icnl_cb_hopid_skip_name = icnl_context_skip_name;
     icnl_context_t ctx = { .pkt = pkt };
     unsigned icnl_actual_len = icnl_encode(icnl_scratch, ICNL_PROTO_NDN_HC, pkt->buf->data, pkt->buf->datalen, &(pkt->hop_id), 1, &ctx);
+    printf("%d\n", icnl_actual_len);
     return ccnl_face_enqueue(ccnl, to, ccnl_buf_new(icnl_scratch, icnl_actual_len));
 #else
+    printf("%d\n", pkt->buf->datalen);
     return ccnl_face_enqueue(ccnl, to, buf_dup(pkt->buf));
 #endif
 }
@@ -459,8 +461,10 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
             // DEBUGMSG(DEBUG, "%p %p %p\n", (void*)i, (void*)i->pkt, (void*)i->pkt->buf);
             if (fwd->tap)
                 (fwd->tap)(ccnl, i->from, i->pkt->pfx, i->pkt->buf);
-            if (fwd->face)
+            if (fwd->face) {
+                printf("exp,tx,interest,");
                 ccnl_send_pkt(ccnl, fwd->face, i->pkt);
+            }
 #if defined(USE_RONR)
             matching_face = 1;
 #endif
@@ -534,6 +538,7 @@ ccnl_interest_broadcast(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *inter
 #endif
         }
         if (fibface) {
+            printf("exp,tx,interest,");
             ccnl_send_pkt(ccnl, fibface, interest->pkt);
             DEBUGMSG_CORE(DEBUG, "  broadcasting interest (%s)\n", ccnl_addr2ascii(&sun));
         }
@@ -712,6 +717,7 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
                 c->pkt->hop_id = pi->hop_id_in;
                 c->pkt->originator = i->pkt;
 #endif
+                printf("exp,tx,data,");
                 ccnl_send_pkt(ccnl, pi->face, c->pkt);
 
 

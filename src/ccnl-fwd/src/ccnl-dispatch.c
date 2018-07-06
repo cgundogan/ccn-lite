@@ -93,6 +93,7 @@ ccnl_core_RX(struct ccnl_relay_s *relay, int ifndx, unsigned char *data,
              int datalen, struct sockaddr *sa, int addrlen)
 {
 
+    printf("exp,rx,%d,", datalen);
 #ifdef MODULE_ICNL
     icnl_context_t ctx = { .relay = relay };
     icnl_cb_hopid = get_hopid;
