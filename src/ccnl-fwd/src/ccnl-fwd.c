@@ -255,7 +255,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
             c->pkt->hop_id = (*pkt)->hop_id;
             c->pkt->originator = *pkt;
 #endif
-            printf("exp,tx,data,");
+            printf("exp;tx;data;");
             ccnl_send_pkt(relay, from, c->pkt);
         } else {
 #ifdef CCNL_APP_RX

@@ -472,7 +472,7 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
             if (fwd->tap)
                 (fwd->tap)(ccnl, i->from, i->pkt->pfx, i->pkt->buf);
             if (fwd->face) {
-                printf("exp,tx,interest,");
+                printf("exp;tx;interest;");
                 ccnl_send_pkt(ccnl, fwd->face, i->pkt);
             }
 #if defined(USE_RONR)
@@ -548,7 +548,7 @@ ccnl_interest_broadcast(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *inter
 #endif
         }
         if (fibface) {
-            printf("exp,tx,interest,");
+            printf("exp;tx;interest;");
             ccnl_send_pkt(ccnl, fibface, interest->pkt);
             DEBUGMSG_CORE(DEBUG, "  broadcasting interest (%s)\n", ccnl_addr2ascii(&sun));
         }
@@ -727,7 +727,7 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
                 c->pkt->hop_id = pi->hop_id_in;
                 c->pkt->originator = i->pkt;
 #endif
-                printf("exp,tx,data,");
+                printf("exp;tx;data;");
                 ccnl_send_pkt(ccnl, pi->face, c->pkt);
 
 
