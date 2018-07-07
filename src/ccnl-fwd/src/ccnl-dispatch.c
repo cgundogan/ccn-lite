@@ -86,6 +86,19 @@ unsigned icnl_name_decompress(uint8_t *out, uint8_t hop_id, void *context)
 
     return 0;
 }
+
+unsigned icnl_context_name_decompress(uint8_t *out, uint8_t prefix_cid, void *context)
+{
+    (void) context;
+    (void) prefix_cid;
+    const char name[] = { 0x08, 0x03, 0x41, 0x43, 0x4D, 0x08, 0x03, 0x49, 0x43, 0x4e, 0x00 };
+    unsigned name_len = strlen(name);
+
+    memcpy(out, name, name_len);
+
+    return name_len;
+}
+
 #endif
 
 void
@@ -98,6 +111,7 @@ ccnl_core_RX(struct ccnl_relay_s *relay, int ifndx, unsigned char *data,
     icnl_context_t ctx = { .relay = relay };
     icnl_cb_hopid = get_hopid;
     icnl_cb_hopid_decompress_name = icnl_name_decompress;
+    icnl_cb_context_decompress_name = icnl_context_name_decompress;
     datalen = icnl_decode(icnl_scratch, data, datalen, &ctx);
     data = icnl_scratch;
 #endif

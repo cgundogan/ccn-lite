@@ -269,7 +269,7 @@ typedef struct {
     struct ccnl_pkt_s *pkt;
 } icnl_context_t;
 
-unsigned icnl_context_skip_name(uint8_t hop_id, void *context)
+unsigned icnl_hopid_skip_prefix(uint8_t hop_id, void *context)
 {
     struct ccnl_pkt_s *pkt = ((icnl_context_t *) context)->pkt;
     uint8_t hopid_to_check = pkt->hop_id;
@@ -279,6 +279,14 @@ unsigned icnl_context_skip_name(uint8_t hop_id, void *context)
     }
     return 0;
 }
+
+unsigned icnl_context_skip_prefix(uint8_t prefix_cid, void *context)
+{
+    (void) prefix_cid;
+    (void) context;
+
+    return 10;
+}
 #endif
 
 int
@@ -286,9 +294,11 @@ ccnl_send_pkt(struct ccnl_relay_s *ccnl, struct ccnl_face_s *to,
                 struct ccnl_pkt_s *pkt)
 {
 #ifdef MODULE_ICNL
-    icnl_cb_hopid_skip_name = icnl_context_skip_name;
+    icnl_cb_hopid_skip_prefix = icnl_hopid_skip_prefix;
+    icnl_cb_context_skip_prefix = icnl_context_skip_prefix;
     icnl_context_t ctx = { .pkt = pkt };
-    unsigned icnl_actual_len = icnl_encode(icnl_scratch, ICNL_PROTO_NDN_HC, pkt->buf->data, pkt->buf->datalen, &(pkt->hop_id), 1, &ctx);
+    uint8_t cids[] = { pkt->hop_id, 0x00 };
+    unsigned icnl_actual_len = icnl_encode(icnl_scratch, ICNL_PROTO_NDN_HC, pkt->buf->data, pkt->buf->datalen, cids, 2, &ctx);
     printf("%d\n", icnl_actual_len);
     return ccnl_face_enqueue(ccnl, to, ccnl_buf_new(icnl_scratch, icnl_actual_len));
 #else
