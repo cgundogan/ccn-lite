@@ -298,7 +298,11 @@ ccnl_send_pkt(struct ccnl_relay_s *ccnl, struct ccnl_face_s *to,
     icnl_cb_context_skip_prefix = icnl_context_skip_prefix;
     icnl_context_t ctx = { .pkt = pkt };
     uint8_t cids[] = { pkt->hop_id, 0x00 };
-    unsigned icnl_actual_len = icnl_encode(icnl_scratch, ICNL_PROTO_NDN_HC, pkt->buf->data, pkt->buf->datalen, cids, 2, &ctx);
+    unsigned cid_len = 2;
+    if (pkt->type == 0x00) {
+        cid_len = 1;
+    }
+    unsigned icnl_actual_len = icnl_encode(icnl_scratch, ICNL_PROTO_NDN_HC, pkt->buf->data, pkt->buf->datalen, cids, cid_len, &ctx);
     printf("%d\n", icnl_actual_len);
     return ccnl_face_enqueue(ccnl, to, ccnl_buf_new(icnl_scratch, icnl_actual_len));
 #else
