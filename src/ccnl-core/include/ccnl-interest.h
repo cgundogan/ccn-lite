@@ -52,10 +52,6 @@ struct ccnl_interest_s {
     evtimer_msg_event_t evtmsg_retrans;
     evtimer_msg_event_t evtmsg_timeout;
 #endif
-#ifdef CCNL_RIOT
-    evtimer_msg_event_t retrans_timer;
-#endif
-
 };
 
 //struct ccnl_interest_s*

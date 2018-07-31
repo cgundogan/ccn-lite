@@ -51,8 +51,6 @@
 extern bool i_am_root;
 extern bool hopp_active;
 
-int callback_content_add(struct ccnl_relay_s *relay, struct ccnl_pkt_s *p);
-
 /**
  * @brief May be defined for a particular caching strategy
  */
@@ -82,10 +80,6 @@ static ccnl_cache_strategy_func _cs_remove_func = NULL;
  * currently configured suite
  */
 static int _ccnl_suite = CCNL_SUITE_NDNTLV;
-
-kernel_pid_t _ccnl_event_loop_pid = KERNEL_PID_UNDEF;
-
-evtimer_msg_t ccnl_evtimer;
 
 /**
  * @}
@@ -446,10 +440,6 @@ void
     msg_init_queue(_msg_queue, CCNL_QUEUE_SIZE);
     evtimer_init_msg(&ccnl_evtimer);
     struct ccnl_relay_s *ccnl = (struct ccnl_relay_s*) arg;
-    struct ccnl_interest_s *ccnl_int;
-    struct ccnl_pkt_s *pkt;
-    struct ccnl_content_s *ccnl_cont;
-    char *prefix;
 
     while(!ccnl->halt_flag) {
         msg_t m, reply, mr;
@@ -673,28 +663,13 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
         DEBUGMSG(WARNING, "could not send Interest: %i\n", ret);
     }
 
-    return 0;
-}
-
-void
-ccnl_set_callback_content_add(ccnl_callback_content_add_func func)
-{
-    _content_add_func = func;
+    return ret;
 }
 
 void
 ccnl_set_cache_strategy_remove(ccnl_cache_strategy_func func)
 {
     _cs_remove_func = func;
-}
-
-int
-callback_content_add(struct ccnl_relay_s *relay, struct ccnl_pkt_s *p)
-{
-    if (_content_add_func) {
-        return _content_add_func(relay, p);
-    }
-    return 0;
 }
 
 int

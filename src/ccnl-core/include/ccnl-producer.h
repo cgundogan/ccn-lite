@@ -4,7 +4,6 @@
  *
  * Copyright (C) 2011-18 University of Basel
  * Copyright (C) 2015, 2016 INRIA
- * Copyright (C) 2018, HAW Hamburg
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -20,7 +19,6 @@
  *
  * File history:
  * 2018-01-23 created (based on ccn-lite-riot.h)
- * 2018-04-09 renamed to ccnl-callbacks.c
  */
 #ifndef CCNL_PRODUCER_H
 #define CCNL_PRODUCER_H
@@ -47,13 +45,13 @@ void ccnl_set_local_producer(ccnl_producer_func func);
 /**
  * @brief Allows to generates content on the fly/or react to any kind of interest
  *
- * A developer has to provide its own local_producer function which is set via
- * \ref ccnl_set_local_producer as a function pointer. If the function pointer
- * is not, set the function simply returns '0'.
+ * A developer has to provide its own local_producer function which is set via 
+ * \ref ccnl_set_local_producer as a function pointer. If the function pointer 
+ * is not, set the function simply returns '0'. 
  *
  * @param[in] relay The active ccn-lite relay
  * @param[in] from  The face the packet was received over
- * @param[in] pkt   The actual received packet
+ * @param[in] pkt   The actual received packet 
  *
  * @return 0 if no function has been set
  */
@@ -64,58 +62,6 @@ int local_producer(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 #define local_producer(...) 0
 #endif
 
-/**
- * @brief Function pointer type for Data message received event
- */
-typedef int (*ccnl_data_received_func)(struct ccnl_relay_s *relay,
-                                       struct ccnl_pkt_s *pkt,
-                                       struct ccnl_face_s *from);
 
-/**
- * @brief Set a callback for Data message received events
- *
- * This callback function is invoked on incoming Data messages.
- *
- * @param[in] func  The function to be called first for any incoming data message
- */
-void ccnl_callback_set_data_received(ccnl_data_received_func func);
-
-/**
- * @brief Allows to generates content on the fly/or react to any kind of interest
- *
- * @param[in] relay The active ccn-lite relay
- * @param[in] pkt   The actual received packet
- * @param[in] pkt   The face from where the packet was received
- *
- * @return 0 if no function has been set
- */
-int callback_data_received(struct ccnl_relay_s *relay, struct ccnl_pkt_s *pkt,
-                           struct ccnl_face_s *from);
-
-
-/**
- * @brief Function pointer type for Data message send event
- */
-typedef int (*ccnl_data_send_func)(struct ccnl_relay_s *relay,
-                                   struct ccnl_pkt_s *pkt);
-
-/**
- * @brief Set a callback for Data message send events
- *
- * This callback function is invoked on outgoing Data messages.
- *
- * @param[in] func  The function to be called first for any outgoing data message
- */
-void ccnl_callback_set_data_send(ccnl_data_send_func func);
-
-/**
- * @brief Allows to generates content on the fly/or react to any kind of interest
- *
- * @param[in] relay The active ccn-lite relay
- * @param[in] pkt   The actual received packet
- *
- * @return 0 if no function has been set
- */
-int callback_data_send(struct ccnl_relay_s *relay, struct ccnl_pkt_s *pkt);
-#endif
+#endif 
 

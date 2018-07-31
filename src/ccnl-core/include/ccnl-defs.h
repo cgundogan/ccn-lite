@@ -80,9 +80,6 @@
 #ifndef CCNL_MAX_INTEREST_RETRANSMIT
 # define CCNL_MAX_INTEREST_RETRANSMIT    7
 #endif
-#ifndef CCNL_DATA_FRESHNESS_PERIOD
-# define CCNL_DATA_FRESHNESS_PERIOD      10000  // msec
-#endif
 
 #ifndef CCNL_FACE_TIMEOUT
 // # define CCNL_FACE_TIMEOUT    60 // sec

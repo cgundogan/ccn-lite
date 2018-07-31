@@ -30,7 +30,6 @@
 #include "ccnl-pkt-ndntlv.h"
 #include "net/gnrc/netreg.h"
 #include "ccnl-dispatch.h"
-#include "ccnl-producer.h"
 //#include "ccnl-pkt-builder.h"
 
 #include "evtimer.h"
@@ -72,10 +71,6 @@ extern "C" {
 #define CCNL_QUEUE_SIZE     (8)
 #endif
 
-#ifndef CCNL_INTEREST_RETRANS_TIMEOUT
-#define CCNL_INTEREST_RETRANS_TIMEOUT (MS_PER_SEC)
-#endif
-
 /**
  * Interest retransmission interval in milliseconds
  */
@@ -111,14 +106,6 @@ extern kernel_pid_t ccnl_event_loop_pid;
  * Message type for advancing the ageing timer
  */
 #define CCNL_MSG_AGEING         (0x1702)
-
-#define CCNL_MSG_INT_RETRANS    (0x1703)
-
-#define CCNL_MSG_ADD_CS         (0x1704)
-
-#define CCNL_MSG_DEL_CS         (0x1705)
-
-#define CCNL_MSG_IN_CS          (0x1706)
 
 /**
  * Message type for Interest retransmissions
@@ -164,21 +151,10 @@ extern kernel_pid_t ccnl_event_loop_pid;
 #define CCNL_THREAD_PRIORITY (THREAD_PRIORITY_MAIN - 1)
 #endif
 
-extern evtimer_msg_t ccnl_evtimer;
-extern evtimer_msg_event_t ccnl_int_retrans_msg_evt;
-
-/**
- * PID of the eventloop thread
- */
-extern kernel_pid_t _ccnl_event_loop_pid;
-
 /**
  * Struct holding CCN-Lite's central relay information
  */
 extern struct ccnl_relay_s ccnl_relay;
-
-typedef int (*ccnl_callback_content_add_func)(struct ccnl_relay_s *relay,
-                                              struct ccnl_pkt_s *s);
 
 /**
  * Struct Evtimer for various ccnl events
@@ -245,18 +221,6 @@ int ccnl_send_interest(struct ccnl_prefix_s *prefix,
  * @return -ETIMEDOUT if no chunk was received until timeout
  */
 int ccnl_wait_for_chunk(void *buf, size_t buf_len, uint64_t timeout);
-
-/**
- * @brief Set a local producer function
- *
- * Setting a local producer function allows to generate content on the fly or
- * react otherwise on any kind of incoming interest.
- *
- * @param[in] func  The function to be called first for any incoming interest
- */
-void ccnl_set_local_producer(ccnl_producer_func func);
-
-void ccnl_set_callback_content_add(ccnl_callback_content_add_func func);
 
 /**
  * @brief Set a function to control the caching strategy

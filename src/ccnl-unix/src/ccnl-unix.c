@@ -794,22 +794,3 @@ notacontent:
     closedir(dir);
 }
 
-int
-local_producer(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
-                   struct ccnl_pkt_s *pkt){
-                       //for unix not implemented yet
-    (void)relay;
-    (void)from;
-    (void)pkt;
-    (void)lasthour;
-    (void)inter_ccn_interval;
-    (void)inter_pkt_interval;
-    return 0;
-}
-
-int
-callback_content_add(struct ccnl_relay_s *relay, struct ccnl_pkt_s *p) {
-    (void)relay;
-    (void)c;
-    return 0;
-}
