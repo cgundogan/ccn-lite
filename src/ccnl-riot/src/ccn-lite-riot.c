@@ -267,9 +267,11 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
                                 nethdr->flags = GNRC_NETIF_HDR_FLAGS_BROADCAST;
                             }
 
+                            ((gnrc_netif_hdr_t *)hdr->data)->if_pid = ifc->if_pid;
+
                             /* actual sending */
                             DEBUGMSG(DEBUG, " try to pass to GNRC (%i): %p\n", (int) ifc->if_pid, (void*) pkt);
-                            if (gnrc_netapi_send(ifc->if_pid, pkt) < 1) {
+                            if (!gnrc_netapi_dispatch_send(GNRC_NETTYPE_SIXLOWPAN, GNRC_NETREG_DEMUX_CTX_ALL, hdr)) {
                                 puts("error: unable to send\n");
                                 gnrc_pktbuf_release(pkt);
                                 return;
@@ -538,7 +540,7 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
     ccnl_interest_opts_u default_opts;
     default_opts.ndntlv.nonce = 0;
     default_opts.ndntlv.mustbefresh = false;
-    default_opts.ndntlv.interestlifetime = CCNL_INTEREST_TIMEOUT * 1000; // ms
+    default_opts.ndntlv.interestlifetime = 0; // ms
 
     if (_ccnl_suite != CCNL_SUITE_NDNTLV) {
         DEBUGMSG(WARNING, "Suite not supported by RIOT!\n");
