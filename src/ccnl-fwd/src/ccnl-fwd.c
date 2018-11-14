@@ -287,21 +287,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     }
     if (i) { // store the I request, for the incoming face (Step 3)
         DEBUGMSG_CFWD(DEBUG, "  appending interest entry %p\n", (void *) i);
-#ifdef MODULE_GNRC_ICNLOWPAN_HC
-        ccnl_interest_append_pending(i, from, i->pkt ? i->pkt->hop_id : 0);
-#else
         ccnl_interest_append_pending(i, from);
-#endif
-#ifdef MODULE_GNRC_ICNLOWPAN_HC
-        struct ccnl_pendint_s *pend = i->pending;
-        while (pend) {
-            if (from->faceid == pend->face->faceid) {
-                i->pkt->hop_id = pend->hop_id_out;
-                break;
-            }
-            pend = pend->next;
-        }
-#endif
         if(propagate) {
             ccnl_interest_propagate(relay, i);
         }

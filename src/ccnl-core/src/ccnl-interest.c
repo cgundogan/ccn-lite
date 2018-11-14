@@ -114,13 +114,8 @@ ccnl_interest_isSame(struct ccnl_interest_s *i, struct ccnl_pkt_s *pkt)
 }
 
 
-#ifdef MODULE_GNRC_ICNLOWPAN_HC
-int
-ccnl_interest_append_pending(struct ccnl_interest_s *i,  struct ccnl_face_s *from, uint8_t hopid)
-#else
 int
 ccnl_interest_append_pending(struct ccnl_interest_s *i,  struct ccnl_face_s *from)
-#endif
 {
     if (i) {
         DEBUGMSG_CORE(TRACE, "ccnl_append_pending\n");
@@ -154,9 +149,11 @@ ccnl_interest_append_pending(struct ccnl_interest_s *i,  struct ccnl_face_s *fro
 #ifdef MODULE_GNRC_ICNLOWPAN_HC
             static uint8_t hop_id_counter = 1;
             pi->hop_id_out = (hop_id_counter++ & 0x7F);
-            if (hopid) {
-                pi->hop_id_in = hopid;
-             }
+            if (pi->hop_id_out == 0) {
+                pi->hop_id_out = 1;
+            }
+            pi->hop_id_in = i->pkt->hop_id;
+            i->pkt->hop_id = pi->hop_id_out;
 #endif
             return 0;
         }
