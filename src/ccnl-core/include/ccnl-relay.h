@@ -63,6 +63,9 @@ struct ccnl_relay_s {
     struct ccnl_pendcrypt_s *pendcrypt;
     char *crypto_path;
   */
+#ifdef MODULE_GNRC_ICNLOWPAN_HC
+    uint8_t hopid;
+#endif
 };
 
 /**

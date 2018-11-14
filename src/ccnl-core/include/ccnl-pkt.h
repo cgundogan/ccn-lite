@@ -104,6 +104,10 @@ struct ccnl_pkt_s {
 #endif
     unsigned int flags;
     char suite;
+#ifdef MODULE_GNRC_ICNLOWPAN_HC
+    uint8_t hop_id;
+    struct ccnl_pkt_s *originator;
+#endif
 };
 
 /**

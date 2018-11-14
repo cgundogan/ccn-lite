@@ -659,6 +659,10 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
                 DEBUGMSG_CORE(VERBOSE, "    Serve to face: %d (pkt=%p)\n",
                          pi->face->faceid, (void*) c->pkt);
 
+#ifdef MODULE_GNRC_ICNLOWPAN_HC
+                c->pkt->hop_id = pi->hop_id_in;
+                c->pkt->originator = i->pkt;
+#endif
                 ccnl_send_pkt(ccnl, pi->face, c->pkt);
 
 

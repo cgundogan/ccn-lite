@@ -360,6 +360,65 @@ ccnl_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccn
     ccnl_interest_propagate(relay, ccnl_int);
 }
 
+#ifdef MODULE_GNRC_ICNLOWPAN_HC
+#include "icnlowpan.h"
+
+typedef struct {
+    struct ccnl_pkt_s *pkt;
+} icnl_context_t;
+
+unsigned icnl_hopid_skip_prefix(uint8_t hop_id, void *context)
+{
+    struct ccnl_pkt_s *pkt = ((icnl_context_t *) context)->pkt;
+    uint8_t hopid_to_check = pkt->hop_id;
+
+    if (hopid_to_check == hop_id) {
+        return pkt->originator->pfx->nameptr[1];
+    }
+    return 0;
+}
+
+void get_hopid(uint8_t local_hopid)
+{
+    ccnl_relay.hopid = local_hopid;
+}
+
+unsigned icnl_name_decompress(uint8_t *out, uint8_t hop_id, void *context)
+{
+	(void) context;
+    struct ccnl_relay_s *relay = &ccnl_relay;
+    struct ccnl_interest_s *i;
+    struct ccnl_pendint_s *pend;
+
+    bool dobreak = false;
+
+    for (i = relay->pit; i; i = i->next) {
+        pend = i->pending;
+        while (pend) {
+            if (pend->hop_id_out == hop_id) {
+                dobreak = true;
+                break;
+            }
+            pend = pend->next;
+        }
+        if (dobreak) {
+            break;
+        }
+    }
+
+    if (i) {
+        unsigned name_len = i->pkt->pfx->nameptr[1];
+        memcpy(out, i->pkt->pfx->nameptr + 2, name_len);
+        return name_len;
+    }
+
+    return 0;
+}
+
+
+#endif
+
+
 /* the main event-loop */
 void
 *_ccnl_event_loop(void *arg)
@@ -374,6 +433,12 @@ void
     msg_init_queue(_msg_queue, CCNL_QUEUE_SIZE);
     evtimer_init_msg(&ccnl_evtimer);
     struct ccnl_relay_s *ccnl = (struct ccnl_relay_s*) arg;
+
+#ifdef MODULE_GNRC_ICNLOWPAN_HC
+    icnl_cb_hopid_skip_prefix = icnl_hopid_skip_prefix;
+    icnl_cb_hopid_decompress_name = icnl_name_decompress;
+	icnl_cb_hopid = get_hopid;
+#endif
 
     while(!ccnl->halt_flag) {
         msg_t m, reply, mr;
