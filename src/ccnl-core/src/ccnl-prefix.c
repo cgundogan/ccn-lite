@@ -411,17 +411,18 @@ ccnl_i_prefixof_c(struct ccnl_prefix_s *prefix,
         return 0;
     }
 
-    if ((prefix->compcnt - p->compcnt) == 1) {
-        unsigned char *md = compute_ccnx_digest(c->pkt->buf); 
+    unsigned char *md = NULL;
 
+    if ((prefix->compcnt - p->compcnt) == 1) {
+        md = compute_ccnx_digest(c->pkt->buf);
         /* computing the ccnx digest failed */
         if (!md) {
             DEBUGMSG(TRACE, "computing the digest failed\n");
             return -3;
         }
-        
-        return (ccnl_prefix_cmp(p, md, prefix, CMP_MATCH) == prefix->compcnt);
     }
+
+    return (ccnl_prefix_cmp(p, md, prefix, CMP_MATCH) == prefix->compcnt);
 
     DEBUGMSG(TRACE, "mismatch in expected number of components between prefix and content\n");
     return -2;

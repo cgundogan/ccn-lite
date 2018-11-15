@@ -39,7 +39,10 @@
 #include "ccnl-logging.h"
 
 #ifdef MODULE_GNRC_ICNLOWPAN_HC
-uint8_t icnl_scratch[512];
+#ifndef ICNL_SCRATCH_SIZE
+#define ICNL_SCRATCH_SIZE (256)
+#endif
+uint8_t icnl_scratch[ICNL_SCRATCH_SIZE];
 #endif
 
 struct ccnl_suite_s ccnl_core_suites[CCNL_SUITE_LAST];
@@ -87,17 +90,17 @@ unsigned icnl_name_decompress(uint8_t *out, uint8_t hop_id, void *context)
     return 0;
 }
 
-//unsigned icnl_context_name_decompress(uint8_t *out, uint8_t prefix_cid, void *context)
-//{
-//    (void) context;
-//    (void) prefix_cid;
-//    const char name[] = { 0x08, 0x03, 0x41, 0x43, 0x4D, 0x08, 0x03, 0x49, 0x43, 0x4e, 0x00 };
-//    unsigned name_len = strlen(name);
-//
-//    memcpy(out, name, name_len);
-//
-//    return name_len;
-//}
+unsigned icnl_context_name_decompress(uint8_t *out, uint8_t prefix_cid, void *context)
+{
+    (void) context;
+    (void) prefix_cid;
+    const char name[] = { 0x08, 0x03, 'H', 'A', 'W', 0x08, 0x03, 'B', 'T', '7', 0x08, 0x04, 'R', 'o', 'o', 'm', 0x00 };
+    unsigned name_len = strlen(name);
+
+    memcpy(out, name, name_len);
+
+    return name_len;
+}
 
 #endif
 
@@ -110,7 +113,7 @@ ccnl_core_RX(struct ccnl_relay_s *relay, int ifndx, unsigned char *data,
     icnl_context_t ctx = { .relay = relay };
     icnl_cb_hopid = get_hopid;
     icnl_cb_hopid_decompress_name = icnl_name_decompress;
-    //icnl_cb_context_decompress_name = icnl_context_name_decompress;
+    icnl_cb_context_decompress_name = icnl_context_name_decompress;
     datalen = icnl_decode(icnl_scratch, data, datalen, &ctx);
     data = icnl_scratch;
 #endif

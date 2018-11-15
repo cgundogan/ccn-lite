@@ -31,7 +31,10 @@
 
 #ifdef MODULE_GNRC_ICNLOWPAN_HC
 #include "icnlowpan.h"
-extern uint8_t icnl_scratch[512];
+#ifndef ICNL_SCRATCH_SIZE
+#define ICNL_SCRATCH_SIZE (256)
+#endif
+extern uint8_t icnl_scratch[ICNL_SCRATCH_SIZE];
 #endif
 
 struct ccnl_relay_s {

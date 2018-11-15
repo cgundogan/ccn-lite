@@ -544,12 +544,10 @@ ccnl_ndntlv_forwarder(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     pkt->type = typ;
     switch (typ) {
     case NDN_TLV_Interest:
-        printf("interest\n");
         if (ccnl_fwd_handleInterest(relay, from, &pkt, ccnl_ndntlv_cMatch))
             goto Done;
         break;
     case NDN_TLV_Data:
-        printf("data\n");
         if (ccnl_fwd_handleContent(relay, from, &pkt))
             goto Done;
         break;
