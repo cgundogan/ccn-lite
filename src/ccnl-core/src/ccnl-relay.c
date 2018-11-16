@@ -33,7 +33,9 @@
 #include "ccn-lite-riot.h"
 #endif
 
-
+#ifdef MODULE_GNRC_ICNLOWPAN_HC
+uint32_t networking_send_before_lowpan = 0;
+#endif
 
 struct ccnl_face_s*
 ccnl_get_face_or_create(struct ccnl_relay_s *ccnl, int ifndx,
@@ -309,6 +311,7 @@ ccnl_send_pkt(struct ccnl_relay_s *ccnl, struct ccnl_face_s *to,
     if ((pkt->type == 0x00) || (pkt->type == 0x06)) {
         cid_len = 1;
     }
+    networking_send_before_lowpan = xtimer_now_usec();
     unsigned icnl_actual_len = icnl_encode(icnl_scratch, ICNL_PROTO_NDN_HC, pkt->buf->data, pkt->buf->datalen, cids, cid_len, &ctx);
     return ccnl_face_enqueue(ccnl, to, ccnl_buf_new(icnl_scratch, icnl_actual_len));
 #else
