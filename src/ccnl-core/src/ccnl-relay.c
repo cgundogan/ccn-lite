@@ -294,7 +294,7 @@ unsigned icnl_context_skip_prefix(uint8_t prefix_cid, void *context)
     (void) prefix_cid;
     (void) context;
 
-    return 16;
+    return ICNL_PREFIX_CUT_LEN;
 }
 #endif
 

@@ -51,7 +51,9 @@
 # define CCNL_MAX_PREFIX_SIZE            50
 #endif
 # define CCNL_MAX_ADDRESS_LEN            8
+#ifndef CCNL_MAX_NAME_COMP
 # define CCNL_MAX_NAME_COMP              8
+#endif
 # define CCNL_DEFAULT_MAX_PIT_ENTRIES    20
 #elif defined(CCNL_ANDROID) // max of BTLE and 2xUDP
 # define CCNL_MAX_INTERFACES             3

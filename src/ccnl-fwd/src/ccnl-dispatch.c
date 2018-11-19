@@ -94,7 +94,8 @@ unsigned icnl_context_name_decompress(uint8_t *out, uint8_t prefix_cid, void *co
 {
     (void) context;
     (void) prefix_cid;
-    const char name[] = { 0x08, 0x03, 'H', 'A', 'W', 0x08, 0x03, 'B', 'T', '7', 0x08, 0x04, 'R', 'o', 'o', 'm', 0x00 };
+    //const char name[] = { 0x08, 0x03, 'H', 'A', 'W', 0x08, 0x03, 'B', 'T', '7', 0x08, 0x04, 'R', 'o', 'o', 'm', 0x00 };
+    const char name[] = { ICNL_PREFIX_CUT };
     unsigned name_len = strlen(name);
 
     memcpy(out, name, name_len);
