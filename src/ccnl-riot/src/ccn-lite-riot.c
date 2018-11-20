@@ -50,6 +50,11 @@ extern uint32_t networking_send_netifdelta;
 extern uint32_t networking_send_net;
 extern uint32_t networking_send_app;
 
+extern uint32_t networking_recv_netif2;
+extern uint32_t networking_recv_netifdelta;
+extern uint32_t networking_recv_net;
+extern uint32_t networking_recv_app;
+
 /**
  * @brief May be defined for a particular caching strategy
  */
@@ -294,7 +299,11 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
                         break;
     }
     (void) rc; /* just to silence a compiler warning (if USE_DEBUG is not set) */
-    printf("t;%lu;%lu;%lu;%lu\n", networking_send_app, networking_send_net, networking_send_netif2, networking_send_netifdelta);
+    printf("tx;%lu;%lu;%lu;%lu\n", networking_send_app, networking_send_net, networking_send_netif2, networking_send_netifdelta);
+#ifdef NODE_PRODUCER
+    printf("rx;%lu;%lu;%lu;%lu\n", networking_send_app, networking_recv_net, networking_recv_netif2, networking_recv_netifdelta);
+    networking_recv_netifdelta = 0;
+#endif
     networking_send_netifdelta = 0;
 }
 
@@ -312,6 +321,12 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         DEBUGMSG(WARNING, "Something went wrong allocating buffer for the chunk!\n");
         return -1;
     }
+
+    networking_recv_app = xtimer_now_usec();
+#ifdef NODE_CONSUMER
+    printf("rx;%lu;%lu;%lu;%lu\n", networking_recv_app, networking_recv_net, networking_recv_netif2, networking_recv_netifdelta);
+    networking_recv_netifdelta = 0;
+#endif
 
     if (!gnrc_netapi_dispatch_receive(GNRC_NETTYPE_CCN_CHUNK,
                                       GNRC_NETREG_DEMUX_CTX_ALL, pkt)) {

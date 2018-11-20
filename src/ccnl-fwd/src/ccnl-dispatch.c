@@ -45,6 +45,8 @@
 uint8_t icnl_scratch[ICNL_SCRATCH_SIZE];
 #endif
 
+extern uint32_t networking_recv_net;
+
 struct ccnl_suite_s ccnl_core_suites[CCNL_SUITE_LAST];
 
 #ifdef MODULE_GNRC_ICNLOWPAN_HC
@@ -118,6 +120,7 @@ ccnl_core_RX(struct ccnl_relay_s *relay, int ifndx, unsigned char *data,
     datalen = icnl_decode(icnl_scratch, data, datalen, &ctx);
     data = icnl_scratch;
 #endif
+    networking_recv_net = xtimer_now_usec();
     unsigned char *base = data;
     struct ccnl_face_s *from;
     int enc, suite = -1, skip;
