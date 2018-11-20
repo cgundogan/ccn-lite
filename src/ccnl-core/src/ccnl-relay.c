@@ -33,7 +33,6 @@
 #include "ccn-lite-riot.h"
 #endif
 
-extern uint32_t networking_send_lowpan;
 extern uint32_t networking_send_net;
 
 struct ccnl_face_s*
@@ -301,7 +300,7 @@ int
 ccnl_send_pkt(struct ccnl_relay_s *ccnl, struct ccnl_face_s *to,
                 struct ccnl_pkt_s *pkt)
 {
-    networking_send_net = networking_send_lowpan = xtimer_now_usec();
+    networking_send_net = xtimer_now_usec();
 #ifdef MODULE_GNRC_ICNLOWPAN_HC
     icnl_cb_hopid_skip_prefix = icnl_hopid_skip_prefix;
     icnl_cb_context_skip_prefix = icnl_context_skip_prefix;
