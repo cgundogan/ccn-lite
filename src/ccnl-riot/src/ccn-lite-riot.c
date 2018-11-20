@@ -45,6 +45,11 @@
 #include "ccnl-producer.h"
 #include "ccnl-pkt-builder.h"
 
+extern uint32_t networking_send_netif2;
+extern uint32_t networking_send_netifdelta;
+extern uint32_t networking_send_net;
+extern uint32_t networking_send_app;
+
 /**
  * @brief May be defined for a particular caching strategy
  */
@@ -289,6 +294,8 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
                         break;
     }
     (void) rc; /* just to silence a compiler warning (if USE_DEBUG is not set) */
+    printf("t;%lu;%lu;%lu;%lu\n", networking_send_app, networking_send_net, networking_send_netif2, networking_send_netifdelta);
+    networking_send_netifdelta = 0;
 }
 
 /* packets delivered to the application */
