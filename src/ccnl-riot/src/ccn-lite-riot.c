@@ -45,11 +45,13 @@
 #include "ccnl-producer.h"
 #include "ccnl-pkt-builder.h"
 
+extern uint32_t networking_send_netif1;
 extern uint32_t networking_send_netif2;
 extern uint32_t networking_send_netifdelta;
 extern uint32_t networking_send_net;
 extern uint32_t networking_send_app;
 
+extern uint32_t networking_recv_netif1;
 extern uint32_t networking_recv_netif2;
 extern uint32_t networking_recv_netifdelta;
 extern uint32_t networking_recv_net;
@@ -283,6 +285,7 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
 
                             /* actual sending */
                             DEBUGMSG(DEBUG, " try to pass to GNRC (%i): %p\n", (int) ifc->if_pid, (void*) pkt);
+                            networking_send_netif1 = xtimer_now_usec();
 #ifdef MODULE_GNRC_ICNLOWPAN_HC
                             if (!gnrc_netapi_dispatch_send(GNRC_NETTYPE_SIXLOWPAN, GNRC_NETREG_DEMUX_CTX_ALL, hdr)) {
 #else
