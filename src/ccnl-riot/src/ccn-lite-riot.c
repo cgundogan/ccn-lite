@@ -351,6 +351,10 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 void
 _receive(struct ccnl_relay_s *ccnl, msg_t *m)
 {
+#ifndef MODULE_GNRC_ICNLOWPAN_HC
+    networking_recv_netif1 = xtimer_now_usec();
+    networking_recv_netifdelta += networking_recv_netif1 - networking_recv_netif2;
+#endif
     networking_recv_net = xtimer_now_usec();
     int i;
     /* iterate over interfaces */
