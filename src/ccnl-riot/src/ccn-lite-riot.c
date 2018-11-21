@@ -45,12 +45,14 @@
 #include "ccnl-producer.h"
 #include "ccnl-pkt-builder.h"
 
+extern uint32_t networking_send_lowpan;
 extern uint32_t networking_send_netif1;
 extern uint32_t networking_send_netif2;
 extern uint32_t networking_send_netifdelta;
 extern uint32_t networking_send_net;
 extern uint32_t networking_send_app;
 
+extern uint32_t networking_recv_lowpan;
 extern uint32_t networking_recv_netif1;
 extern uint32_t networking_recv_netif2;
 extern uint32_t networking_recv_netifdelta;
@@ -285,6 +287,10 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
 
                             /* actual sending */
                             DEBUGMSG(DEBUG, " try to pass to GNRC (%i): %p\n", (int) ifc->if_pid, (void*) pkt);
+                            networking_send_net = xtimer_now_usec();
+#ifdef MODULE_GNRC_ICNLOWPAN_HC
+                            networking_send_net -= networking_send_lowpan;
+#endif
                             networking_send_netif1 = xtimer_now_usec();
 #ifdef MODULE_GNRC_ICNLOWPAN_HC
                             if (!gnrc_netapi_dispatch_send(GNRC_NETTYPE_SIXLOWPAN, GNRC_NETREG_DEMUX_CTX_ALL, hdr)) {
@@ -302,9 +308,9 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
                         break;
     }
     (void) rc; /* just to silence a compiler warning (if USE_DEBUG is not set) */
-    printf("tx;%lu;%lu;%lu;%lu\n", networking_send_app, networking_send_net, networking_send_netif2, networking_send_netifdelta);
+    printf("tx;%lu;%lu;%lu;%lu;%lu\n", networking_send_app, networking_send_net, networking_send_netif2, networking_send_netifdelta, networking_send_lowpan);
 #ifdef NODE_PRODUCER
-    printf("rx;%lu;%lu;%lu;%lu\n", networking_send_app, networking_recv_net, networking_recv_netif2, networking_recv_netifdelta);
+    printf("rx;%lu;%lu;%lu;%lu;%lu\n", networking_send_app, networking_recv_net, networking_recv_netif2, networking_recv_netifdelta, networking_recv_lowpan);
     networking_recv_netifdelta = 0;
 #endif
     networking_send_netifdelta = 0;
@@ -327,7 +333,7 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 
     networking_recv_app = xtimer_now_usec();
 #ifdef NODE_CONSUMER
-    printf("rx;%lu;%lu;%lu;%lu\n", networking_recv_app, networking_recv_net, networking_recv_netif2, networking_recv_netifdelta);
+    printf("rx;%lu;%lu;%lu;%lu;%lu\n", networking_recv_app, networking_recv_net, networking_recv_netif2, networking_recv_netifdelta, networking_recv_lowpan);
     networking_recv_netifdelta = 0;
 #endif
 
@@ -345,6 +351,7 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 void
 _receive(struct ccnl_relay_s *ccnl, msg_t *m)
 {
+    networking_recv_net = xtimer_now_usec();
     int i;
     /* iterate over interfaces */
     for (i = 0; i < ccnl->ifcount; i++) {
