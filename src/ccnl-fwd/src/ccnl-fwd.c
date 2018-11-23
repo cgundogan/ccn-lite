@@ -51,11 +51,14 @@ int ccnl_fib_add_entry(struct ccnl_relay_s *relay, struct ccnl_prefix_s *pfx,
                        struct ccnl_face_s *face);
 #endif
 
+extern uint32_t networking_msg_type;
+
 // returning 0 if packet was
 int
 ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
                        struct ccnl_pkt_s **pkt)
 {
+    networking_msg_type = 0;
     struct ccnl_content_s *c;
     char s[CCNL_MAX_PREFIX_SIZE];
     (void) s;
@@ -179,6 +182,7 @@ int
 ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
                         struct ccnl_pkt_s **pkt, cMatchFct cMatch)
 {
+    networking_msg_type = 1;
     struct ccnl_interest_s *i;
     struct ccnl_content_s *c;
     int propagate= 0;

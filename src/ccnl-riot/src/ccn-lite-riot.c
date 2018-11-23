@@ -61,6 +61,7 @@ extern uint32_t networking_recv_net;
 extern uint32_t networking_recv_app;
 
 extern bool networking_recv_netiffirst;
+extern uint32_t networking_msg_type;
 
 /**
  * @brief May be defined for a particular caching strategy
@@ -311,12 +312,12 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
                         break;
     }
     (void) rc; /* just to silence a compiler warning (if USE_DEBUG is not set) */
-    printf("tx;%lu;%lu;%lu;%lu;%lu\n", networking_send_app, networking_send_net, networking_send_netif2, networking_send_netifdelta, networking_send_lowpan);
-#ifdef NODE_PRODUCER
-    printf("rx;%lu;%lu;%lu;%lu;%lu\n", networking_send_app, networking_recv_net, networking_recv_netif, networking_recv_netifdelta, networking_recv_lowpan);
+#if defined(NODE_PRODUCER) || defined(NODE_FORWARDER)
+    printf("rx;%lu;%lu;%lu;%lu;%lu;%lu\n", networking_send_app, networking_recv_net, networking_recv_netif, networking_recv_netifdelta, networking_recv_lowpan, networking_msg_type);
     networking_recv_netifdelta = 0;
     networking_recv_netiffirst = true;
 #endif
+    printf("tx;%lu;%lu;%lu;%lu;%lu;%lu\n", networking_send_app, networking_send_net, networking_send_netif2, networking_send_netifdelta, networking_send_lowpan, networking_msg_type);
     networking_send_netifdelta = 0;
 }
 
@@ -337,7 +338,7 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 
     networking_recv_app = xtimer_now_usec();
 #ifdef NODE_CONSUMER
-    printf("rx;%lu;%lu;%lu;%lu;%lu\n", networking_recv_app, networking_recv_net, networking_recv_netif, networking_recv_netifdelta, networking_recv_lowpan);
+    printf("rx;%lu;%lu;%lu;%lu;%lu;%lu\n", networking_recv_app, networking_recv_net, networking_recv_netif, networking_recv_netifdelta, networking_recv_lowpan, networking_msg_type);
     networking_recv_netifdelta = 0;
     networking_recv_netiffirst = true;
 #endif

@@ -35,6 +35,7 @@
 
 extern uint32_t networking_send_lowpan;
 extern uint32_t networking_send_net;
+extern uint32_t networking_send_app;
 
 struct ccnl_face_s*
 ccnl_get_face_or_create(struct ccnl_relay_s *ccnl, int ifndx,
@@ -703,6 +704,9 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 #ifdef MODULE_GNRC_ICNLOWPAN_HC
                 c->pkt->hop_id = pi->hop_id_in;
                 c->pkt->originator = i->pkt;
+#endif
+#ifdef NODE_FORWARDER
+                networking_send_app = xtimer_now_usec();
 #endif
                 ccnl_send_pkt(ccnl, pi->face, c->pkt);
 
