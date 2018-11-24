@@ -62,6 +62,7 @@ extern uint32_t networking_recv_app;
 
 extern bool networking_recv_netiffirst;
 extern uint32_t networking_msg_type;
+extern uint32_t networking_content_creation_diff;
 
 /**
  * @brief May be defined for a particular caching strategy
@@ -317,7 +318,12 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
     networking_recv_netifdelta = 0;
     networking_recv_netiffirst = true;
 #endif
+#if defined(NODE_PRODDUCER)
+    printf("tx;%lu;%lu;%lu;%lu;%lu;%lu\n", networking_send_app + networking_content_creation_diff, networking_send_net, networking_send_netif2, networking_send_netifdelta, networking_send_lowpan, networking_msg_type);
+#else
+    (void) networking_content_creation_diff;
     printf("tx;%lu;%lu;%lu;%lu;%lu;%lu\n", networking_send_app, networking_send_net, networking_send_netif2, networking_send_netifdelta, networking_send_lowpan, networking_msg_type);
+#endif
     networking_send_netifdelta = 0;
 }
 
