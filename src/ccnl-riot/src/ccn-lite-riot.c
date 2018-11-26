@@ -45,6 +45,10 @@
 #include "ccnl-producer.h"
 #include "ccnl-pkt-builder.h"
 
+#ifndef NETWORKING_VERBOSE
+#define NETWORKING_VERBOSE (1)
+#endif
+
 extern uint32_t networking_send_lowpan;
 extern uint32_t networking_send_netif1;
 extern uint32_t networking_send_netif2;
@@ -314,15 +318,21 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
     }
     (void) rc; /* just to silence a compiler warning (if USE_DEBUG is not set) */
 #if defined(NODE_PRODUCER) || defined(NODE_FORWARDER)
+#if NETWORKING_VERBOSE
     printf("rx;%lu;%lu;%lu;%lu;%lu;%lu\n", networking_send_app, networking_recv_net, networking_recv_netif, networking_recv_netifdelta, networking_recv_lowpan, networking_msg_type);
     networking_recv_netifdelta = 0;
     networking_recv_netiffirst = true;
 #endif
+#endif
 #if defined(NODE_PRODDUCER)
+#if NETWORKING_VERBOSE
     printf("tx;%lu;%lu;%lu;%lu;%lu;%lu\n", networking_send_app + networking_content_creation_diff, networking_send_net, networking_send_netif2, networking_send_netifdelta, networking_send_lowpan, networking_msg_type);
+#endif
 #else
     (void) networking_content_creation_diff;
+#if NETWORKING_VERBOSE
     printf("tx;%lu;%lu;%lu;%lu;%lu;%lu\n", networking_send_app, networking_send_net, networking_send_netif2, networking_send_netifdelta, networking_send_lowpan, networking_msg_type);
+#endif
 #endif
     networking_send_netifdelta = 0;
 }
@@ -344,9 +354,11 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 
     networking_recv_app = xtimer_now_usec();
 #ifdef NODE_CONSUMER
+#if NETWORKING_VERBOSE
     printf("rx;%lu;%lu;%lu;%lu;%lu;%lu\n", networking_recv_app, networking_recv_net, networking_recv_netif, networking_recv_netifdelta, networking_recv_lowpan, networking_msg_type);
     networking_recv_netifdelta = 0;
     networking_recv_netiffirst = true;
+#endif
 #endif
 
     if (!gnrc_netapi_dispatch_receive(GNRC_NETTYPE_CCN_CHUNK,
