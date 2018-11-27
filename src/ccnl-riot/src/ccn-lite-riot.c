@@ -40,6 +40,8 @@
 #include "net/packet.h"
 #include "ccn-lite-riot.h"
 
+#include "periph/gpio.h"
+
 #include "ccnl-os-time.h"
 #include "ccnl-fwd.h"
 #include "ccnl-producer.h"
@@ -353,6 +355,12 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
     }
 
     networking_recv_app = xtimer_now_usec();
+#if NETWORKING_ENERGY
+#ifdef NODE_CONSUMER
+    gpio_set(NETWORKING_CONSUMER_APP_RX_PIN);
+    gpio_clear(NETWORKING_CONSUMER_APP_RX_PIN);
+#endif
+#endif
 #ifdef NODE_CONSUMER
 #if NETWORKING_VERBOSE
     printf("rx;%lu;%lu;%lu;%lu;%lu;%lu\n", networking_recv_app, networking_recv_net, networking_recv_netif, networking_recv_netifdelta, networking_recv_lowpan, networking_msg_type);
