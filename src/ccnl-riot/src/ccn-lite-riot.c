@@ -70,6 +70,8 @@ extern bool networking_recv_netiffirst;
 extern uint32_t networking_msg_type;
 extern uint32_t networking_content_creation_diff;
 
+extern uint32_t max_recvd;
+
 /**
  * @brief May be defined for a particular caching strategy
  */
@@ -375,6 +377,8 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
                  interested in it\n");
         gnrc_pktbuf_release(pkt);
     }
+
+    max_recvd++;
 
     return 0;
 }
