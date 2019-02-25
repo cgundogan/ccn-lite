@@ -220,7 +220,11 @@ ccnl_pkt_interest_lifetime(const struct ccnl_pkt_s *pkt)
 #endif
 #ifdef USE_SUITE_NDNTLV
     case CCNL_SUITE_NDNTLV:
+#ifndef USE_SUITE_NDNTLV03
         return (pkt->s.ndntlv.interestlifetime / 1000);
+#else
+        return (pkt->s.ndntlv_interest.lifetime / 1000);
+#endif
 #endif
     default:
         break;

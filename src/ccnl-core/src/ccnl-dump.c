@@ -251,6 +251,7 @@ ccnl_dump(int lev, int typ, void *p)
                     break;
 #endif
 #ifdef USE_SUITE_NDNTLV
+#ifndef USE_SUITE_NDNTLV03
                 case CCNL_SUITE_NDNTLV:
                     INDENT(lev + 1);
                     CONSOLE("minsfx=%llu maxsfx=%llu mbf=%d scope=%llu",
@@ -268,6 +269,7 @@ ccnl_dump(int lev, int typ, void *p)
                         CONSOLE("\n");
                     }
                     break;
+#endif
 #endif
                 default:
                     INDENT(lev + 1);
@@ -475,9 +477,11 @@ get_interest_dump(int lev, void *p, long *interest, long *next, long *prev,
                     publisher[line] = (long)(void *) itr->pkt->s.ccnb.ppkd;
                     break;
                 case CCNL_SUITE_NDNTLV:
+#ifndef USE_SUITE_NDNTLV03
                     min[line] = itr->pkt->s.ndntlv.minsuffix;
                     max[line] = itr->pkt->s.ndntlv.maxsuffix;
                     publisher[line] = (long)(void *) itr->pkt->s.ndntlv.ppkl;
+#endif
                     break;
                 default:
                     break;

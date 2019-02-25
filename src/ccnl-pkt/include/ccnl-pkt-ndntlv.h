@@ -198,4 +198,9 @@ int8_t
 ccnl_ndntlv_prependName(struct ccnl_prefix_s *name,
                         size_t *offset, uint8_t *buf);
 
+static inline bool
+ccnl_ndntlv_is_data(unsigned type) {
+    return (type == NDN_TLV_Data);
+}
+
 #endif // EOF

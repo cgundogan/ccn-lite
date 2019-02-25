@@ -27,6 +27,7 @@
 #include <stddef.h>
 
 #include "ccnl-content.h"
+#include "ndnv03/data.h"
 
 /**
  * Default interest lifetime in milliseconds. If the element is omitted by a user, a default
@@ -38,6 +39,35 @@
 
 #define NDN_UDP_PORT                    6363
 #define NDN_DEFAULT_MTU                 4096
+
+struct ccnl_ndntlv03_interest_s {
+    uint32_t nonce;                   /**< nonce of the interest */
+    uint32_t lifetime;                /**< lifetime of the interest */
+
+    uint8_t can_be_prefix;            /**< if present, the name element in the interest is a prefix, exact, or full name of the requested data packet */
+
+    uint8_t must_be_fresh;            /**< indicates whether a content store may satisfy the interest with stale data */
+
+    /* TODO add parameters TLV */
+
+    uint8_t hop_limit;                /**< hop limit */
+
+    uint8_t lifetime_enabled :1;      /**< indicates if the lifetime field is set*/
+    uint8_t can_be_prefix_enabled :1; /**< indicates if @ref can_be_prefix field is set */
+    uint8_t must_be_fresh_enabled :1; /**< indicates if @ref must_be_fresh field is set */
+    uint8_t parameters_enabled :1;    /**< indicates if parameters field is set */
+    uint8_t hop_limit_enabled :1;     /**< indicates if field @ref hop_limit is set */
+};
+
+struct ccnl_ndntlv03_data_s {
+    ndn_data_metainfo_t metainfo;          /**< MetaInfo TLV */
+    ndn_data_content_t content;            /**< Content TLV */
+    uint8_t metainfo_enabled :1;           /**< indicates if @ref metainfo is included */
+    uint8_t contenttype_enabled :1;        /**< indicates if @ref metainfo::contenttype is set */
+    uint8_t freshnessperiod_enabled :1;    /**< indicates if @ref metainfo::freshnessperiod is set */
+    uint8_t finalblockid_enabled :1;       /**< indicates if @ref metainfo::finalblockid is set */
+    uint8_t content_enabled :1;            /**< indicates if @ref content is set */
+};
 
 /**
  * @brief NDN Interest options
@@ -89,5 +119,10 @@ ccnl_ndntlv_prependContent(struct ccnl_prefix_s *name,
                            uint8_t *payload, size_t paylen,
                            size_t *contentpos, struct ccnl_ndntlv_data_opts_s *opts,
                            size_t *offset, uint8_t *buf, size_t *reslen);
+
+static inline bool
+ccnl_ndntlv_is_data(unsigned type) {
+    return (type == tlv_data);
+}
 
 #endif /* CCNL_PKT_NDNTLV_H */

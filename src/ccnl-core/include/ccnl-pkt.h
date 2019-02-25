@@ -31,7 +31,11 @@
 #include "ccnl-prefix.h"
 
 #ifdef USE_SUITE_NDNTLV
+#ifndef USE_SUITE_NDNTLV03
 #include "ccnl-pkt-ndntlv.h"
+#else
+#include "ndnv03/ccnl-pkt-ndntlv.h"
+#endif
 #endif
 
 #ifdef USE_SUITE_NDNTLV03
@@ -104,7 +108,14 @@ struct ccnl_pkt_s {
     union {
         struct ccnl_pktdetail_ccnb_s   ccnb;
         struct ccnl_pktdetail_ccntlv_s ccntlv;
+#ifdef USE_SUITE_NDNTLV
+#ifndef USE_SUITE_NDNTLV03
         struct ccnl_pktdetail_ndntlv_s ndntlv;
+#else
+        struct ccnl_ndntlv03_interest_s ndntlv_interest;
+        struct ccnl_ndntlv03_data_s ndntlv_data;
+#endif
+#endif
     } s;                           /**< suite specific packet details */
 #ifdef USE_HMAC256
     uint8_t *hmacStart;
