@@ -203,4 +203,14 @@ ccnl_ndntlv_is_data(unsigned type) {
     return (type == NDN_TLV_Data);
 }
 
+static inline bool
+ccnl_ndntlv_is_interest(unsigned type) {
+    return (type == NDN_TLV_Interest);
+}
+
+static inline bool
+ccnl_ndntlv_is_fragment(unsigned type) {
+    return (type == NDN_TLV_Fragment);
+}
+
 #endif // EOF

@@ -94,8 +94,12 @@ ccnl_interest_isSame(struct ccnl_interest_s *i, struct ccnl_pkt_s *pkt)
                     
 #ifdef USE_SUITE_NDNTLV
                 case CCNL_SUITE_NDNTLV: 
+#ifndef USE_SUITE_NDNTLV03
                     return i->pkt->s.ndntlv.minsuffix == pkt->s.ndntlv.minsuffix && i->pkt->s.ndntlv.maxsuffix == pkt->s.ndntlv.maxsuffix &&
                     ((!i->pkt->s.ndntlv.ppkl && !pkt->s.ndntlv.ppkl) || buf_equal(i->pkt->s.ndntlv.ppkl, pkt->s.ndntlv.ppkl));
+#else
+                    break;
+#endif
 #endif
 #ifdef USE_SUITE_CCNTLV 
                 case CCNL_SUITE_CCNTLV: 

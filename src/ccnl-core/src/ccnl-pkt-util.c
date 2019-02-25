@@ -166,7 +166,7 @@ ccnl_pkt2suite(uint8_t *data, size_t len, size_t *skip)
 #endif
 
 #ifdef USE_SUITE_NDNTLV
-    if (*data == NDN_TLV_Interest || *data == NDN_TLV_Data ||
+    if (ndntlv_is_interest(*data) || *data == NDN_TLV_Data ||
         *data == NDN_TLV_Fragment) {
         return CCNL_SUITE_NDNTLV;
     }

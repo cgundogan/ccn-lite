@@ -125,4 +125,14 @@ ccnl_ndntlv_is_data(unsigned type) {
     return (type == tlv_data);
 }
 
+static inline bool
+ccnl_ndntlv_is_interest(unsigned type) {
+    return (type == tlv_interest);
+}
+
+static inline bool
+ccnl_ndntlv_is_fragment(unsigned type) {
+    return (type == 0x64);
+}
+
 #endif /* CCNL_PKT_NDNTLV_H */

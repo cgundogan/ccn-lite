@@ -2815,7 +2815,9 @@ ccnl_mgmt_addcacheobject(struct ccnl_relay_s *ccnl, struct ccnl_buf_s *orig,
             pkt->s.ccnb.maxsuffix = CCNL_MAX_NAME_COMP;
             break;
         case CCNL_SUITE_NDNTLV:
+#ifndef USE_SUITE_NDNTLV03
             pkt->s.ndntlv.maxsuffix = CCNL_MAX_NAME_COMP;
+#endif
             break;
         default:
             break;
