@@ -34,6 +34,12 @@
 #include "ccnl-pkt-ndntlv.h"
 #endif
 
+#ifdef USE_SUITE_NDNTLV03
+#include "ndnv03/interest.h"
+#include "ndnv03/data.h"
+#include "ndnv03/ccnl-pkt-ndntlv.h"
+#endif
+
 // packet flags:  0000ebtt
 #define CCNL_PKT_REQUEST    0x01 // "Interest"
 #define CCNL_PKT_REPLY      0x02 // "Object", "Data"

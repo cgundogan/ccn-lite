@@ -1,6 +1,6 @@
-#include "tlv.h"
-#include "interest.h"
-#include "name.h"
+#include "ndnv03/tlv.h"
+#include "ndnv03/interest.h"
+#include "ndnv03/name.h"
 
 int8_t nonce_encode(buffer_write_t *out, uint32_t nonce)
 {
@@ -36,7 +36,7 @@ int8_t interest_lifetime_encode(buffer_write_t *out, uint32_t interest_lifetime)
     return result;
 }
 
-size_t interest_get_size(const ndn_interest_t* interest)
+size_t interest_get_size(const ndnv03_interest_t* interest)
 {
     size_t size = get_name_block_size(&(interest->name));
 
@@ -67,7 +67,7 @@ size_t interest_get_size(const ndn_interest_t* interest)
     return size;
 }
 
-int8_t interest_encode(buffer_write_t *out, ndn_interest_t *interest)
+int8_t interest_encode(buffer_write_t *out, ndnv03_interest_t *interest)
 {
     int8_t result = -1;
 
@@ -124,7 +124,7 @@ int8_t interest_encode(buffer_write_t *out, ndn_interest_t *interest)
     return result;
 }
 
-int8_t interest_decode(ndn_interest_t *interest, buffer_read_t *in)
+int8_t interest_decode(ndnv03_interest_t *interest, buffer_read_t *in)
 {
     int8_t result = -1;
 

@@ -8,25 +8,28 @@
 
 /**
  * @file        interest.h
- * @brief       Data structures and functions for NDN interests
+ * @brief       Data structures and functions for NDN Interest messages
  * @author      Michael Frey <michael.frey@safetyio.com>
  * @copyright   MIT License
  * @addtogroup  NDNup Minimal Standalone NDN Packet Parser
  * @{
  */
 
-#ifndef INTEREST_H
-#define INTEREST_H
+#ifndef NDNV03_INTEREST_H
+#define NDNV03_INTEREST_H
 
 #include <stdint.h>
 #include <string.h>
 
-#include "tlv.h"
-#include "name.h"
-#include "helper.h"
-#include "constants.h"
-#include "buffer.h"
+#include "ndnv03/tlv.h"
+#include "ndnv03/name.h"
+#include "ndnv03/helper.h"
+#include "ndnv03/constants.h"
+#include "ndnv03/buffer.h"
 
+/**
+ * The default lifetime of an Interest packet in milliseconds.
+ */
 #ifndef INTEREST_DEFAULT_LIFETIME
 #define INTEREST_DEFAULT_LIFETIME (4000u)
 #endif
@@ -36,17 +39,20 @@ extern "C" {
 #endif
 
 /**
- * The structure to represent the Interest parameters element.
+ * @brief NDN Interest parameters element
+ * @{
  */
 typedef struct interest_params {
-  uint8_t value[NDN_INTEREST_PARAMETERS_BUFFER_SIZE];
-  uint32_t size;
-} interest_params_t;
+  uint8_t value[NDN_INTEREST_PARAMETERS_BUFFER_SIZE]; /**< actual interest parameters */
+  uint32_t size;                                      /**< overall size of the interest parameters */
+} ndnv03_interest_params_t;
+/** @} */
 
 /**
- * Representation of a Interest message
+ * @brief NDN Interest message
+ * @{
  */
-typedef struct ndn_interest {
+typedef struct {
     ndn_name_t name;               /**< name of the interest */
 
     uint32_t nonce;                /**< nonce of the interest */
@@ -56,7 +62,7 @@ typedef struct ndn_interest {
 
     uint8_t must_be_fresh;         /**< indicates whether a content store may satisfy the interest with stale data */
 
-    interest_params_t parameters;  /**< parameters of the interest */
+    ndnv03_interest_params_t parameters;  /**< parameters of the interest */
 
     uint8_t hop_limit;             /**< hop limit */
 
@@ -65,13 +71,13 @@ typedef struct ndn_interest {
     uint8_t must_be_fresh_enabled :1; /**< indicates if @ref must_be_fresh field is set */
     uint8_t parameters_enabled :1;    /**< indicates if parameters field is set */
     uint8_t hop_limit_enabled :1;     /**< indicates if field @ref hop_limit is set */
-} ndn_interest_t;
+} ndnv03_interest_t;
+/** @} */
 
-
-static inline void interest_create(ndn_interest_t *interest)
+static inline void interest_create(ndnv03_interest_t *interest)
 {
     /** initialize all fields of the interest with '0' */
-    memset(interest, 0, sizeof(ndn_interest_t));
+    memset(interest, 0, sizeof(ndnv03_interest_t));
 }
 
 /**
@@ -80,7 +86,7 @@ static inline void interest_create(ndn_interest_t *interest)
  * @param[in]   interest   Interest messages
  * @return      Length of the encoded message in bytes
  */
-size_t interest_get_size(const ndn_interest_t* interest);
+size_t interest_get_size(const ndnv03_interest_t* interest);
 
 /**
  * @brief       Encodes an Interest message
@@ -91,7 +97,7 @@ size_t interest_get_size(const ndn_interest_t* interest);
  * @retval      -1 output buffer @p out was NULL
  * @retval      -2 @p interest was NULL
  */
-int8_t interest_encode(buffer_write_t *out, ndn_interest_t *interest);
+int8_t interest_encode(buffer_write_t *out, ndnv03_interest_t *interest);
 
 
 /**
@@ -104,14 +110,14 @@ int8_t interest_encode(buffer_write_t *out, ndn_interest_t *interest);
  * @retval      -2 input buffer @p in was NULL
  * @retval      -3 data in @p in to decode was not an Interest packet 
  */
-int8_t interest_decode(ndn_interest_t *interest, buffer_read_t *in);
+int8_t interest_decode(ndnv03_interest_t *interest, buffer_read_t *in);
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* INTEREST_H */
+#endif /* NDNV03_INTEREST_H */
 
 /**
  * @}

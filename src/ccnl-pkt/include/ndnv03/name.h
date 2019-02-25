@@ -21,19 +21,20 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "tlv.h"
-#include "helper.h"
-#include "constants.h"
-#include "component.h"
-#include "buffer.h"
+#include "ndnv03/tlv.h"
+#include "ndnv03/helper.h"
+#include "ndnv03/constants.h"
+#include "ndnv03/component.h"
+#include "ndnv03/buffer.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * The structure to represent the Name.
- * This structure is memory expensive so please be careful when using it.
+ * @brief NDN name
+ * (This structure is memory expensive so please be careful when using it.)
+ * @{
  */
 typedef struct {
   /**
@@ -45,6 +46,7 @@ typedef struct {
    */
   uint32_t components_size;
 } ndn_name_t;
+/** @} */
 
 /**
  * @brief       Returns the size of an encoded Name TLV

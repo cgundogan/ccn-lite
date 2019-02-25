@@ -8,24 +8,24 @@
 
 /**
  * @file        data.h
- * @brief       Data structures and functions for NDN data messages
+ * @brief       Data structures and functions for NDN Data messages
  * @author      Cenk Gündoğan <cenk.guendogan@haw-hamburg.de>
  * @copyright   MIT License
  * @addtogroup  Decoder
  * @{
  */
 
-#ifndef DATA_H
-#define DATA_H
+#ifndef NDNV03_DATA_H
+#define NDNV03_DATA_H
 
 #include <stdint.h>
 #include <string.h>
 
-#include "tlv.h"
-#include "name.h"
-#include "helper.h"
-#include "constants.h"
-#include "buffer.h"
+#include "ndnv03/tlv.h"
+#include "ndnv03/name.h"
+#include "ndnv03/helper.h"
+#include "ndnv03/constants.h"
+#include "ndnv03/buffer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,24 +39,29 @@ extern "C" {
 #endif
 
 /**
- * Representation of the MetaInfo TLV
+ * @brief Representation of the MetaInfo TLV
+ * @{
  */
 typedef struct {
     tlfield_t contenttype;              /**< content type */
     tlfield_t freshnessperiod;          /**< period the data is marked as fresh */
     ndn_component_t finalblockid;       /**< indicating the final name component */
 } ndn_data_metainfo_t;
+/** @} */
 
 /**
- * Representation of the Content TLV
+ * @brief Representation of the Content TLV
+ * @{
  */
 typedef struct {
     uint8_t value[DATA_CONTENT_LENGTH];  /**< actual content */
     size_t length;                       /**< length of the content */
 } ndn_data_content_t;
+/** @} */
 
 /**
- * Representation of a Data message
+ * @brief NDN Data message
+ * @{
  */
 typedef struct {
     ndn_name_t name;                       /**< name of the data */
@@ -67,12 +72,13 @@ typedef struct {
     uint8_t freshnessperiod_enabled :1;    /**< indicates if @ref metainfo::freshnessperiod is set */
     uint8_t finalblockid_enabled :1;       /**< indicates if @ref metainfo::finalblockid is set */
     uint8_t content_enabled :1;            /**< indicates if @ref content is set */
-} ndn_data_t;
+} ndnv03_data_t;
+/** @} */
 
-static inline void data_create(ndn_data_t *data)
+static inline void data_create(ndnv03_data_t *data)
 {
     /** initialize all fields of the data with '0' */
-    memset(data, 0, sizeof(ndn_data_t));
+    memset(data, 0, sizeof(ndnv03_data_t));
 }
 
 /**
@@ -84,7 +90,7 @@ static inline void data_create(ndn_data_t *data)
  * @retval      -1 output buffer @p out was NULL
  * @retval      -2 @p data was NULL
  */
-int8_t data_encode(buffer_write_t *out, ndn_data_t *data);
+int8_t data_encode(buffer_write_t *out, ndnv03_data_t *data);
 
 /**
  * @brief       Decodes a Data message
@@ -96,13 +102,13 @@ int8_t data_encode(buffer_write_t *out, ndn_data_t *data);
  * @retval      -2 input buffer @p in was NULL
  * @retval      -3 data in @p in to decode was not a Data packet
  */
-int8_t data_decode(ndn_data_t *data, buffer_read_t *in);
+int8_t data_decode(ndnv03_data_t *data, buffer_read_t *in);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* DATA_H */
+#endif /* NDNV03_DATA_H */
 
 /**
  * @}
