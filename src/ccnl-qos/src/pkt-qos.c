@@ -46,7 +46,7 @@ char *qos_traffic_class(char *name)
 
         if (memcmp(tcs[i], name, len) == 0) {
             if ((name_len > len) && (name[len] == '/')) {
-                if (len > strlen(class)) {
+                if (!class || (len > strlen(class))) {
                     class = tcs[i];
                 }
             }
