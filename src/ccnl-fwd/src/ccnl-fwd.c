@@ -90,6 +90,10 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         return 0;
     }
 
+    ccnl_prefix_to_str((*pkt)->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    qos_traffic_class_t *tclass = qos_traffic_class(s);
+    printf("Data tclass: [prefix: %s, reliable: %d, expedited: %d]\n", tclass->traffic_class, tclass->reliable, tclass->expedited);
+
     // CONFORM: Step 1:
     for (c = relay->contents; c; c = c->next) {
         if (ccnl_prefix_cmp(c->pkt->pfx, NULL, (*pkt)->pfx, CMP_EXACT) == 0) {
@@ -248,7 +252,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 
     ccnl_prefix_to_str((*pkt)->pfx, s, CCNL_MAX_PREFIX_SIZE);
     qos_traffic_class_t *tclass = qos_traffic_class(s);
-    printf("tclass: [prefix: %s, reliable: %d, expedited: %d]\n", tclass->traffic_class, tclass->reliable, tclass->expedited);
+    printf("Interest tclass: [prefix: %s, reliable: %d, expedited: %d]\n", tclass->traffic_class, tclass->reliable, tclass->expedited);
 
     for (c = relay->contents; c; c = c->next) {
         if (c->pkt->pfx->suite != (*pkt)->pfx->suite)
@@ -267,6 +271,10 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 #endif 
             }
         }
+
+        ccnl_prefix_to_str(c->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+        qos_traffic_class_t *tclass = qos_traffic_class(s);
+        printf("Data tclass: [prefix: %s, reliable: %d, expedited: %d]\n", tclass->traffic_class, tclass->reliable, tclass->expedited);
 
         return 0; // we are done
     }
