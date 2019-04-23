@@ -247,8 +247,8 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     DEBUGMSG_CFWD(DEBUG, "  searching in CS\n");
 
     ccnl_prefix_to_str((*pkt)->pfx, s, CCNL_MAX_PREFIX_SIZE);
-    char *tclass = qos_traffic_class(s);
-    printf("tclass: %s\n", tclass);
+    qos_traffic_class_t *tclass = qos_traffic_class(s);
+    printf("tclass: [prefix: %s, reliable: %d, expedited: %d]\n", tclass->traffic_class, tclass->reliable, tclass->expedited);
 
     for (c = relay->contents; c; c = c->next) {
         if (c->pkt->pfx->suite != (*pkt)->pfx->suite)

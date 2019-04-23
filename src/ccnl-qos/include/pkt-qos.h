@@ -21,13 +21,21 @@
 #define CCN_LITE_QOS_H
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-char *qos_traffic_class(char *name);
+#define QOS_MAX_TC_LENGTH (32)
 
+typedef struct {
+    char traffic_class[QOS_MAX_TC_LENGTH];
+    bool expedited;
+    bool reliable;
+} qos_traffic_class_t;
+
+qos_traffic_class_t *qos_traffic_class(char *name);
 
 #ifdef __cplusplus
 }

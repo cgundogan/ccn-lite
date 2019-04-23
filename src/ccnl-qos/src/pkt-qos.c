@@ -20,34 +20,35 @@
 #include <string.h>
 #include "pkt-qos.h"
 
-#define QOS_MAX_TC_ENTRIES (4)
-#define QOS_MAX_TC_LENGTH (16)
+#define QOS_MAX_TC_ENTRIES (3)
 
-char tcs[QOS_MAX_TC_ENTRIES][QOS_MAX_TC_LENGTH] =
+qos_traffic_class_t tcs[QOS_MAX_TC_ENTRIES] =
 {
-    "/HAW",
-    "/SafetyIO/Site/A",
+    { "/HAW", false, false },
+    { "/SafetyIO/Site/A", false, true },
+    { "/HAW/Room/481", true, true },
 };
 
-char *qos_traffic_class(char *name)
+qos_traffic_class_t *qos_traffic_class(char *name)
 {
-    const size_t tcs_len = sizeof(tcs) / sizeof(tcs[0]);
     const size_t name_len = strlen(name);
 
     size_t len;
 
-    char *class = NULL;
+    qos_traffic_class_t *class = NULL;
 
-    for (size_t i = 0; i < tcs_len; i++) {
-        len = strlen(tcs[i]);
+    for (size_t i = 0; i < QOS_MAX_TC_ENTRIES; i++) {
+        qos_traffic_class_t *tc = &tcs[i];
+
+        len = strlen(tc->traffic_class);
         if (name_len < len) {
             continue;
         }
 
-        if (memcmp(tcs[i], name, len) == 0) {
+        if (memcmp(tc->traffic_class, name, len) == 0) {
             if ((name_len > len) && (name[len] == '/')) {
-                if (!class || (len > strlen(class))) {
-                    class = tcs[i];
+                if (!class || (len > strlen(class->traffic_class))) {
+                    class = tc;
                 }
             }
         }
