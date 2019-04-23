@@ -29,6 +29,8 @@
 #include "ccnl-pkt.h"
 #include "ccnl-sched.h"
 
+#include "ccnl-qos.h"
+
 
 struct ccnl_relay_s {
     void (*ccnl_ll_TX_ptr)(struct ccnl_relay_s*, struct ccnl_if_s*,
@@ -144,8 +146,9 @@ ccnl_content_remove(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c);
  *
  * @note adding content with this function bypasses pending interests
  *
- * @param[in] ccnl  pointer to current ccnl relay
- * @param[in] c     content to be added to the content store
+ * @param[in] ccnl   pointer to current ccnl relay
+ * @param[in] c      content to be added to the content store
+ * @param[in] tclass desired service class
  *
  * @return   reference to the content @p c
  * @return   NULL, if @p c cannot be added
@@ -268,6 +271,17 @@ int
 ccnl_cs_remove(struct ccnl_relay_s *ccnl, char *prefix);
 
 /**
+ * @brief Remove all content from the Content Store
+ *
+ * @param[in] ccnl      pointer to current ccnl relay
+ *
+ * @return    0, if content with @p prefix was removed
+ * @return   -1, if @p ccnl is NULL
+*/
+int
+ccnl_cs_flush(struct ccnl_relay_s *ccnl);
+
+/**
  * @brief Lookup content from the Content Store with prefix @p prefix
  *
  * @param[in] ccnl      pointer to current ccnl relay
@@ -280,6 +294,72 @@ ccnl_cs_remove(struct ccnl_relay_s *ccnl, char *prefix);
 */
 struct ccnl_content_s *
 ccnl_cs_lookup(struct ccnl_relay_s *ccnl, char *prefix);
+
+/**
+ * @brief Function pointer type for caching strategy function
+ */
+typedef int (*ccnl_cache_strategy_func)(struct ccnl_relay_s *relay,
+                                        struct ccnl_content_s *c);
+typedef int (*ccnl_cache_strategy_cache_func)(struct ccnl_relay_s *relay,
+                                              struct ccnl_content_s *c, int pit_pending);
+
+
+/**
+ * @brief Set a function to control the cache replacement strategy
+ *
+ * The given function will be called if the cache is full and a new content
+ * chunk arrives. It shall remove (at least) one entry from the cache.
+ *
+ * If the return value of @p func is 0, the default caching strategy will be
+ * applied by the CCN-lite stack. If the return value is 1, it is assumed that
+ * (at least) one entry has been removed from the cache.
+ *
+ * @param[in] func  The function to be called for an incoming content chunk if
+ *                  the cache is full.
+ */
+void ccnl_set_cache_strategy_remove(ccnl_cache_strategy_func func);
+
+/**
+ * @brief Set a function to control the caching decision strategy
+ *
+ * The given function will be called when a new content chunk arrives.
+ * It decides whether or not to cache the new content.
+ *
+ * If the return value of @p func is 1, the content chunk will be cached;
+ * otherwise, it will be discarded. If no caching decision strategy is
+ * implemented, all content chunks will be cached.
+ *
+ * @param[in] func  The function to be called for an incoming content
+ *                  chunk.
+ */
+void ccnl_set_cache_strategy_cache(ccnl_cache_strategy_cache_func func);
+
+/**
+ * @brief May be defined for a particular cache replacement strategy
+ */
+int cache_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_content_s *c);
+
+/**
+ * @brief May be defined for a particular caching decision strategy
+ */
+int cache_strategy_cache(struct ccnl_relay_s *relay, struct ccnl_content_s *c, int pit_pending);
+
+/**
+ * @brief Function pointer type for PIT strategy function
+ */
+typedef int (*ccnl_pit_strategy_func)(struct ccnl_relay_s *relay, struct ccnl_interest_s *i);
+/**
+ * @brief Set a function to control the pit replacement strategy
+ *
+ * @param[in] func  The function to be called for an incoming interest if
+ *                  the PIT is full.
+ */
+void ccnl_set_pit_strategy_remove(ccnl_pit_strategy_func func);
+
+/**
+ * @brief May be defined for a particular PIT replacement strategy
+ */
+int pit_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_interest_s *i);
 
 #endif //CCNL_RELAY_H
 /** @} */

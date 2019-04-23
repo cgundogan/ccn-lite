@@ -41,6 +41,8 @@
 #define CCNL_PKT_FRAG_BEGIN 0x04 // see also CCNL_DATA_FRAG_FLAG_FIRST etc
 #define CCNL_PKT_FRAG_END   0x08
 
+#include "ccnl-qos.h"
+
 /**
  * @brief Options for Interest messages of all TLV formats
  */
@@ -100,6 +102,7 @@ struct ccnl_pkt_s {
         struct ccnl_pktdetail_ccntlv_s ccntlv;
         struct ccnl_pktdetail_ndntlv_s ndntlv;
     } s;                           /**< suite specific packet details */
+    struct ccnl_face_s *to;
 #ifdef USE_HMAC256
     uint8_t *hmacStart;
     size_t hmacLen;
@@ -107,7 +110,10 @@ struct ccnl_pkt_s {
 #endif
     unsigned int flags;
     char suite;
+    qos_traffic_class_t *tc;
 };
+
+bool qos_queue(struct ccnl_pkt_s **pkt, struct ccnl_face_s **face);
 
 /**
  * @brief Free a pkt data structure

@@ -43,8 +43,18 @@
 #include <ccnl-pkt-switch.h>
 #endif
 
+extern uint32_t num_ints;
+extern uint32_t num_datas;
+extern uint32_t num_gasints;
+extern uint32_t num_gasdatas;
+extern uint32_t num_pits_qos;
+extern uint32_t num_pits_noqos;
+extern uint32_t num_cs_qos;
+extern uint32_t num_cs_noqos;
+
 //#include "ccnl-logging.h"
 
+#include "ccnl-qos.h"
 
 #ifdef NEEDS_PREFIX_MATCHING
 struct ccnl_prefix_s* ccnl_prefix_dup(struct ccnl_prefix_s *prefix);
@@ -99,21 +109,24 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 
     c = ccnl_content_new(pkt);
     if (!c) {
+        puts("OH OH OH OH OH");
         return 0;
     }
 
-    if (!ccnl_content_serve_pending(relay, c)) { // unsolicited content
-        // CONFORM: "A node MUST NOT forward unsolicited data [...]"
-        DEBUGMSG_CFWD(DEBUG, "  removed because no matching interest\n");
-        ccnl_content_free(c);
-        return 0;
-    }
+    int pit_pending = ccnl_content_serve_pending(relay, c);
 
-    if (relay->max_cache_entries != 0) { // it's set to -1 or a limit
+    if (relay->max_cache_entries != 0 && cache_strategy_cache(relay, c, pit_pending)) {
         DEBUGMSG_CFWD(DEBUG, "  adding content to cache\n");
-        ccnl_content_add2cache(relay, c);
-        int contlen = (int) (c->pkt->contlen > INT_MAX ? INT_MAX : c->pkt->contlen);
-        DEBUGMSG_CFWD(INFO, "data after creating packet %.*s\n", contlen, c->pkt->content);
+        if (ccnl_content_add2cache(relay, c)) {
+            int contlen = (int) (c->pkt->contlen > INT_MAX ? INT_MAX : c->pkt->contlen);
+            DEBUGMSG_CFWD(INFO, "data after creating packet %.*s\n", contlen, c->pkt->content);
+            if (ccnl_callback_rx_on_data2(relay, c)) {
+                return 0;
+            }
+        }
+        else {
+            return 0;
+        }
     } else {
         DEBUGMSG_CFWD(DEBUG, "  content not added to cache\n");
         ccnl_content_free(c);
@@ -195,6 +208,17 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 
     if (from) {
         char *from_as_str = ccnl_addr2ascii(&(from->peer));
+
+        ccnl_prefix_to_str((*pkt)->pfx,s,CCNL_MAX_PREFIX_SIZE);
+        if (strstr(s, "/HK/gas-level") != NULL) {
+            printf("irxgp;%lu;%s\n", (unsigned long) xtimer_now_usec64(), &s[14]);
+        }
+        else if (strstr(s, "/HK/control") != NULL) {
+            printf("irxap;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], relay->pitcnt, relay->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+        } else {
+            printf("irxsp;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], relay->pitcnt, relay->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+        }
+
 #ifndef CCNL_LINUXKERNEL
         DEBUGMSG_CFWD(INFO, "  incoming interest=<%s>%s nonce=%"PRIi32" from=%s\n",
              ccnl_prefix_to_str((*pkt)->pfx,s,CCNL_MAX_PREFIX_SIZE),
@@ -219,9 +243,10 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         return 0;
     }
 #endif
-    if (local_producer(relay, from, *pkt)) {
-        return 0;
-    }
+
+    bool produced = true;
+    c = local_producer(relay, from, *pkt);
+
 #if defined(USE_SUITE_CCNB) && defined(USE_MGMT)
     if ((*pkt)->suite == CCNL_SUITE_CCNB && (*pkt)->pfx->compcnt == 4 &&
                                   !memcmp((*pkt)->pfx->comp[0], "ccnx", 4)) {
@@ -245,24 +270,45 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
             // Step 1: search in content store
     DEBUGMSG_CFWD(DEBUG, "  searching in CS\n");
 
-    for (c = relay->contents; c; c = c->next) {
-        if (c->pkt->pfx->suite != (*pkt)->pfx->suite)
-            continue;
-        if (cMatch(*pkt, c))
-            continue;
+    if (!c) {
+        produced = false;
+        for (c = relay->contents; c; c = c->next) {
+            if (c->pkt->pfx->suite != (*pkt)->pfx->suite)
+                continue;
+            if (cMatch(*pkt, c))
+                continue;
 
-        DEBUGMSG_CFWD(DEBUG, "  found matching content %p\n", (void *) c);
+            DEBUGMSG_CFWD(DEBUG, "  found matching content %p\n", (void *) c);
+            break;
+        }
+    }
 
+    if (c) {
         if (from) {
             if (from->ifndx >= 0) {
                 ccnl_send_pkt(relay, from, c->pkt);
+                char s[CCNL_MAX_PREFIX_SIZE];
+                ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE);
+                if (strstr(s, "/HK/gas-level") != NULL) {
+                    printf("gpp;%lu;%s;%u\n", (unsigned long) xtimer_now_usec64(), &s[14], relay->pitcnt);
+                }
+                else if (strstr(s, "/HK/control") != NULL) {
+                    printf("app;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], relay->pitcnt, relay->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+                } else {
+                    printf("spp;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], relay->pitcnt, relay->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+                }
+                if (ccnl_callback_tx_on_data(relay, from, c->pkt)) {
+                    return 0;
+                }
+                if (produced) {
+                    ccnl_content_free(c);
+                }
             } else {
 #ifdef CCNL_APP_RX 
                 ccnl_app_RX(relay, c);
 #endif 
             }
         }
-
         return 0; // we are done
     }
 

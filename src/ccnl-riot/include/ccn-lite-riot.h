@@ -128,14 +128,24 @@ extern kernel_pid_t ccnl_event_loop_pid;
 #define CCNL_MSG_CS_LOOKUP      (0x1706)
 
 /**
+ * Message type for flushing the content store
+ */
+#define CCNL_MSG_CS_FLUSH       (0x1707)
+
+/**
  * Message type for Interest timeouts
  */
-#define CCNL_MSG_INT_TIMEOUT    (0x1707)
+#define CCNL_MSG_INT_TIMEOUT    (0x1708)
 
 /**
  * Message type for Face timeouts
  */
-#define CCNL_MSG_FACE_TIMEOUT   (0x1708)
+#define CCNL_MSG_FACE_TIMEOUT   (0x1709)
+
+/**
+ * Message type for when PIT was removed
+ */
+#define CCNL_MSG_REMOVED_PIT    (0x1710)
 
 /**
  * Maximum number of elements that can be cached
@@ -152,6 +162,11 @@ extern kernel_pid_t ccnl_event_loop_pid;
 #endif
 
 /**
+ * @brief Local loopback face
+ */
+extern struct ccnl_face_s *loopback_face;
+
+/**
  * Struct holding CCN-Lite's central relay information
  */
 extern struct ccnl_relay_s ccnl_relay;
@@ -160,12 +175,6 @@ extern struct ccnl_relay_s ccnl_relay;
  * Struct Evtimer for various ccnl events
  */
 extern evtimer_msg_t ccnl_evtimer;
-
-/**
- * @brief Function pointer type for caching strategy function
- */
-typedef int (*ccnl_cache_strategy_func)(struct ccnl_relay_s *relay,
-                                        struct ccnl_content_s *c);
 
 /**
  * @brief   Start the main CCN-Lite event-loop
@@ -202,7 +211,7 @@ int ccnl_open_netif(kernel_pid_t if_pid, gnrc_nettype_t netreg_type);
  */
 int ccnl_send_interest(struct ccnl_prefix_s *prefix,
                        unsigned char *buf, int buf_len,
-                       ccnl_interest_opts_u *int_opts);
+                       ccnl_interest_opts_u *int_opts, struct ccnl_face_s *to);
 
 /**
  * @brief Wait for incoming content chunk
@@ -221,21 +230,6 @@ int ccnl_send_interest(struct ccnl_prefix_s *prefix,
  * @return -ETIMEDOUT if no chunk was received until timeout
  */
 int ccnl_wait_for_chunk(void *buf, size_t buf_len, uint64_t timeout);
-
-/**
- * @brief Set a function to control the caching strategy
- *
- * The given function will be called if the cache is full and a new content
- * chunk arrives. It shall remove (at least) one entry from the cache.
- *
- * If the return value of @p func is 0, the default caching strategy will be
- * applied by the CCN-lite stack. If the return value is 1, it is assumed that
- * (at least) one entry has been removed from the cache.
- *
- * @param[in] func  The function to be called for an incoming content chunk if
- *                  the cache is full.
- */
-void ccnl_set_cache_strategy_remove(ccnl_cache_strategy_func func);
 
 /**
  * @brief Send a message to the CCN-lite thread to add @p to the content store

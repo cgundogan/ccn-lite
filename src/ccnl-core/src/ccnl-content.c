@@ -28,6 +28,8 @@
 #include "ccnl-os-time.h"
 #include "ccnl-logging.h"
 #include "ccnl-defs.h"
+#include "ccnl-relay.h"
+#include "ccnl-qos.h"
 #else
 #include <ccnl-content.h>
 #include <ccnl-malloc.h>
@@ -50,9 +52,9 @@ ccnl_content_new(struct ccnl_pkt_s **pkt)
     char s[CCNL_MAX_PREFIX_SIZE];
     (void) s;
 
-    DEBUGMSG_CORE(TRACE, "ccnl_content_new %p <%s [%d]>\n",
+    DEBUGMSG_CORE(TRACE, "ccnl_content_new %p <%s [%lu]>\n",
              (void*) *pkt, ccnl_prefix_to_str((*pkt)->pfx, s, CCNL_MAX_PREFIX_SIZE),
-             ((*pkt)->pfx->chunknum) ? *((*pkt)->pfx->chunknum) : 0);
+                  ((*pkt)->pfx->chunknum) ? (long unsigned) *((*pkt)->pfx->chunknum) : 0UL);
 
     c = (struct ccnl_content_s *) ccnl_calloc(1, sizeof(struct ccnl_content_s));
     if (!c)
@@ -61,6 +63,10 @@ ccnl_content_new(struct ccnl_pkt_s **pkt)
     *pkt = NULL;
     c->last_used = CCNL_NOW();
     c->flags = CCNL_CONTENT_FLAGS_NOT_STALE;
+
+    ccnl_prefix_to_str(c->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    qos_traffic_class_t *tclass = qos_traffic_class(s);
+    c->tclass = tclass;
 
     return c;
 }
@@ -79,4 +85,46 @@ ccnl_content_free(struct ccnl_content_s *content)
     }
 
     return -1;
+}
+
+/**
+ * caching strategy removal function
+ */
+static ccnl_cache_strategy_func _cs_remove_func = NULL;
+
+/**
+ * caching strategy decision function
+ */
+static ccnl_cache_strategy_cache_func _cs_decision_func = NULL;
+
+void
+ccnl_set_cache_strategy_remove(ccnl_cache_strategy_func func)
+{
+    _cs_remove_func = func;
+}
+
+void
+ccnl_set_cache_strategy_cache(ccnl_cache_strategy_cache_func func)
+{
+    _cs_decision_func = func;
+}
+
+int
+cache_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_content_s *c)
+{
+    if (_cs_remove_func) {
+        return _cs_remove_func(relay, c);
+    }
+    return 0;
+}
+
+int
+cache_strategy_cache(struct ccnl_relay_s *relay, struct ccnl_content_s *c, int pit_pending)
+{
+    if (_cs_decision_func) {
+        // Unreliable content MAY be cached
+        return _cs_decision_func(relay, c, pit_pending);
+    }
+    // If no caching decision strategy is defined, we cache everything (CEE)
+    return 1;
 }

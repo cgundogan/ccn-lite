@@ -31,9 +31,19 @@
 
 #ifdef CCNL_RIOT
 #include "ccn-lite-riot.h"
+#include "thread.h"
+#include "random.h"
+#include "xtimer.h"
 #endif
 
-
+extern uint32_t num_ints;
+extern uint32_t num_datas;
+extern uint32_t num_gasints;
+extern uint32_t num_gasdatas;
+extern uint32_t num_pits_qos;
+extern uint32_t num_pits_noqos;
+extern uint32_t num_cs_qos;
+extern uint32_t num_cs_noqos;
 
 struct ccnl_face_s*
 ccnl_get_face_or_create(struct ccnl_relay_s *ccnl, int ifndx,
@@ -152,6 +162,22 @@ ccnl_face_remove(struct ccnl_relay_s *ccnl, struct ccnl_face_s *f)
         } else {
             DEBUGMSG_CORE(TRACE, "before interest_remove 0x%p\n",
                           (void*)pit);
+
+            char s[CCNL_MAX_PREFIX_SIZE];
+            if (strcmp(pit->tc->traffic_class, "/HK/control") == 0) {
+                num_pits_qos--;
+            }
+            else {
+                num_pits_noqos--;
+            }
+
+            ccnl_prefix_to_str(pit->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+            if (strstr(s, "/HK/control") != NULL) {
+                printf("iadelf;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+            } else {
+                printf("isdelf;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+            }
+
             pit = ccnl_interest_remove(ccnl, pit);
         }
     }
@@ -289,7 +315,15 @@ int
 ccnl_send_pkt(struct ccnl_relay_s *ccnl, struct ccnl_face_s *to,
                 struct ccnl_pkt_s *pkt)
 {
-    return ccnl_face_enqueue(ccnl, to, buf_dup(pkt->buf));
+    struct ccnl_pkt_s *tpkt = pkt;
+    struct ccnl_face_s *tface = to;
+
+    if (!qos_queue(&tpkt, &tface)) {
+        return 0;
+    }
+    int res = ccnl_face_enqueue(ccnl, tface, buf_dup(tpkt->buf));
+    ccnl_pkt_free(tpkt);
+    return res;
 }
 
 int
@@ -360,6 +394,15 @@ ccnl_interest_remove(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
     i2 = i->next;
     DBL_LINKED_LIST_REMOVE(ccnl->pit, i);
 
+    ccnl->pitcnt--;
+
+    thread_t *me = (thread_t*) sched_threads[sched_active_pid];
+    for (unsigned int j = 0; j <= me->msg_queue.mask; j++) {
+        if (me->msg_array[j].content.ptr == i) {
+            memset(&(me->msg_array[j]), 0, sizeof(me->msg_array[j]));
+        }
+    }
+
     if (i->pkt) {
         ccnl_pkt_free(i->pkt);
     }
@@ -390,8 +433,12 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
     // transmit an Interest Message on all listed dest faces in sequence."
     // CCNL strategy: we forward on all FWD entries with a prefix match
 
+    if (i->pkt->to) {
+        ccnl_send_pkt(ccnl, i->pkt->to, i->pkt);
+        return;
+    }
+
     for (fwd = ccnl->fib; fwd; fwd = fwd->next) {
-        printf("fwd: %p\n", (void*)fwd);
         if (!fwd->prefix) {
             continue;
         }
@@ -405,8 +452,8 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
 
         rc = ccnl_prefix_cmp(fwd->prefix, NULL, i->pkt->pfx, CMP_LONGEST);
 
-        DEBUGMSG_CORE(DEBUG, "  ccnl_interest_propagate, rc=%d/%d\n",
-                 rc, fwd->prefix->compcnt);
+        DEBUGMSG_CORE(DEBUG, "  ccnl_interest_propagate, rc=%d/%lu\n",
+                      rc, (long unsigned) fwd->prefix->compcnt);
         if (rc < (signed) fwd->prefix->compcnt) {
             continue;
         }
@@ -421,6 +468,11 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
                     memcpy(&nonce, i->pkt->s.ndntlv.nonce->data, 4);
                 }
             }
+#ifdef CCNL_RIOT
+            else {
+                nonce = random_uint32();
+            }
+#endif
 
             DEBUGMSG_CFWD(INFO, "  outgoing interest=<%s> nonce=%i to=%s\n",
                           ccnl_prefix_to_str(i->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE), nonce,
@@ -433,6 +485,18 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
             }
             if (fwd->face) {
                 ccnl_send_pkt(ccnl, fwd->face, i->pkt);
+                if (i->from != loopback_face) {
+                    ccnl_prefix_to_str(i->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+                    if (strstr(s, "/HK/gas-level") != NULL) {
+                        printf("fgq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[14], ccnl->pitcnt);
+                    }
+                    else if (strstr(s, "/HK/control") != NULL) {
+                        printf("faq;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+                    } else {
+                        printf("fsq;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+                    }
+                }
+                break;
             }
 #if defined(USE_RONR)
             matching_face = 1;
@@ -522,19 +586,26 @@ ccnl_content_remove(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
     c2 = c->next;
     DBL_LINKED_LIST_REMOVE(ccnl->contents, c);
 
-//    free_content(c);
-    if (c->pkt) {
-        ccnl_prefix_free(c->pkt->pfx);
-        ccnl_free(c->pkt->buf);
-        ccnl_free(c->pkt);
-    }
-    //    ccnl_prefix_free(c->name);
-    ccnl_free(c);
-
     ccnl->contentcnt--;
 #ifdef CCNL_RIOT
     evtimer_del((evtimer_t *)(&ccnl_evtimer), (evtimer_event_t *)&c->evtmsg_cstimeout);
 #endif
+
+    char s[CCNL_MAX_PREFIX_SIZE];
+    ccnl_prefix_to_str(c->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    if (strstr(s, "/HK/control") != NULL) {
+        num_cs_qos--;
+        printf("cadel;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+    } else {
+        num_cs_noqos--;
+        printf("csdel;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+    }
+
+    if (c->pkt) {
+        ccnl_pkt_free(c->pkt);
+    }
+    ccnl_free(c);
+
     return c2;
 }
 
@@ -556,32 +627,38 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         }
     }
 
-    if (ccnl->max_cache_entries > 0 &&
-        ccnl->contentcnt >= ccnl->max_cache_entries) { // remove oldest content
-        struct ccnl_content_s *c2, *oldest = NULL;
-        uint32_t age = 0;
-        for (c2 = ccnl->contents; c2; c2 = c2->next) {
-             if (!(c2->flags & CCNL_CONTENT_FLAGS_STATIC)) {
-                 if ((age == 0) || c2->last_used < age) {
-                     age = c2->last_used;
-                     oldest = c2;
-                 }
-             }
-         }
-         if (oldest) {
-             DEBUGMSG_CORE(DEBUG, " remove old entry from cache\n");
-             ccnl_content_remove(ccnl, oldest);
-         }
+    if (ccnl->max_cache_entries > 0 && ccnl->contentcnt >= ccnl->max_cache_entries) {
+        if (cache_strategy_remove(ccnl, c) == 0) {
+            if (c->pkt) {
+                ccnl_pkt_free(c->pkt);
+            }
+            ccnl_free(c);
+            return NULL;
+        }
     }
-    if ((ccnl->max_cache_entries <= 0) ||
-         (ccnl->contentcnt <= ccnl->max_cache_entries)) {
+
+    if ((ccnl->max_cache_entries <= 0) || (ccnl->contentcnt < ccnl->max_cache_entries)) {
             DBL_LINKED_LIST_ADD(ccnl->contents, c);
             ccnl->contentcnt++;
+            if (strcmp(c->pkt->tc->traffic_class, "/HK/control") == 0) {
+                num_cs_qos++;
+            }
+            else {
+                num_cs_noqos++;
+            }
+            ccnl_prefix_to_str(c->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+            if (strstr(s, "/HK/control") != NULL) {
+                printf("cacr;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+            } else {
+                printf("cscr;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+            }
 #ifdef CCNL_RIOT
+#if 0
             /* set cache timeout timer if content is not static */
             if (!(c->flags & CCNL_CONTENT_FLAGS_STATIC)) {
                 ccnl_evtimer_set_cs_timeout(c);
             }
+#endif
 #endif
     }
 
@@ -628,8 +705,8 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 #endif
 #ifdef USE_SUITE_NDNTLV
         case CCNL_SUITE_NDNTLV:
-            if (!ccnl_i_prefixof_c(i->pkt->pfx, i->pkt->s.ndntlv.minsuffix,
-                       i->pkt->s.ndntlv.maxsuffix, c)) {
+            if (ccnl_i_prefixof_c(i->pkt->pfx, i->pkt->s.ndntlv.minsuffix,
+                       i->pkt->s.ndntlv.maxsuffix, c) < 0) {
                 // XX must also check i->ppkl,
                 i = i->next;
                 continue;
@@ -645,6 +722,22 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         if(i && ! i->pending){
             DEBUGMSG_CORE(WARNING, "releasing interest 0x%p OK?\n", (void*)i);
             c->flags |= CCNL_CONTENT_FLAGS_STATIC;
+
+            char s[CCNL_MAX_PREFIX_SIZE];
+            if (strcmp(i->tc->traffic_class, "/HK/control") == 0) {
+                num_pits_qos--;
+            }
+            else {
+                num_pits_noqos--;
+            }
+
+            ccnl_prefix_to_str(i->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+            if (strstr(s, "/HK/control") != NULL) {
+                printf("iadeln;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+            } else {
+                printf("isdeln;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+            }
+
             i = ccnl_interest_remove(ccnl, i);
 
             c->served_cnt++;
@@ -686,6 +779,17 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
                 ccnl_send_pkt(ccnl, pi->face, c->pkt);
 
 
+                ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE);
+
+                if (strstr(s, "/HK/gas-level") != NULL) {
+                    printf("fgp;%lu;%s;%lu;%lu;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[14], (unsigned long) num_gasints, (unsigned long) num_gasdatas, ccnl->pitcnt);
+                }
+                else if (strstr(s, "/HK/control") != NULL) {
+                    printf("fap;%lu;%s;%lu;%lu;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[12], (unsigned long)num_ints, (unsigned long)num_datas, ccnl->pitcnt);
+                } else {
+                    printf("fsp;%lu;%s;%lu;%lu;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[12], (unsigned long)num_ints, (unsigned long)num_datas, ccnl->pitcnt);
+                    }
+
             } else {// upcall to deliver content to local client
 #ifdef CCNL_APP_RX
                 ccnl_app_RX(ccnl, c);
@@ -694,6 +798,22 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
             c->served_cnt++;
             cnt++;
         }
+
+        char s[CCNL_MAX_PREFIX_SIZE];
+        if (strcmp(i->tc->traffic_class, "/HK/control") == 0) {
+            num_pits_qos--;
+        }
+        else {
+            num_pits_noqos--;
+        }
+
+        ccnl_prefix_to_str(i->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+        if (strstr(s, "/HK/control") != NULL) {
+            printf("iadels;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+        } else {
+            printf("isdels;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+        }
+
         i = ccnl_interest_remove(ccnl, i);
     }
 
@@ -801,7 +921,8 @@ ccnl_nonce_isDup(struct ccnl_relay_s *relay, struct ccnl_pkt_s *pkt)
     if(CCNL_MAX_NONCES < 0){
         struct ccnl_interest_s *i = NULL;
         for (i = relay->pit; i; i = i->next) {
-            if(buf_equal(i->pkt->s.ndntlv.nonce, pkt->s.ndntlv.nonce)){
+            if(ccnl_prefix_cmp(i->pkt->pfx, NULL, pkt->pfx, CMP_EXACT) &&
+               buf_equal(i->pkt->s.ndntlv.nonce, pkt->s.ndntlv.nonce)){
                 return 1;
             }
         }
@@ -954,7 +1075,7 @@ ccnl_cs_dump(struct ccnl_relay_s *ccnl)
         printf("CS[%u]: %s [%d]: %.*s\n", i++,
                ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE),
                (c->pkt->pfx->chunknum)? (signed) *(c->pkt->pfx->chunknum) : -1,
-               (int32_t) c->pkt->contlen, c->pkt->content);
+               (int) c->pkt->contlen, c->pkt->content);
         c = c->next;
     }
 #endif
@@ -1032,6 +1153,21 @@ ccnl_cs_remove(struct ccnl_relay_s *ccnl, char *prefix)
     return -3;
 }
 
+int
+ccnl_cs_flush(struct ccnl_relay_s *ccnl)
+{
+    struct ccnl_content_s *c;
+
+    if (!ccnl) {
+        return -1;
+    }
+
+    for (c = ccnl->contents; c; c = c->next) {
+        ccnl_content_remove(ccnl, c);
+    }
+    return 0;
+}
+
 struct ccnl_content_s *
 ccnl_cs_lookup(struct ccnl_relay_s *ccnl, char *prefix)
 {
@@ -1053,4 +1189,40 @@ ccnl_cs_lookup(struct ccnl_relay_s *ccnl, char *prefix)
         ccnl_free(spref);
     }
     return NULL;
+}
+
+/**
+ * pit strategy removal function
+ */
+static ccnl_pit_strategy_func _pit_remove_func = NULL;
+
+void
+ccnl_set_pit_strategy_remove(ccnl_pit_strategy_func func)
+{
+    _pit_remove_func = func;
+}
+
+int
+pit_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_interest_s *i)
+{
+    if (_pit_remove_func) {
+        return _pit_remove_func(relay, i);
+    } else {
+        // If no PIT removal strategy defined, remove oldest PIT entry
+        struct ccnl_interest_s *cur = relay->pit;
+        struct ccnl_interest_s *oldest = cur;
+
+        while (cur) {
+            if (cur->last_used < oldest->last_used) {
+                oldest = cur;
+            }
+            cur = cur->next;
+        }
+
+        ccnl_interest_remove(relay, oldest);
+
+        return 1;
+    }
+
+    return 0;
 }

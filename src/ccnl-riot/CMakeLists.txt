@@ -12,4 +12,3 @@ file(GLOB FWDSOURCE "../ccnl-fwd/src/*.c")
 file(GLOB PKTSOURCE "../ccnl-pkt/src/*.c")
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES} ${CORESOURCE} ${FWDSOURCE} ${PKTSOURCE} ${HEADERS})
-

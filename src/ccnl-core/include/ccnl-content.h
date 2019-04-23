@@ -30,8 +30,7 @@
 #include "evtimer_msg.h"
 #endif
 
-struct ccnl_pkt_s;
-struct ccnl_prefix_s;
+#include "ccnl-qos.h"
 
 /**
  * @brief Defines if content added to the content store is
@@ -66,6 +65,7 @@ typedef struct ccnl_content_s {
     evtimer_msg_event_t evtmsg_cstimeout; /**< event timer message which is triggered when a timeout in the content store occurs */
 #endif
     int served_cnt;                       /**< determines how often the content has been served */
+    qos_traffic_class_t *tclass;
 } ccnl_content;
 
 /**

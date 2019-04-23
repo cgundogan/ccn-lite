@@ -1,10 +1,8 @@
 /*
- * @f ccnl-producer.c
- * @b Producer functions
+ * @f ccnl-qos.h
+ * @b CCN lite - header file for QoS
  *
- * Copyright (C) 2011-14, Christian Tschudin, University of Basel
- * Copyright (C) 2015, 2016, 2018, Oliver Hahm, INRIA
- * Copyright (C) 2018, Michael Frey, MSA Safety
+ * Copyright (C) 2019 HAW Hamburg
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -17,31 +15,31 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- * File history:
- * 2018-01-24 created (based on ccn-lite-riot.c)
  */
 
-#include "ccnl-producer.h"
+#ifndef CCN_LITE_QOS_H
+#define CCN_LITE_QOS_H
 
-/**
- * local producer function defined by the application
- */
-static ccnl_producer_func _prod_func = NULL;
+#include <stdlib.h>
+#include <stdbool.h>
 
-void
-ccnl_set_local_producer(ccnl_producer_func func)
-{
-    _prod_func = func;
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define QOS_MAX_TC_LENGTH (32)
+
+typedef struct {
+    char traffic_class[QOS_MAX_TC_LENGTH];
+    bool expedited;
+    bool reliable;
+} qos_traffic_class_t;
+
+qos_traffic_class_t *qos_traffic_class(char *name);
+
+void ccnl_qos_set_tcs(qos_traffic_class_t *tcs, size_t len);
+
+#ifdef __cplusplus
 }
-
-struct ccnl_content_s *
-local_producer(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
-                   struct ccnl_pkt_s *pkt)
-{
-    if (_prod_func) {
-        return _prod_func(relay, from, pkt);
-    }
-
-    return NULL;
-}
+#endif
+#endif /* CCN_LITE_QOS_H */

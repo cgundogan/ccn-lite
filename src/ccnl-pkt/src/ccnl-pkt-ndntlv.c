@@ -36,7 +36,7 @@
 #include <ccnl-core.h>
 #endif
 
-
+#include "ccnl-qos.h"
 
 
 // ----------------------------------------------------------------------
@@ -106,6 +106,9 @@ struct ccnl_pkt_s*
 ccnl_ndntlv_bytes2pkt(uint64_t pkttype, uint8_t *start,
                       uint8_t **data, size_t *datalen)
 {
+    char s[CCNL_MAX_PREFIX_SIZE];
+    (void) s;
+
     struct ccnl_pkt_s *pkt;
     size_t oldpos, len, i;
     uint64_t typ;
@@ -328,6 +331,9 @@ ccnl_ndntlv_bytes2pkt(uint64_t pkttype, uint8_t *start,
         }
     }
 
+    ccnl_prefix_to_str(pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    pkt->tc = qos_traffic_class(s);
+
     return pkt;
 Bail:
     ccnl_pkt_free(pkt);
@@ -347,7 +353,7 @@ ccnl_ndntlv_cMatch(struct ccnl_pkt_s *p, struct ccnl_content_s *c)
     assert(p->suite == CCNL_SUITE_NDNTLV);
 #endif
 
-    if (!ccnl_i_prefixof_c(p->pfx, p->s.ndntlv.minsuffix, p->s.ndntlv.maxsuffix, c)) {
+    if (ccnl_i_prefixof_c(p->pfx, p->s.ndntlv.minsuffix, p->s.ndntlv.maxsuffix, c) < 0) {
         return -1;
     }
 
@@ -548,7 +554,7 @@ ccnl_ndntlv_prependInterest(struct ccnl_prefix_s *name, int scope, struct ccnl_n
         }
     }
 
-    if (ccnl_ndntlv_prependNonNegInt(NDN_TLV_Nonce, (uint64_t) opts->nonce, offset, buf) < 0) {
+    if (ccnl_ndntlv_prependBlob(NDN_TLV_Nonce, (uint8_t *) &opts->nonce, 4, offset, buf) < 0) {
         return -1;
     }
 

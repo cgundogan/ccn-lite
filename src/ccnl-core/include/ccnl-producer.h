@@ -28,9 +28,9 @@
 /**
  * @brief Function pointer type for local producer function
  */
-typedef int (*ccnl_producer_func)(struct ccnl_relay_s *relay,
-                                  struct ccnl_face_s *from,
-                                  struct ccnl_pkt_s *pkt);
+typedef struct ccnl_content_s *(*ccnl_producer_func)(struct ccnl_relay_s *relay,
+                                                     struct ccnl_face_s *from,
+                                                     struct ccnl_pkt_s *pkt);
 
 /**
  * @brief Set a local producer function
@@ -56,8 +56,8 @@ void ccnl_set_local_producer(ccnl_producer_func func);
  * @return 0 if no function has been set
  */
 #ifndef CCNL_ANDROID
-int local_producer(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
-                   struct ccnl_pkt_s *pkt);
+struct ccnl_content_s *local_producer(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
+                                      struct ccnl_pkt_s *pkt);
 #else
 #define local_producer(...) 0
 #endif

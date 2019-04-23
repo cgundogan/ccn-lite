@@ -43,6 +43,11 @@
 #include "ccn-lite-riot.h"
 #endif
 
+extern uint32_t num_pits_qos;
+extern uint32_t num_pits_noqos;
+extern uint32_t num_cs_qos;
+extern uint32_t num_cs_noqos;
+
 struct ccnl_interest_s*
 ccnl_interest_new(struct ccnl_relay_s *ccnl, struct ccnl_face_s *from,
                   struct ccnl_pkt_s **pkt)
@@ -66,7 +71,38 @@ ccnl_interest_new(struct ccnl_relay_s *ccnl, struct ccnl_face_s *from,
     *pkt = NULL;
     i->from = from;
     i->last_used = CCNL_NOW();
+
+    ccnl_prefix_to_str(i->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    qos_traffic_class_t *tclass = qos_traffic_class(s);
+    i->tc = tclass;
+
+    if (ccnl->pitcnt >= ccnl->max_pit_entries) {
+        if (!pit_strategy_remove(ccnl, i)) {
+            // No PIT entry was removed, so we should discard this Interest
+            ccnl_pkt_free(i->pkt);
+            ccnl_free(i);
+            return NULL;
+        }
+    }
+
+    // PIT entry was removed, so we can add the new entry
     DBL_LINKED_LIST_ADD(ccnl->pit, i);
+
+    if (strcmp(i->tc->traffic_class, "/HK/control") == 0) {
+        num_pits_qos++;
+    }
+    else {
+        num_pits_noqos++;
+    }
+
+    ccnl->pitcnt++;
+
+    ccnl_prefix_to_str(i->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    if (strstr(s, "/HK/control") != NULL) {
+        printf("iacr;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+    } else {
+        printf("iscr;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+    }
 
 #ifdef CCNL_RIOT
     ccnl_evtimer_reset_interest_retrans(i);
