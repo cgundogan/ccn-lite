@@ -622,8 +622,14 @@ int
 cache_strategy_cache(struct ccnl_relay_s *relay, struct ccnl_content_s *c,
                      qos_traffic_class_t *tclass)
 {
+    if (tclass->reliable) {
+        // Reliable content MUST be cached
+        return 1;
+    }
+
     if (_cs_decision_func) {
-        return _cs_decision_func(relay, c);
+        // Unreliable content MAY be cached
+        return _cs_decision_func(relay, c, tclass);
     }
     // If no caching decision strategy is defined, we cache everything (CEE)
     return 1;
