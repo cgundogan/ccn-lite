@@ -224,7 +224,7 @@ int ccnl_send_interest(struct ccnl_prefix_s *prefix,
 int ccnl_wait_for_chunk(void *buf, size_t buf_len, uint64_t timeout);
 
 /**
- * @brief Set a function to control the caching strategy
+ * @brief Set a function to control the cache replacement strategy
  *
  * The given function will be called if the cache is full and a new content
  * chunk arrives. It shall remove (at least) one entry from the cache.

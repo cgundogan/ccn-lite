@@ -46,7 +46,7 @@
 #include "ccnl-pkt-builder.h"
 
 /**
- * @brief May be defined for a particular caching strategy
+ * @brief May be defined for a particular cache replacement strategy
  */
 int cache_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_content_s *c);
 
