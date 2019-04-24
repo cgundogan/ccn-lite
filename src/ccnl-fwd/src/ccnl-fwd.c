@@ -43,7 +43,9 @@
 #include <ccnl-pkt-switch.h>
 #endif
 
+#ifdef CCNL_RIOT
 #include "ccn-lite-riot.h"
+#endif
 
 //#include "ccnl-logging.h"
 
