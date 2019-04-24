@@ -71,6 +71,11 @@ static char _ccnl_stack[CCNL_STACK_SIZE];
 static ccnl_cache_strategy_func _cs_remove_func = NULL;
 
 /**
+ * caching strategy decision function
+ */
+static ccnl_cache_strategy_func _cs_decision_func = NULL;
+
+/**
  * currently configured suite
  */
 static int _ccnl_suite = CCNL_SUITE_NDNTLV;
@@ -602,6 +607,12 @@ ccnl_set_cache_strategy_remove(ccnl_cache_strategy_func func)
     _cs_remove_func = func;
 }
 
+void
+ccnl_set_cache_strategy_cache(ccnl_cache_strategy_func func)
+{
+    _cs_decision_func = func;
+}
+
 int
 cache_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_content_s *c)
 {
@@ -609,4 +620,14 @@ cache_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_content_s *c)
         return _cs_remove_func(relay, c);
     }
     return 0;
+}
+
+int
+cache_strategy_cache(struct ccnl_relay_s *relay, struct ccnl_content_s *c)
+{
+    if (_cs_decision_func) {
+        return _cs_decision_func(relay, c);
+    }
+    // If no caching decision strategy is defined, we cache everything (CEE)
+    return 1;
 }

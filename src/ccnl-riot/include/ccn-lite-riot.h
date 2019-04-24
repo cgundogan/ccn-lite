@@ -239,6 +239,26 @@ int ccnl_wait_for_chunk(void *buf, size_t buf_len, uint64_t timeout);
 void ccnl_set_cache_strategy_remove(ccnl_cache_strategy_func func);
 
 /**
+ * @brief Set a function to control the caching decision strategy
+ *
+ * The given function will be called when a new content chunk arrives.
+ * It decides whether or not to cache the new content.
+ *
+ * If the return value of @p func is 1, the content chunk will be cached;
+ * otherwise, it will be discarded. If no caching decision strategy is
+ * implemented, all content chunks will be cached.
+ *
+ * @param[in] func  The function to be called for an incoming content
+ *                  chunk.
+ */
+void ccnl_set_cache_strategy_cache(ccnl_cache_strategy_func func);
+
+/**
+ * @brief May be defined for a particular caching decision strategy
+ */
+int cache_strategy_cache(struct ccnl_relay_s *relay, struct ccnl_content_s *c);
+
+/**
  * @brief Send a message to the CCN-lite thread to add @p to the content store
  *
  * @param[in] content   The content to add to the content store
