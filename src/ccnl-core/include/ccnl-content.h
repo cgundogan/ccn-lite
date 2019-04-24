@@ -30,9 +30,6 @@
 #include "evtimer_msg.h"
 #endif
 
-struct ccnl_pkt_s;
-struct ccnl_prefix_s;
-
 /**
  * @brief Defines if content added to the content store is
  * static or stale.

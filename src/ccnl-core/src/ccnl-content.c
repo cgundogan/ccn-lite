@@ -28,6 +28,7 @@
 #include "ccnl-os-time.h"
 #include "ccnl-logging.h"
 #include "ccnl-defs.h"
+#include "ccnl-relay.h"
 #else
 #include <ccnl-content.h>
 #include <ccnl-malloc.h>
@@ -79,4 +80,53 @@ ccnl_content_free(struct ccnl_content_s *content)
     }
 
     return -1;
+}
+
+/**
+ * caching strategy removal function
+ */
+static ccnl_cache_strategy_func _cs_remove_func = NULL;
+
+/**
+ * caching strategy decision function
+ */
+static ccnl_cache_strategy_func _cs_decision_func = NULL;
+
+void
+ccnl_set_cache_strategy_remove(ccnl_cache_strategy_func func)
+{
+    _cs_remove_func = func;
+}
+
+void
+ccnl_set_cache_strategy_cache(ccnl_cache_strategy_func func)
+{
+    _cs_decision_func = func;
+}
+
+int
+cache_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_content_s *c,
+                      qos_traffic_class_t *tclass)
+{
+    if (_cs_remove_func) {
+        return _cs_remove_func(relay, c, tclass);
+    }
+    return 0;
+}
+
+int
+cache_strategy_cache(struct ccnl_relay_s *relay, struct ccnl_content_s *c,
+                     qos_traffic_class_t *tclass)
+{
+    if (tclass->reliable) {
+        // Reliable content MUST be cached
+        return 1;
+    }
+
+    if (_cs_decision_func) {
+        // Unreliable content MAY be cached
+        return _cs_decision_func(relay, c, tclass);
+    }
+    // If no caching decision strategy is defined, we cache everything (CEE)
+    return 1;
 }

@@ -26,6 +26,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "ccnl-prefix.h"
 #include "ccnl-content.h"
 
 /**
