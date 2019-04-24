@@ -29,6 +29,8 @@
 #include "ccnl-pkt.h"
 #include "ccnl-sched.h"
 
+#include "pkt-qos.h"
+
 
 struct ccnl_relay_s {
     void (*ccnl_ll_TX_ptr)(struct ccnl_relay_s*, struct ccnl_if_s*,
@@ -144,14 +146,16 @@ ccnl_content_remove(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c);
  *
  * @note adding content with this function bypasses pending interests
  *
- * @param[in] ccnl  pointer to current ccnl relay
- * @param[in] c     content to be added to the content store
+ * @param[in] ccnl   pointer to current ccnl relay
+ * @param[in] c      content to be added to the content store
+ * @param[in] tclass desired service class
  *
  * @return   reference to the content @p c
  * @return   NULL, if @p c cannot be added
 */
 struct ccnl_content_s*
-ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c);
+ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c,
+                       qos_traffic_class_t *tclass);
 
 /**
  * @brief deliver new content @p c to all clients with (loosely) matching interest 

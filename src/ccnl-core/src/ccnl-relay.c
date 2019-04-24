@@ -540,7 +540,8 @@ ccnl_content_remove(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 }
 
 struct ccnl_content_s*
-ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
+ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c,
+                       qos_traffic_class_t *tclass)
 {
     struct ccnl_content_s *cit;
     char s[CCNL_MAX_PREFIX_SIZE];
