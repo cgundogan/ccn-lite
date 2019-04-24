@@ -111,7 +111,10 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         return 0;
     }
 
-    if (!ccnl_content_serve_pending(relay, c)) { // unsolicited content
+    ccnl_prefix_to_str((*pkt)->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    tclass = qos_traffic_class(s);
+    int pit_pending = ccnl_content_serve_pending(relay, c);
+    if (!pit_pending && !tclass->reliable) { // unsolicited content
         // CONFORM: "A node MUST NOT forward unsolicited data [...]"
         DEBUGMSG_CFWD(DEBUG, "  removed because no matching interest\n");
         ccnl_content_free(c);
