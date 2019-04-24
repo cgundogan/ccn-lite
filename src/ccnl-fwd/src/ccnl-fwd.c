@@ -43,6 +43,8 @@
 #include <ccnl-pkt-switch.h>
 #endif
 
+#include "ccn-lite-riot.h"
+
 //#include "ccnl-logging.h"
 
 #include "pkt-qos.h"
