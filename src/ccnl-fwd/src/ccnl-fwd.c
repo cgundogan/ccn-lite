@@ -49,7 +49,7 @@
 
 //#include "ccnl-logging.h"
 
-#include "pkt-qos.h"
+#include "ccnl-qos.h"
 
 #ifdef NEEDS_PREFIX_MATCHING
 struct ccnl_prefix_s* ccnl_prefix_dup(struct ccnl_prefix_s *prefix);

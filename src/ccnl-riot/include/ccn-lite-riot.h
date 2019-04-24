@@ -36,7 +36,7 @@
 #include "evtimer.h"
 #include "evtimer_msg.h"
 
-#include "pkt-qos.h"
+#include "ccnl-qos.h"
 
 #ifdef __cplusplus
 extern "C" {

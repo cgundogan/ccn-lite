@@ -29,7 +29,7 @@
 #include "ccnl-pkt.h"
 #include "ccnl-sched.h"
 
-#include "pkt-qos.h"
+#include "ccnl-qos.h"
 
 
 struct ccnl_relay_s {

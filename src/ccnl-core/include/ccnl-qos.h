@@ -1,5 +1,5 @@
 /*
- * @f pkt-qos.h
+ * @f ccnl-qos.h
  * @b CCN lite - header file for QoS
  *
  * Copyright (C) 2019 HAW Hamburg

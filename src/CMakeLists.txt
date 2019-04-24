@@ -145,7 +145,6 @@ if (DOXYGEN_FOUND)
         VERBATIM )
 endif()
 
-add_subdirectory(ccnl-qos)
 
 # unused:
 set(CCNL_DISABLED_FLAGS "USE_LINKLAYER USE_DEBUG USE_DEBUG_MALLOC USE_FRAG

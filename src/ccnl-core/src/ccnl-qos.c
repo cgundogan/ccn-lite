@@ -1,5 +1,5 @@
 /*
- * @f pkt-qos.c
+ * @f ccnl-qos.c
  * @b QoS
  *
  * Copyright (C) 2019 HAW Hamburg
@@ -18,7 +18,7 @@
  */
 
 #include <string.h>
-#include "pkt-qos.h"
+#include "ccnl-qos.h"
 
 #define QOS_MAX_TC_ENTRIES (3)
 
