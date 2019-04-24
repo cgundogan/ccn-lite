@@ -46,11 +46,6 @@
 #include "ccnl-pkt-builder.h"
 
 /**
- * @brief May be defined for a particular cache replacement strategy
- */
-int cache_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_content_s *c);
-
-/**
  * @brief RIOT specific local variables
  * @{
  */
@@ -614,16 +609,18 @@ ccnl_set_cache_strategy_cache(ccnl_cache_strategy_func func)
 }
 
 int
-cache_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_content_s *c)
+cache_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_content_s *c,
+                      qos_traffic_class_t *tclass)
 {
     if (_cs_remove_func) {
-        return _cs_remove_func(relay, c);
+        return _cs_remove_func(relay, c, tclass);
     }
     return 0;
 }
 
 int
-cache_strategy_cache(struct ccnl_relay_s *relay, struct ccnl_content_s *c)
+cache_strategy_cache(struct ccnl_relay_s *relay, struct ccnl_content_s *c,
+                     qos_traffic_class_t *tclass)
 {
     if (_cs_decision_func) {
         return _cs_decision_func(relay, c);
