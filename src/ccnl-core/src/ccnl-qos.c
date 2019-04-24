@@ -20,14 +20,14 @@
 #include <string.h>
 #include "ccnl-qos.h"
 
-#define QOS_MAX_TC_ENTRIES (3)
+static qos_traffic_class_t *tcs = NULL;
+static size_t tcs_len = 0;
 
-qos_traffic_class_t tcs[QOS_MAX_TC_ENTRIES] =
+void ccnl_qos_set_tcs(qos_traffic_class_t *arg, size_t len)
 {
-    { "/HAW", false, false },
-    { "/SafetyIO/Site/A", false, true },
-    { "/HAW/Room/481", true, true },
-};
+    tcs = arg;
+    tcs_len = len;
+}
 
 qos_traffic_class_t *qos_traffic_class(char *name)
 {
@@ -37,9 +37,7 @@ qos_traffic_class_t *qos_traffic_class(char *name)
 
     qos_traffic_class_t *class = NULL;
 
-    for (size_t i = 0; i < QOS_MAX_TC_ENTRIES; i++) {
-        qos_traffic_class_t *tc = &tcs[i];
-
+    for (qos_traffic_class_t *tc = tcs; tc < (tcs + tcs_len); tc++) {
         len = strlen(tc->traffic_class);
         if (name_len < len) {
             continue;

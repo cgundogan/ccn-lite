@@ -37,6 +37,8 @@ typedef struct {
 
 qos_traffic_class_t *qos_traffic_class(char *name);
 
+void ccnl_qos_set_tcs(qos_traffic_class_t *tcs, size_t len);
+
 #ifdef __cplusplus
 }
 #endif
