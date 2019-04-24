@@ -14,7 +14,6 @@ include_directories(
     ../ccnl-fwd/include
     ../ccnl-core/include
     ../ccnl-unix/include
-    ../ccnl-qos/include
 )
 
 file(GLOB SOURCES "*.c")
@@ -22,4 +21,4 @@ file(GLOB SOURCES "*.c")
 add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_link_libraries(${PROJECT_NAME} ${PROJECT_LINK_LIBS} ${EXT_LINK_LIBS})
-target_link_libraries(ccn-lite-relay ccnl-core ccnl-pkt ccnl-fwd ccnl-unix ccnl-qos)
+target_link_libraries(ccn-lite-relay ccnl-core ccnl-pkt ccnl-fwd ccnl-unix)
