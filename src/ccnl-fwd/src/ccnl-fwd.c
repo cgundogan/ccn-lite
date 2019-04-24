@@ -121,7 +121,11 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         return 0;
     }
 
-    if (relay->max_cache_entries != 0 && cache_strategy_cache(relay, c)) { // it's set to -1 or a limit
+#ifdef CCNL_RIOT
+    if (relay->max_cache_entries != 0 && cache_strategy_cache(relay, c, tclass)) {
+#else
+    if (relay->max_cache_entries != 0) { // it's set to -1 or a limit
+#endif
         DEBUGMSG_CFWD(DEBUG, "  adding content to cache\n");
         ccnl_content_add2cache(relay, c, tclass);
         int contlen = (int) (c->pkt->contlen > INT_MAX ? INT_MAX : c->pkt->contlen);
