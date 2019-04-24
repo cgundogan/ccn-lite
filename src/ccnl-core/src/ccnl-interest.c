@@ -68,9 +68,13 @@ ccnl_interest_new(struct ccnl_relay_s *ccnl, struct ccnl_face_s *from,
     i->last_used = CCNL_NOW();
 
     if (ccnl->pitcnt >= ccnl->max_pit_entries) {
-        ccnl_pkt_free(i->pkt);
-        ccnl_free(i);
-        return NULL;
+        ccnl_prefix_to_str(i->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+        qos_traffic_class_t *tclass = qos_traffic_class(s);
+        if (pit_strategy_remove(ccnl, i, tclass)) {
+            ccnl->pitcnt++;
+            ccnl_interest_remove(ccnl, i);
+            return NULL;
+        }
     }
 
     DBL_LINKED_LIST_ADD(ccnl->pit, i);

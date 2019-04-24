@@ -362,6 +362,8 @@ ccnl_interest_remove(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
 
     DBL_LINKED_LIST_REMOVE(ccnl->pit, i);
 
+    ccnl->pitcnt--;
+
     if (i->pkt) {
         ccnl_pkt_free(i->pkt);
     }
@@ -1055,4 +1057,25 @@ ccnl_cs_lookup(struct ccnl_relay_s *ccnl, char *prefix)
         ccnl_free(spref);
     }
     return NULL;
+}
+
+/**
+ * pit strategy removal function
+ */
+static ccnl_pit_strategy_func _pit_remove_func = NULL;
+
+void
+ccnl_set_pit_strategy_remove(ccnl_pit_strategy_func func)
+{
+    _pit_remove_func = func;
+}
+
+int
+pit_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_interest_s *i,
+                    qos_traffic_class_t *tclass)
+{
+    if (_pit_remove_func) {
+        return _pit_remove_func(relay, i, tclass);
+    }
+    return 0;
 }
