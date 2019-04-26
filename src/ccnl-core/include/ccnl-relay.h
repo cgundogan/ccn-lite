@@ -338,9 +338,7 @@ int cache_strategy_cache(struct ccnl_relay_s *relay, struct ccnl_content_s *c,
 /**
  * @brief Function pointer type for PIT strategy function
  */
-typedef int (*ccnl_pit_strategy_func)(struct ccnl_relay_s *relay,
-                                      struct ccnl_interest_s *i,
-                                      qos_traffic_class_t *tclass);
+typedef int (*ccnl_pit_strategy_func)(struct ccnl_relay_s *relay, struct ccnl_interest_s *i);
 /**
  * @brief Set a function to control the pit replacement strategy
  *
@@ -352,8 +350,7 @@ void ccnl_set_pit_strategy_remove(ccnl_pit_strategy_func func);
 /**
  * @brief May be defined for a particular PIT replacement strategy
  */
-int pit_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_interest_s *i,
-                        qos_traffic_class_t *tclass);
+int pit_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_interest_s *i);
 
 #endif //CCNL_RELAY_H
 /** @} */

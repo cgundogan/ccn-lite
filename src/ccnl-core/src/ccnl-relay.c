@@ -412,7 +412,7 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
         rc = ccnl_prefix_cmp(fwd->prefix, NULL, i->pkt->pfx, CMP_LONGEST);
 
         DEBUGMSG_CORE(DEBUG, "  ccnl_interest_propagate, rc=%d/%lu\n",
-                 rc, fwd->prefix->compcnt);
+                      rc, (long unsigned) fwd->prefix->compcnt);
         if (rc < (signed) fwd->prefix->compcnt) {
             continue;
         }
@@ -1074,20 +1074,20 @@ ccnl_set_pit_strategy_remove(ccnl_pit_strategy_func func)
 }
 
 int
-pit_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_interest_s *i,
-                    qos_traffic_class_t *tclass)
+pit_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_interest_s *i)
 {
     if (_pit_remove_func) {
-        return _pit_remove_func(relay, i, tclass);
+        return _pit_remove_func(relay, i);
     } else {
         // If no PIT removal strategy defined, remove oldest PIT entry
         struct ccnl_interest_s *cur = relay->pit;
         struct ccnl_interest_s *oldest = cur;
 
         while (cur) {
-            if (cur->last_used < oldest->last_used) {
+            if (cur->last_used > oldest->last_used) {
                 oldest = cur;
             }
+            cur++;
         }
 
         ccnl_interest_remove(relay, oldest);
