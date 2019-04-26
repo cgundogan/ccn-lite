@@ -176,7 +176,7 @@ ccnl_prefix_addChunkNum(struct ccnl_prefix_s *prefix, uint32_t chunknum)
 {
     if (chunknum >= 0xff) {
       DEBUGMSG_CUTL(WARNING, "addChunkNum is only implemented for "
-               "chunknum smaller than 0xff (%lu)\n", (long unsigned) chunknum);
+                    "chunknum smaller than 0xff (%lu)\n", (long unsigned) chunknum);
         return -1;
     }
 
@@ -429,8 +429,8 @@ ccnl_prefix_cmp(struct ccnl_prefix_s *pfx, unsigned char *md,
     // FIXME: we must also inspect chunknum here!
     rc = (mode == CMP_EXACT) ? 0 : (int32_t) i;
 done:
-    DEBUGMSG(TRACE, "  cmp result: pfxlen=%lu cmplen=%lu namlen=%lu matchlen=%ld\n",
-             (long unsigned) pfx->compcnt, (long unsigned) plen, (long unsigned) nam->compcnt, (long) rc);
+    DEBUGMSG(TRACE, "  cmp result: pfxlen=%lu cmplen=%lu namlen=%lu matchlen=%lu\n",
+             (long unsigned) pfx->compcnt, (long unsigned) plen, (long unsigned) nam->compcnt, (long unsigned) rc);
     return rc;
 }
 

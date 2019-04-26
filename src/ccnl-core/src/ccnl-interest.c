@@ -67,11 +67,15 @@ ccnl_interest_new(struct ccnl_relay_s *ccnl, struct ccnl_face_s *from,
     i->from = from;
     i->last_used = CCNL_NOW();
 
+    ccnl_prefix_to_str(i->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    qos_traffic_class_t *tclass = qos_traffic_class(s);
+    i->tc = tclass;
+
     if (ccnl->pitcnt >= ccnl->max_pit_entries) {
-        ccnl_prefix_to_str(i->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
-        qos_traffic_class_t *tclass = qos_traffic_class(s);
-        if (!pit_strategy_remove(ccnl, i, tclass)) {
+        if (!pit_strategy_remove(ccnl, i)) {
             // No PIT entry was removed, so we should discard this Interest
+            ccnl_pkt_free(i->pkt);
+            ccnl_free(i);
             return NULL;
         }
     }

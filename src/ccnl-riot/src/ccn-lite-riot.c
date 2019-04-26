@@ -549,6 +549,7 @@ ccnl_send_interest(struct ccnl_prefix_s *prefix, unsigned char *buf, int buf_len
         return -1;
     }
 
+
     DEBUGMSG(INFO, "interest for chunk number: %lu\n", (prefix->chunknum == NULL) ? (unsigned long) 0 : (unsigned long) *prefix->chunknum);
 
     if (!prefix) {
