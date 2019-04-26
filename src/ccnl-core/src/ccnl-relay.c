@@ -1079,6 +1079,21 @@ pit_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_interest_s *i,
 {
     if (_pit_remove_func) {
         return _pit_remove_func(relay, i, tclass);
+    } else {
+        // If no PIT removal strategy defined, remove oldest PIT entry
+        struct ccnl_interest_s *cur = relay->pit;
+        struct ccnl_interest_s *oldest = cur;
+
+        while (cur) {
+            if (cur->last_used < oldest->last_used) {
+                oldest = cur;
+            }
+        }
+
+        ccnl_interest_remove(relay, oldest);
+
+        return 1;
     }
+
     return 0;
 }

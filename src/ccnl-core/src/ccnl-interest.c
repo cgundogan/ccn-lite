@@ -70,13 +70,13 @@ ccnl_interest_new(struct ccnl_relay_s *ccnl, struct ccnl_face_s *from,
     if (ccnl->pitcnt >= ccnl->max_pit_entries) {
         ccnl_prefix_to_str(i->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
         qos_traffic_class_t *tclass = qos_traffic_class(s);
-        if (pit_strategy_remove(ccnl, i, tclass)) {
-            ccnl->pitcnt++;
-            ccnl_interest_remove(ccnl, i);
+        if (!pit_strategy_remove(ccnl, i, tclass)) {
+            // No PIT entry was removed, so we should discard this Interest
             return NULL;
         }
     }
 
+    // PIT entry was removed, so we can add the new entry
     DBL_LINKED_LIST_ADD(ccnl->pit, i);
 
     ccnl->pitcnt++;

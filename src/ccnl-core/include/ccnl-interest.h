@@ -27,6 +27,7 @@
 
 #include "ccnl-pkt.h"
 #include "ccnl-face.h"
+#include "ccnl-qos.h"
 
 #ifdef CCNL_RIOT
 #include "evtimer_msg.h"
@@ -50,6 +51,7 @@ struct ccnl_interest_s {
     struct ccnl_pkt_s *pkt;             /**< the packet the interests originates from (?) */
     struct ccnl_face_s *from;           /**< the face the interest was received from */
     struct ccnl_pendint_s *pending;     /**< linked list of faces wanting that content */
+    qos_traffic_class_t *tc;
     uint32_t lifetime;                  /**< interest lifetime */
     uint32_t last_used;                 /**< last time the entry was used */
     int retries;                        /**< current number of executed retransmits. */
