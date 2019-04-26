@@ -635,8 +635,8 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 #endif
 #ifdef USE_SUITE_NDNTLV
         case CCNL_SUITE_NDNTLV:
-            if (!ccnl_i_prefixof_c(i->pkt->pfx, i->pkt->s.ndntlv.minsuffix,
-                       i->pkt->s.ndntlv.maxsuffix, c)) {
+            if (ccnl_i_prefixof_c(i->pkt->pfx, i->pkt->s.ndntlv.minsuffix,
+                       i->pkt->s.ndntlv.maxsuffix, c) < 0) {
                 // XX must also check i->ppkl,
                 i = i->next;
                 continue;
