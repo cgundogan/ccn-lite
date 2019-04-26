@@ -44,7 +44,7 @@ qos_traffic_class_t *qos_traffic_class(char *name)
         }
 
         if (memcmp(tc->traffic_class, name, len) == 0) {
-            if ((name_len > len) && (name[len] == '/')) {
+            if ((name_len == len) || ((name_len > len) && (name[len] == '/'))) {
                 if (!class || (len > strlen(class->traffic_class))) {
                     class = tc;
                 }
