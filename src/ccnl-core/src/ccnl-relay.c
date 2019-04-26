@@ -545,8 +545,7 @@ ccnl_content_remove(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 }
 
 struct ccnl_content_s*
-ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c,
-                       qos_traffic_class_t *tclass)
+ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 {
     struct ccnl_content_s *cit;
     char s[CCNL_MAX_PREFIX_SIZE];
@@ -564,7 +563,7 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c,
     }
 
     if (ccnl->max_cache_entries > 0 &&
-        ccnl->contentcnt >= ccnl->max_cache_entries && !cache_strategy_remove(ccnl, c, tclass)) {
+        ccnl->contentcnt >= ccnl->max_cache_entries && !cache_strategy_remove(ccnl, c)) {
         struct ccnl_content_s *c2, *oldest = NULL;
         uint32_t age = 0;
         for (c2 = ccnl->contents; c2; c2 = c2->next) {
@@ -1006,7 +1005,7 @@ ccnl_cs_add(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 {
     struct ccnl_content_s *content;
 
-    content = ccnl_content_add2cache(ccnl, c, NULL);
+    content = ccnl_content_add2cache(ccnl, c);
     if (content) {
         ccnl_content_serve_pending(ccnl, content);
         return 0;
@@ -1087,7 +1086,7 @@ pit_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_interest_s *i)
             if (cur->last_used > oldest->last_used) {
                 oldest = cur;
             }
-            cur++;
+            cur = cur->next;
         }
 
         ccnl_interest_remove(relay, oldest);

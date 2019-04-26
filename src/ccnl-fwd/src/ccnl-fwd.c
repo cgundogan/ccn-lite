@@ -90,10 +90,6 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         return 0;
     }
 
-    ccnl_prefix_to_str((*pkt)->pfx, s, CCNL_MAX_PREFIX_SIZE);
-    qos_traffic_class_t *tclass = qos_traffic_class(s);
-    printf("Data tclass: [prefix: %s, reliable: %d, expedited: %d]\n", tclass->traffic_class, tclass->reliable, tclass->expedited);
-
     // CONFORM: Step 1:
     for (c = relay->contents; c; c = c->next) {
         if (ccnl_prefix_cmp(c->pkt->pfx, NULL, (*pkt)->pfx, CMP_EXACT) == 0) {
@@ -107,19 +103,17 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         return 0;
     }
 
-    ccnl_prefix_to_str(c->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
-    tclass = qos_traffic_class(s);
     int pit_pending = ccnl_content_serve_pending(relay, c);
-    if (!pit_pending && !tclass->reliable) { // unsolicited content
+    if (!pit_pending && !c->tclass->reliable) { // unsolicited content
         // CONFORM: "A node MUST NOT forward unsolicited data [...]"
         DEBUGMSG_CFWD(DEBUG, "  removed because no matching interest\n");
         ccnl_content_free(c);
         return 0;
     }
 
-    if (relay->max_cache_entries != 0 && cache_strategy_cache(relay, c, tclass)) {
+    if (relay->max_cache_entries != 0 && cache_strategy_cache(relay, c)) {
         DEBUGMSG_CFWD(DEBUG, "  adding content to cache\n");
-        ccnl_content_add2cache(relay, c, tclass);
+        ccnl_content_add2cache(relay, c);
         int contlen = (int) (c->pkt->contlen > INT_MAX ? INT_MAX : c->pkt->contlen);
         DEBUGMSG_CFWD(INFO, "data after creating packet %.*s\n", contlen, c->pkt->content);
         if (ccnl_callback_rx_on_data2(relay, c)) {
@@ -256,10 +250,6 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
             // Step 1: search in content store
     DEBUGMSG_CFWD(DEBUG, "  searching in CS\n");
 
-    ccnl_prefix_to_str((*pkt)->pfx, s, CCNL_MAX_PREFIX_SIZE);
-    qos_traffic_class_t *tclass = qos_traffic_class(s);
-    printf("Interest tclass: [prefix: %s, reliable: %d, expedited: %d]\n", tclass->traffic_class, tclass->reliable, tclass->expedited);
-
     for (c = relay->contents; c; c = c->next) {
         if (c->pkt->pfx->suite != (*pkt)->pfx->suite)
             continue;
@@ -280,10 +270,6 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 #endif 
             }
         }
-
-        ccnl_prefix_to_str(c->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
-        qos_traffic_class_t *tclass = qos_traffic_class(s);
-        printf("Data tclass: [prefix: %s, reliable: %d, expedited: %d]\n", tclass->traffic_class, tclass->reliable, tclass->expedited);
 
         return 0; // we are done
     }
