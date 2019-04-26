@@ -154,8 +154,7 @@ ccnl_content_remove(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c);
  * @return   NULL, if @p c cannot be added
 */
 struct ccnl_content_s*
-ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c,
-                       qos_traffic_class_t *tclass);
+ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c);
 
 /**
  * @brief deliver new content @p c to all clients with (loosely) matching interest 
@@ -289,8 +288,7 @@ ccnl_cs_lookup(struct ccnl_relay_s *ccnl, char *prefix);
  * @brief Function pointer type for caching strategy function
  */
 typedef int (*ccnl_cache_strategy_func)(struct ccnl_relay_s *relay,
-                                        struct ccnl_content_s *c,
-                                        qos_traffic_class_t *tclass);
+                                        struct ccnl_content_s *c);
 
 
 /**
@@ -326,14 +324,12 @@ void ccnl_set_cache_strategy_cache(ccnl_cache_strategy_func func);
 /**
  * @brief May be defined for a particular cache replacement strategy
  */
-int cache_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_content_s *c,
-                          qos_traffic_class_t *tclass);
+int cache_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_content_s *c);
 
 /**
  * @brief May be defined for a particular caching decision strategy
  */
-int cache_strategy_cache(struct ccnl_relay_s *relay, struct ccnl_content_s *c,
-                         qos_traffic_class_t *tclass);
+int cache_strategy_cache(struct ccnl_relay_s *relay, struct ccnl_content_s *c);
 
 /**
  * @brief Function pointer type for PIT strategy function
