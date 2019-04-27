@@ -128,19 +128,24 @@ extern kernel_pid_t ccnl_event_loop_pid;
 #define CCNL_MSG_CS_LOOKUP      (0x1706)
 
 /**
+ * Message type for flushing the content store
+ */
+#define CCNL_MSG_CS_FLUSH       (0x1707)
+
+/**
  * Message type for Interest timeouts
  */
-#define CCNL_MSG_INT_TIMEOUT    (0x1707)
+#define CCNL_MSG_INT_TIMEOUT    (0x1708)
 
 /**
  * Message type for Face timeouts
  */
-#define CCNL_MSG_FACE_TIMEOUT   (0x1708)
+#define CCNL_MSG_FACE_TIMEOUT   (0x1709)
 
 /**
  * Message type for when PIT was removed
  */
-#define CCNL_MSG_REMOVED_PIT    (0x1709)
+#define CCNL_MSG_REMOVED_PIT    (0x1710)
 
 /**
  * Maximum number of elements that can be cached

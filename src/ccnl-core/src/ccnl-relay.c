@@ -31,9 +31,10 @@
 
 #ifdef CCNL_RIOT
 #include "ccn-lite-riot.h"
+#include "thread.h"
 #endif
 
-
+extern uint32_t num_datas;
 
 struct ccnl_face_s*
 ccnl_get_face_or_create(struct ccnl_relay_s *ccnl, int ifndx,
@@ -362,6 +363,13 @@ ccnl_interest_remove(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
 
     ccnl->pitcnt--;
 
+    thread_t *me = (thread_t*) sched_threads[sched_active_pid];
+    for (unsigned int j = 0; j <= me->msg_queue.mask; j++) {
+        if (me->msg_array[j].content.ptr == i) {
+            memset(&(me->msg_array[j]), 0, sizeof(me->msg_array[j]));
+        }
+    }
+
     if (i->pkt) {
         ccnl_pkt_free(i->pkt);
     }
@@ -439,6 +447,7 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
             }
             if (fwd->face) {
                 ccnl_send_pkt(ccnl, fwd->face, i->pkt);
+                break;
             }
 #if defined(USE_RONR)
             matching_face = 1;
@@ -528,13 +537,9 @@ ccnl_content_remove(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
     c2 = c->next;
     DBL_LINKED_LIST_REMOVE(ccnl->contents, c);
 
-//    free_content(c);
     if (c->pkt) {
-        ccnl_prefix_free(c->pkt->pfx);
-        ccnl_free(c->pkt->buf);
-        ccnl_free(c->pkt);
+        ccnl_pkt_free(c->pkt);
     }
-    //    ccnl_prefix_free(c->name);
     ccnl_free(c);
 
     ccnl->contentcnt--;
@@ -699,6 +704,7 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
             }
             c->served_cnt++;
             cnt++;
+            num_datas++;
         }
         i = ccnl_interest_remove(ccnl, i);
     }
@@ -1036,6 +1042,21 @@ ccnl_cs_remove(struct ccnl_relay_s *ccnl, char *prefix)
         ccnl_free(spref);
     }
     return -3;
+}
+
+int
+ccnl_cs_flush(struct ccnl_relay_s *ccnl)
+{
+    struct ccnl_content_s *c;
+
+    if (!ccnl) {
+        return -1;
+    }
+
+    for (c = ccnl->contents; c; c = c->next) {
+        ccnl_content_remove(ccnl, c);
+    }
+    return 0;
 }
 
 struct ccnl_content_s *

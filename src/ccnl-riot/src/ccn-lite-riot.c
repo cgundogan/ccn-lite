@@ -382,6 +382,10 @@ void
         DEBUGMSG(VERBOSE, "ccn-lite: waiting for incoming message.\n");
         msg_receive(&m);
 
+        if (m.type == 0) {
+            continue;
+        }
+
         switch (m.type) {
             case GNRC_NETAPI_MSG_TYPE_RCV:
                 DEBUGMSG(DEBUG, "ccn-lite: GNRC_NETAPI_MSG_TYPE_RCV received\n");
@@ -434,6 +438,12 @@ void
                 }
                 mr.content.ptr = content;
                 msg_reply(&m, &mr);
+                break;
+            case CCNL_MSG_CS_FLUSH:
+                DEBUGMSG(VERBOSE, "ccn-lite: CS flush\n");
+                if (ccnl_cs_flush(ccnl) < 0) {
+                    DEBUGMSG(WARNING, "flushing CS entry failed\n");
+                }
                 break;
             case CCNL_MSG_INT_RETRANS:
                 ccnl_int = (struct ccnl_interest_s *)m.content.ptr;
