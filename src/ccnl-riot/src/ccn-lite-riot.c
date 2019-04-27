@@ -45,6 +45,8 @@
 #include "ccnl-producer.h"
 #include "ccnl-pkt-builder.h"
 
+extern uint32_t num_datas;
+
 /**
  * @brief RIOT specific local variables
  * @{
@@ -294,6 +296,8 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
                  interested in it\n");
         gnrc_pktbuf_release(pkt);
     }
+
+    num_datas++;
 
     return 0;
 }
