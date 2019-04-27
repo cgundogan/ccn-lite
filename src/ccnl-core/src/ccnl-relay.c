@@ -34,8 +34,6 @@
 #include "thread.h"
 #endif
 
-extern uint32_t num_datas;
-
 struct ccnl_face_s*
 ccnl_get_face_or_create(struct ccnl_relay_s *ccnl, int ifndx,
                         struct sockaddr *sa, size_t addrlen)
@@ -589,10 +587,12 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
             DBL_LINKED_LIST_ADD(ccnl->contents, c);
             ccnl->contentcnt++;
 #ifdef CCNL_RIOT
+#if 0
             /* set cache timeout timer if content is not static */
             if (!(c->flags & CCNL_CONTENT_FLAGS_STATIC)) {
                 ccnl_evtimer_set_cs_timeout(c);
             }
+#endif
 #endif
     }
 
@@ -704,7 +704,6 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
             }
             c->served_cnt++;
             cnt++;
-            num_datas++;
         }
         i = ccnl_interest_remove(ccnl, i);
     }
