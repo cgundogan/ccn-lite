@@ -271,6 +271,17 @@ int
 ccnl_cs_remove(struct ccnl_relay_s *ccnl, char *prefix);
 
 /**
+ * @brief Remove all content from the Content Store
+ *
+ * @param[in] ccnl      pointer to current ccnl relay
+ *
+ * @return    0, if content with @p prefix was removed
+ * @return   -1, if @p ccnl is NULL
+*/
+int
+ccnl_cs_flush(struct ccnl_relay_s *ccnl);
+
+/**
  * @brief Lookup content from the Content Store with prefix @p prefix
  *
  * @param[in] ccnl      pointer to current ccnl relay
