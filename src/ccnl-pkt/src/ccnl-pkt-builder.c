@@ -20,6 +20,9 @@
 
 
 #include "ccnl-pkt-builder.h"
+#ifdef CCNL_RIOT
+#include "random.h"
+#endif
 
 #ifdef CCNL_RIOT
 #include "random.h"
@@ -223,6 +226,7 @@ ccnl_mkInterest(struct ccnl_prefix_s *name, ccnl_interest_opts_u *opts,
             (void) tmpend;
 
             if (!opts) {
+                default_opts.ndntlv.nonce = 0;
                 opts = &default_opts;
             }
 
