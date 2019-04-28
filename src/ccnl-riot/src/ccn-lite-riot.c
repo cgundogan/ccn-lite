@@ -45,7 +45,10 @@
 #include "ccnl-producer.h"
 #include "ccnl-pkt-builder.h"
 
+extern uint32_t num_ints;
+extern uint32_t num_gasints;
 extern uint32_t num_datas;
+extern uint32_t num_gasdatas;
 
 /**
  * @brief RIOT specific local variables
@@ -297,7 +300,20 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         gnrc_pktbuf_release(pkt);
     }
 
-    num_datas++;
+    char s[CCNL_MAX_PREFIX_SIZE];
+    ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE);
+
+    if (strstr(s, "/HK/gas-level") != NULL) {
+        num_gasdatas++;
+        printf("gasresp;%lu;%s;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long) num_gasints, (unsigned long) num_gasdatas);
+    }
+    else if (strstr(s, "/HK/control") != NULL) {
+        num_datas++;
+        printf("actresp;%lu;%s;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long)num_ints, (unsigned long)num_datas);
+    } else {
+        num_datas++;
+        printf("senresp;%lu;%s;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long)num_ints, (unsigned long)num_datas);
+    }
 
     return 0;
 }
@@ -381,6 +397,8 @@ void
     evtimer_init_msg(&ccnl_evtimer);
     struct ccnl_relay_s *ccnl = (struct ccnl_relay_s*) arg;
 
+    char s[CCNL_MAX_PREFIX_SIZE];
+
     while(!ccnl->halt_flag) {
         msg_t m, reply, mr;
         DEBUGMSG(VERBOSE, "ccn-lite: waiting for incoming message.\n");
@@ -399,6 +417,18 @@ void
             case GNRC_NETAPI_MSG_TYPE_SND:
                 DEBUGMSG(DEBUG, "ccn-lite: GNRC_NETAPI_MSG_TYPE_SND received\n");
                 pkt = (struct ccnl_pkt_s *) m.content.ptr;
+                ccnl_prefix_to_str(pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+                if (strstr(s, "/HK/gas-level") != NULL) {
+                    num_gasints++;
+                    printf("gasreq;%lu;%s;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long) num_gasints, (unsigned long) num_gasdatas);
+                }
+                else if (strstr(s, "/HK/control") != NULL) {
+                    num_ints++;
+                    printf("actreq;%lu;%s;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long) num_ints, (unsigned long) num_datas);
+                } else {
+                    num_ints++;
+                    printf("senreq;%lu;%s;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long)num_ints, (unsigned long)num_datas);
+                }
                 ccnl_fwd_handleInterest(ccnl, loopback_face, &pkt, ccnl_ndntlv_cMatch);
                 ccnl_pkt_free(pkt);
                 break;
