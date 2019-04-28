@@ -32,6 +32,7 @@
 #ifdef CCNL_RIOT
 #include "ccn-lite-riot.h"
 #include "thread.h"
+#include "random.h"
 #endif
 
 struct ccnl_face_s*
@@ -433,8 +434,13 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
                     memcpy(&nonce, i->pkt->s.ndntlv.nonce->data, 4);
                 }
             }
+#ifdef CCNL_RIOT
+            else {
+                nonce = random_uint32();
+            }
+#endif
 
-            DEBUGMSG_CFWD(INFO, "  outgoing interest=<%s> nonce=%i to=%s\n",
+            printf("  outgoing interest=<%s> nonce=%i to=%s\n",
                           ccnl_prefix_to_str(i->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE), nonce,
                           fwd->face ? ccnl_addr2ascii(&fwd->face->peer)
                                     : "<tap>");
@@ -571,7 +577,7 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         uint32_t age = 0;
         for (c2 = ccnl->contents; c2; c2 = c2->next) {
              if (!(c2->flags & CCNL_CONTENT_FLAGS_STATIC)) {
-                 if ((age == 0) || c2->last_used < age) {
+                 if ((age == 0) || c2->last_used > age) {
                      age = c2->last_used;
                      oldest = c2;
                  }
@@ -812,7 +818,8 @@ ccnl_nonce_isDup(struct ccnl_relay_s *relay, struct ccnl_pkt_s *pkt)
     if(CCNL_MAX_NONCES < 0){
         struct ccnl_interest_s *i = NULL;
         for (i = relay->pit; i; i = i->next) {
-            if(buf_equal(i->pkt->s.ndntlv.nonce, pkt->s.ndntlv.nonce)){
+            if(ccnl_prefix_cmp(i->pkt->pfx, NULL, pkt->pfx, CMP_EXACT) &&
+               buf_equal(i->pkt->s.ndntlv.nonce, pkt->s.ndntlv.nonce)){
                 return 1;
             }
         }
