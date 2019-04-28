@@ -224,9 +224,10 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         return 0;
     }
 #endif
-    if (local_producer(relay, from, *pkt)) {
-        return 0;
-    }
+
+    bool produced = true;
+    c = local_producer(relay, from, *pkt);
+
 #if defined(USE_SUITE_CCNB) && defined(USE_MGMT)
     if ((*pkt)->suite == CCNL_SUITE_CCNB && (*pkt)->pfx->compcnt == 4 &&
                                   !memcmp((*pkt)->pfx->comp[0], "ccnx", 4)) {
@@ -250,19 +251,28 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
             // Step 1: search in content store
     DEBUGMSG_CFWD(DEBUG, "  searching in CS\n");
 
-    for (c = relay->contents; c; c = c->next) {
-        if (c->pkt->pfx->suite != (*pkt)->pfx->suite)
-            continue;
-        if (cMatch(*pkt, c))
-            continue;
+    if (!c) {
+        produced = false;
+        for (c = relay->contents; c; c = c->next) {
+            if (c->pkt->pfx->suite != (*pkt)->pfx->suite)
+                continue;
+            if (cMatch(*pkt, c))
+                continue;
 
-        DEBUGMSG_CFWD(DEBUG, "  found matching content %p\n", (void *) c);
+            DEBUGMSG_CFWD(DEBUG, "  found matching content %p\n", (void *) c);
+            break;
+        }
+    }
 
+    if (c) {
         if (from) {
             if (from->ifndx >= 0) {
                 ccnl_send_pkt(relay, from, c->pkt);
                 if (ccnl_callback_tx_on_data(relay, from, c->pkt)) {
                     return 0;
+                }
+                if (produced) {
+                    ccnl_content_free(c);
                 }
             } else {
 #ifdef CCNL_APP_RX 
@@ -270,7 +280,6 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 #endif 
             }
         }
-
         return 0; // we are done
     }
 
