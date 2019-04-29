@@ -303,16 +303,18 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
     char s[CCNL_MAX_PREFIX_SIZE];
     ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE);
 
+    qos_traffic_class_t *tc = qos_traffic_class(s);
+
     if (strstr(s, "/HK/gas-level") != NULL) {
         num_gasdatas++;
-        printf("gasresp;%lu;%s;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long) num_gasints, (unsigned long) num_gasdatas);
+        printf("gasresp;%lu;%s;%lu;%lu;%s;%u;%u\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long) num_gasints, (unsigned long) num_gasdatas, tc->traffic_class, tc->expedited, tc->reliable);
     }
     else if (strstr(s, "/HK/control") != NULL) {
         num_datas++;
-        printf("actresp;%lu;%s;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long)num_ints, (unsigned long)num_datas);
+        printf("actresp;%lu;%s;%lu;%lu;%s;%u;%u\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long)num_ints, (unsigned long)num_datas, tc->traffic_class, tc->expedited, tc->reliable);
     } else {
         num_datas++;
-        printf("senresp;%lu;%s;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long)num_ints, (unsigned long)num_datas);
+        printf("senresp;%lu;%s;%lu;%lu;%s;%u;%u\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long)num_ints, (unsigned long)num_datas, tc->traffic_class, tc->expedited, tc->reliable);
     }
 
     return 0;
@@ -418,16 +420,17 @@ void
                 DEBUGMSG(DEBUG, "ccn-lite: GNRC_NETAPI_MSG_TYPE_SND received\n");
                 pkt = (struct ccnl_pkt_s *) m.content.ptr;
                 ccnl_prefix_to_str(pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+                qos_traffic_class_t *tc = qos_traffic_class(s);
                 if (strstr(s, "/HK/gas-level") != NULL) {
                     num_gasints++;
-                    printf("gasreq;%lu;%s;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long) num_gasints, (unsigned long) num_gasdatas);
+                    printf("gasreq;%lu;%s;%lu;%lu;%s;%u;%u\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long) num_gasints, (unsigned long) num_gasdatas, tc->traffic_class, tc->expedited, tc->reliable);
                 }
                 else if (strstr(s, "/HK/control") != NULL) {
                     num_ints++;
-                    printf("actreq;%lu;%s;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long) num_ints, (unsigned long) num_datas);
+                    printf("actreq;%lu;%s;%lu;%lu;%s;%u;%u\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long) num_ints, (unsigned long) num_datas, tc->traffic_class, tc->expedited, tc->reliable);
                 } else {
                     num_ints++;
-                    printf("senreq;%lu;%s;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long)num_ints, (unsigned long)num_datas);
+                    printf("senreq;%lu;%s;%lu;%lu;%s;%u;%u\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long)num_ints, (unsigned long)num_datas, tc->traffic_class, tc->expedited, tc->reliable);
                 }
                 ccnl_fwd_handleInterest(ccnl, loopback_face, &pkt, ccnl_ndntlv_cMatch);
                 ccnl_pkt_free(pkt);
