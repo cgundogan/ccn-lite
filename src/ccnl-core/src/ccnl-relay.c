@@ -577,7 +577,7 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         uint32_t age = 0;
         for (c2 = ccnl->contents; c2; c2 = c2->next) {
              if (!(c2->flags & CCNL_CONTENT_FLAGS_STATIC)) {
-                 if ((age == 0) || c2->last_used > age) {
+                 if ((age == 0) || c2->last_used < age) {
                      age = c2->last_used;
                      oldest = c2;
                  }
@@ -1110,7 +1110,7 @@ pit_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_interest_s *i)
         struct ccnl_interest_s *oldest = cur;
 
         while (cur) {
-            if (cur->last_used > oldest->last_used) {
+            if (cur->last_used < oldest->last_used) {
                 oldest = cur;
             }
             cur = cur->next;
