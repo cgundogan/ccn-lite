@@ -303,14 +303,14 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 
     if (strstr(s, "/HK/gas-level") != NULL) {
         num_gasdatas++;
-        printf("gpc;%lu;%s;%lu;%lu;%u\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long) num_gasints, (unsigned long) num_gasdatas, ccnl_relay.pitcnt);
+        printf("gpc;%lu;%s;%lu;%lu;%u\n", (unsigned long) xtimer_now_usec64(), &s[14], (unsigned long) num_gasints, (unsigned long) num_gasdatas, ccnl_relay.pitcnt);
     }
     else if (strstr(s, "/HK/control") != NULL) {
         num_datas++;
-        printf("apc;%lu;%s;%lu;%lu;%u\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long)num_ints, (unsigned long)num_datas, ccnl_relay.pitcnt);
+        printf("apc;%lu;%s;%lu;%lu;%u\n", (unsigned long) xtimer_now_usec64(), &s[12], (unsigned long)num_ints, (unsigned long)num_datas, ccnl_relay.pitcnt);
     } else {
         num_datas++;
-        printf("spc;%lu;%s;%lu;%lu;%u\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long)num_ints, (unsigned long)num_datas, ccnl_relay.pitcnt);
+        printf("spc;%lu;%s;%lu;%lu;%u\n", (unsigned long) xtimer_now_usec64(), &s[12], (unsigned long)num_ints, (unsigned long)num_datas, ccnl_relay.pitcnt);
     }
 
     return 0;
@@ -381,12 +381,12 @@ ccnl_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccn
     char s[CCNL_MAX_PREFIX_SIZE];
     ccnl_prefix_to_str(ccnl_int->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
     if (strstr(s, "/HK/gas-level") != NULL) {
-        printf("rgq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), s, relay->pitcnt);
+        printf("rgq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[14], relay->pitcnt);
     }
     else if (strstr(s, "/HK/control") != NULL) {
-        printf("raq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), s, relay->pitcnt);
+        printf("raq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[12], relay->pitcnt);
     } else {
-        printf("rsq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), s, relay->pitcnt);
+        printf("rsq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[12], relay->pitcnt);
     }
 
     ccnl_interest_propagate(relay, ccnl_int);
@@ -430,14 +430,14 @@ void
                 ccnl_prefix_to_str(pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
                 if (strstr(s, "/HK/gas-level") != NULL) {
                     num_gasints++;
-                    printf("gq;%lu;%s;%lu;%lu;%u;1\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long) num_gasints, (unsigned long) num_gasdatas,ccnl_relay.pitcnt);
+                    printf("gq;%lu;%s;%lu;%lu;%u;1\n", (unsigned long) xtimer_now_usec64(), &s[14], (unsigned long) num_gasints, (unsigned long) num_gasdatas,ccnl_relay.pitcnt);
                 }
                 else if (strstr(s, "/HK/control") != NULL) {
                     num_ints++;
-                    printf("aq;%lu;%s;%lu;%lu;%u;1\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long) num_ints, (unsigned long) num_datas, ccnl_relay.pitcnt);
+                    printf("aq;%lu;%s;%lu;%lu;%u;1\n", (unsigned long) xtimer_now_usec64(), &s[12], (unsigned long) num_ints, (unsigned long) num_datas, ccnl_relay.pitcnt);
                 } else {
                     num_ints++;
-                    printf("sq;%lu;%s;%lu;%lu;%u;1\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long)num_ints, (unsigned long)num_datas, ccnl_relay.pitcnt);
+                    printf("sq;%lu;%s;%lu;%lu;%u;1\n", (unsigned long) xtimer_now_usec64(), &s[12], (unsigned long)num_ints, (unsigned long)num_datas, ccnl_relay.pitcnt);
                 }
                 ccnl_fwd_handleInterest(ccnl, loopback_face, &pkt, ccnl_ndntlv_cMatch);
                 ccnl_pkt_free(pkt);

@@ -121,11 +121,6 @@ cache_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_content_s *c)
 int
 cache_strategy_cache(struct ccnl_relay_s *relay, struct ccnl_content_s *c, int pit_pending)
 {
-    if (c->tclass->reliable) {
-        // Reliable content MUST be cached
-        return 1;
-    }
-
     if (_cs_decision_func) {
         // Unreliable content MAY be cached
         return _cs_decision_func(relay, c, pit_pending);
