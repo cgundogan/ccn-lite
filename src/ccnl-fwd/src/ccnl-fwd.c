@@ -109,12 +109,6 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     }
 
     int pit_pending = ccnl_content_serve_pending(relay, c);
-    if (!pit_pending && !c->tclass->reliable) { // unsolicited content
-        // CONFORM: "A node MUST NOT forward unsolicited data [...]"
-        DEBUGMSG_CFWD(DEBUG, "  removed because no matching interest\n");
-        ccnl_content_free(c);
-        return 0;
-    }
 
     if (relay->max_cache_entries != 0 && cache_strategy_cache(relay, c, pit_pending)) {
         DEBUGMSG_CFWD(DEBUG, "  adding content to cache\n");
