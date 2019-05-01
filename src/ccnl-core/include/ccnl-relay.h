@@ -300,6 +300,8 @@ ccnl_cs_lookup(struct ccnl_relay_s *ccnl, char *prefix);
  */
 typedef int (*ccnl_cache_strategy_func)(struct ccnl_relay_s *relay,
                                         struct ccnl_content_s *c);
+typedef int (*ccnl_cache_strategy_cache_func)(struct ccnl_relay_s *relay,
+                                              struct ccnl_content_s *c, int pit_pending);
 
 
 /**
@@ -330,7 +332,7 @@ void ccnl_set_cache_strategy_remove(ccnl_cache_strategy_func func);
  * @param[in] func  The function to be called for an incoming content
  *                  chunk.
  */
-void ccnl_set_cache_strategy_cache(ccnl_cache_strategy_func func);
+void ccnl_set_cache_strategy_cache(ccnl_cache_strategy_cache_func func);
 
 /**
  * @brief May be defined for a particular cache replacement strategy
@@ -340,7 +342,7 @@ int cache_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_content_s *c);
 /**
  * @brief May be defined for a particular caching decision strategy
  */
-int cache_strategy_cache(struct ccnl_relay_s *relay, struct ccnl_content_s *c);
+int cache_strategy_cache(struct ccnl_relay_s *relay, struct ccnl_content_s *c, int pit_pending);
 
 /**
  * @brief Function pointer type for PIT strategy function

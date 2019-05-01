@@ -162,6 +162,11 @@ extern kernel_pid_t ccnl_event_loop_pid;
 #endif
 
 /**
+ * @brief Local loopback face
+ */
+extern struct ccnl_face_s *loopback_face;
+
+/**
  * Struct holding CCN-Lite's central relay information
  */
 extern struct ccnl_relay_s ccnl_relay;

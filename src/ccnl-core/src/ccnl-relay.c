@@ -33,7 +33,13 @@
 #include "ccn-lite-riot.h"
 #include "thread.h"
 #include "random.h"
+#include "xtimer.h"
 #endif
+
+extern uint32_t num_ints;
+extern uint32_t num_datas;
+extern uint32_t num_gasints;
+extern uint32_t num_gasdatas;
 
 struct ccnl_face_s*
 ccnl_get_face_or_create(struct ccnl_relay_s *ccnl, int ifndx,
@@ -451,6 +457,17 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
             }
             if (fwd->face) {
                 ccnl_send_pkt(ccnl, fwd->face, i->pkt);
+                if (i->from != loopback_face) {
+                    ccnl_prefix_to_str(i->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+                    if (strstr(s, "/HK/gas-level") != NULL) {
+                        printf("fgq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), s, ccnl->pitcnt);
+                    }
+                    else if (strstr(s, "/HK/control") != NULL) {
+                        printf("faq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), s, ccnl->pitcnt);
+                    } else {
+                        printf("fsq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), s, ccnl->pitcnt);
+                    }
+                }
                 break;
             }
 #if defined(USE_RONR)
@@ -571,25 +588,11 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         }
     }
 
-    if (ccnl->max_cache_entries > 0 &&
-        ccnl->contentcnt >= ccnl->max_cache_entries && !cache_strategy_remove(ccnl, c)) {
-        struct ccnl_content_s *c2, *oldest = NULL;
-        uint32_t age = 0;
-        for (c2 = ccnl->contents; c2; c2 = c2->next) {
-             if (!(c2->flags & CCNL_CONTENT_FLAGS_STATIC)) {
-                 if ((age == 0) || c2->last_used < age) {
-                     age = c2->last_used;
-                     oldest = c2;
-                 }
-             }
-         }
-         if (oldest) {
-             DEBUGMSG_CORE(DEBUG, " remove old entry from cache\n");
-             ccnl_content_remove(ccnl, oldest);
-         }
+    if (ccnl->max_cache_entries > 0 && ccnl->contentcnt >= ccnl->max_cache_entries) {
+        cache_strategy_remove(ccnl, c);
     }
-    if ((ccnl->max_cache_entries <= 0) ||
-         (ccnl->contentcnt <= ccnl->max_cache_entries)) {
+
+    if ((ccnl->max_cache_entries <= 0) || (ccnl->contentcnt < ccnl->max_cache_entries)) {
             DBL_LINKED_LIST_ADD(ccnl->contents, c);
             ccnl->contentcnt++;
 #ifdef CCNL_RIOT
@@ -701,6 +704,17 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
                          pi->face->faceid, (void*) c->pkt);
 
                 ccnl_send_pkt(ccnl, pi->face, c->pkt);
+
+                ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE);
+
+                if (strstr(s, "/HK/gas-level") != NULL) {
+                    printf("fgp;%lu;%s;%lu;%lu;%u;0\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long) num_gasints, (unsigned long) num_gasdatas, ccnl->pitcnt);
+                }
+                else if (strstr(s, "/HK/control") != NULL) {
+                    printf("fap;%lu;%s;%lu;%lu;%u;0\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long)num_ints, (unsigned long)num_datas, ccnl->pitcnt);
+                } else {
+                    printf("fsp;%lu;%s;%lu;%lu;%u;0\n", (unsigned long) xtimer_now_usec64(), s, (unsigned long)num_ints, (unsigned long)num_datas, ccnl->pitcnt);
+    }
 
 
             } else {// upcall to deliver content to local client

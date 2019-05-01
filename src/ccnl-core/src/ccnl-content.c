@@ -95,7 +95,7 @@ static ccnl_cache_strategy_func _cs_remove_func = NULL;
 /**
  * caching strategy decision function
  */
-static ccnl_cache_strategy_func _cs_decision_func = NULL;
+static ccnl_cache_strategy_cache_func _cs_decision_func = NULL;
 
 void
 ccnl_set_cache_strategy_remove(ccnl_cache_strategy_func func)
@@ -104,7 +104,7 @@ ccnl_set_cache_strategy_remove(ccnl_cache_strategy_func func)
 }
 
 void
-ccnl_set_cache_strategy_cache(ccnl_cache_strategy_func func)
+ccnl_set_cache_strategy_cache(ccnl_cache_strategy_cache_func func)
 {
     _cs_decision_func = func;
 }
@@ -119,7 +119,7 @@ cache_strategy_remove(struct ccnl_relay_s *relay, struct ccnl_content_s *c)
 }
 
 int
-cache_strategy_cache(struct ccnl_relay_s *relay, struct ccnl_content_s *c)
+cache_strategy_cache(struct ccnl_relay_s *relay, struct ccnl_content_s *c, int pit_pending)
 {
     if (c->tclass->reliable) {
         // Reliable content MUST be cached
@@ -128,7 +128,7 @@ cache_strategy_cache(struct ccnl_relay_s *relay, struct ccnl_content_s *c)
 
     if (_cs_decision_func) {
         // Unreliable content MAY be cached
-        return _cs_decision_func(relay, c);
+        return _cs_decision_func(relay, c, pit_pending);
     }
     // If no caching decision strategy is defined, we cache everything (CEE)
     return 1;
