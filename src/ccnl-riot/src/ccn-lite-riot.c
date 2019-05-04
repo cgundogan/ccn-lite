@@ -388,7 +388,6 @@ ccnl_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccn
     } else {
         printf("rsq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[12], relay->pitcnt);
     }
-
     ccnl_interest_propagate(relay, ccnl_int);
 }
 
