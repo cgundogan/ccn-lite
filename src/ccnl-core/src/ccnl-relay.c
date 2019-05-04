@@ -705,6 +705,7 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 
                 ccnl_send_pkt(ccnl, pi->face, c->pkt);
 
+
                 ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE);
 
                 if (strstr(s, "/HK/gas-level") != NULL) {
@@ -714,8 +715,7 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
                     printf("fap;%lu;%s;%lu;%lu;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[12], (unsigned long)num_ints, (unsigned long)num_datas, ccnl->pitcnt);
                 } else {
                     printf("fsp;%lu;%s;%lu;%lu;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[12], (unsigned long)num_ints, (unsigned long)num_datas, ccnl->pitcnt);
-    }
-
+                    }
 
             } else {// upcall to deliver content to local client
 #ifdef CCNL_APP_RX

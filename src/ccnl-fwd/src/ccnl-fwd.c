@@ -105,6 +105,7 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 
     c = ccnl_content_new(pkt);
     if (!c) {
+        puts("OH OH OH OH OH");
         return 0;
     }
 
@@ -199,6 +200,17 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 
     if (from) {
         char *from_as_str = ccnl_addr2ascii(&(from->peer));
+
+        ccnl_prefix_to_str((*pkt)->pfx,s,CCNL_MAX_PREFIX_SIZE);
+        if (strstr(s, "/HK/gas-level") != NULL) {
+            printf("irxgp;%lu;%s\n", (unsigned long) xtimer_now_usec64(), &s[14]);
+        }
+        else if (strstr(s, "/HK/control") != NULL) {
+            printf("irxap;%lu;%s\n", (unsigned long) xtimer_now_usec64(), &s[12]);
+        } else {
+            printf("irxsp;%lu;%s\n", (unsigned long) xtimer_now_usec64(), &s[12]);
+        }
+
 #ifndef CCNL_LINUXKERNEL
         DEBUGMSG_CFWD(INFO, "  incoming interest=<%s>%s nonce=%"PRIi32" from=%s\n",
              ccnl_prefix_to_str((*pkt)->pfx,s,CCNL_MAX_PREFIX_SIZE),
