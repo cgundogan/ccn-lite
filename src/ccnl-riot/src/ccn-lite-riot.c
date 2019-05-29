@@ -44,6 +44,7 @@
 #include "ccnl-fwd.h"
 #include "ccnl-producer.h"
 #include "ccnl-pkt-builder.h"
+#include "ccnl-qos.h"
 
 extern uint32_t num_ints;
 extern uint32_t num_gasints;
@@ -391,6 +392,31 @@ ccnl_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccn
     ccnl_interest_propagate(relay, ccnl_int);
 }
 
+typedef struct {
+    struct ccnl_pkt_s *pkt;
+    struct ccnl_face_s *face;
+} ccnl_pkt_face_t;
+
+static ccnl_pkt_face_t pqueue = { .pkt = NULL, .face = NULL };
+
+bool qos_queue(struct ccnl_pkt_s **pkt, struct ccnl_face_s **face)
+{
+    *pkt = ccnl_pkt_dup(*pkt);
+    if ((*pkt)->tc->expedited) {
+        return true;
+    }
+    struct ccnl_pkt_s *tpkt = pqueue.pkt;
+    struct ccnl_face_s *tface = pqueue.face;
+    pqueue.pkt = *pkt;
+    pqueue.face = *face;
+    if (tpkt == NULL) {
+        return false;
+    }
+    *pkt = tpkt;
+    *face = tface;
+    return true;
+}
+
 /* the main event-loop */
 void
 *_ccnl_event_loop(void *arg)
@@ -408,9 +434,24 @@ void
 
     char s[CCNL_MAX_PREFIX_SIZE];
 
+    thread_t *me = (thread_t*) sched_threads[sched_active_pid];
+    unsigned cib_len = 0;
+
     while(!ccnl->halt_flag) {
         msg_t m, reply, mr;
         DEBUGMSG(VERBOSE, "ccn-lite: waiting for incoming message.\n");
+
+        cib_len = cib_avail(&me->msg_queue);
+
+        if (cib_len == 0) {
+            if (pqueue.pkt) {
+                ccnl_send_pkt(ccnl, pqueue.face, pqueue.pkt);
+                ccnl_pkt_free(pqueue.pkt);
+                pqueue.pkt = NULL;
+                pqueue.face = NULL;
+            }
+        }
+
         msg_receive(&m);
 
         if (m.type == 0) {

@@ -295,7 +295,15 @@ int
 ccnl_send_pkt(struct ccnl_relay_s *ccnl, struct ccnl_face_s *to,
                 struct ccnl_pkt_s *pkt)
 {
-    return ccnl_face_enqueue(ccnl, to, buf_dup(pkt->buf));
+    struct ccnl_pkt_s *tpkt = pkt;
+    struct ccnl_face_s *tface = to;
+
+    if (!qos_queue(&tpkt, &tface)) {
+        return 0;
+    }
+    int res = ccnl_face_enqueue(ccnl, tface, buf_dup(tpkt->buf));
+    ccnl_pkt_free(tpkt);
+    return res;
 }
 
 int
