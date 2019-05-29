@@ -36,7 +36,7 @@
 #include <ccnl-core.h>
 #endif
 
-
+#include "ccnl-qos.h"
 
 
 // ----------------------------------------------------------------------
@@ -106,6 +106,9 @@ struct ccnl_pkt_s*
 ccnl_ndntlv_bytes2pkt(uint64_t pkttype, uint8_t *start,
                       uint8_t **data, size_t *datalen)
 {
+    char s[CCNL_MAX_PREFIX_SIZE];
+    (void) s;
+
     struct ccnl_pkt_s *pkt;
     size_t oldpos, len, i;
     uint64_t typ;
@@ -327,6 +330,9 @@ ccnl_ndntlv_bytes2pkt(uint64_t pkttype, uint8_t *start,
             prefix->nameptr = pkt->buf->data + (prefix->nameptr - start);
         }
     }
+
+    ccnl_prefix_to_str(pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    pkt->tc = qos_traffic_class(s);
 
     return pkt;
 Bail:

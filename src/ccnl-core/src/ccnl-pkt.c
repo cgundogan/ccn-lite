@@ -120,6 +120,7 @@ ccnl_pkt_dup(struct ccnl_pkt_s *pkt){
         ret->content = ret->buf->data + (pkt->content - pkt->buf->data);
         ret->contlen = pkt->contlen;
         ret->to = pkt->to;
+        ret->tc = pkt->tc;
     }
     return ret;
 }
