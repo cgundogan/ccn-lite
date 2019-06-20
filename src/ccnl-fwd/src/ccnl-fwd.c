@@ -263,6 +263,8 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
             }
         }
 
+        ccnl_callback_tx_on_data(relay, from, c->pkt);
+
         return 0; // we are done
     }
 
