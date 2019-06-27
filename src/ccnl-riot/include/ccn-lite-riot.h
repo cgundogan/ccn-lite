@@ -424,7 +424,7 @@ static inline void print_recv_interest(struct ccnl_pkt_s *pkt) {
     recv_interest++;
 }
 
-static inline void print_recv_data(struct ccnl_pkt_s *pkt) {
+static inline void print_dropdup_interest(struct ccnl_pkt_s *pkt) {
 #ifdef PRINT_ALL_EVENTS
     char s[CCNL_MAX_PREFIX_SIZE];
     ccnl_prefix_to_str(pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);

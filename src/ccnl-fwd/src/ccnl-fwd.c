@@ -75,6 +75,8 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 
     }
 
+    print_recv_data((*pkt));
+
 #if defined(USE_SUITE_CCNB) && defined(USE_SIGNATURES)
 //  FIXME: mgmt messages for NDN and other suites?
         if (pkt->pfx->compcnt == 2 && !memcmp(pkt->pfx->comp[0], "ccnx", 4)
@@ -105,6 +107,9 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     if (!ccnl_content_serve_pending(relay, c)) { // unsolicited content
         // CONFORM: "A node MUST NOT forward unsolicited data [...]"
         DEBUGMSG_CFWD(DEBUG, "  removed because no matching interest\n");
+
+        print_recv_drop_data(c->pkt);
+
         ccnl_content_free(c);
         return 0;
     }
@@ -195,6 +200,12 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 
     if (from) {
         char *from_as_str = ccnl_addr2ascii(&(from->peer));
+
+        // only if interest is not from upper layer
+        if (from != loopback_face) {
+            print_recv_interest((*pkt));
+        }
+
 #ifndef CCNL_LINUXKERNEL
         DEBUGMSG_CFWD(INFO, "  incoming interest=<%s>%s nonce=%"PRIi32" from=%s\n",
              ccnl_prefix_to_str((*pkt)->pfx,s,CCNL_MAX_PREFIX_SIZE),
@@ -212,6 +223,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 
     if (ccnl_nonce_isDup(relay, *pkt)) {
     #ifndef CCNL_LINUXKERNEL
+        print_drop_dup_interest(pkt);
         DEBUGMSG_CFWD(DEBUG, "  dropped because of duplicate nonce %"PRIi32"\n", nonce);
     #else
         DEBUGMSG_CFWD(DEBUG, "  dropped because of duplicate nonce %d\n", nonce);
@@ -256,6 +268,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         if (from) {
             if (from->ifndx >= 0) {
                 ccnl_send_pkt(relay, from, c->pkt);
+                print_cs_send_data(c->pkt);
             } else {
 #ifdef CCNL_APP_RX 
                 ccnl_app_RX(relay, c);

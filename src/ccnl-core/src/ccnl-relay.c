@@ -377,6 +377,7 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
     struct ccnl_forward_s *fwd;
     int rc = 0;
     char s[CCNL_MAX_PREFIX_SIZE];
+    bool sent_int=0;
     (void) s;
 
 #if defined(USE_RONR)
@@ -438,7 +439,15 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
                 (fwd->tap)(ccnl, i->from, i->pkt->pfx, i->pkt->buf);
             }
             if (fwd->face) {
+                sent_int=1;
                 ccnl_send_pkt(ccnl, fwd->face, i->pkt);
+
+                if (i->retries == 0) {
+                    print_fwd_interest(i->pkt);
+                }
+                if(i->retries > 0) {
+                    print_retrans_send_interest(i->pkt);
+                }
             }
 #if defined(USE_RONR)
             matching_face = 1;
@@ -453,6 +462,10 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
         ccnl_interest_broadcast(ccnl, i);
     }
 #endif
+
+    if(!sent_int) {
+            print_send_drop_interest(i->pkt);
+    }
 
     return;
 }
@@ -691,6 +704,7 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 
                 ccnl_send_pkt(ccnl, pi->face, c->pkt);
 
+                print_fwd_data(c->pkt);
 
             } else {// upcall to deliver content to local client
 #ifdef CCNL_APP_RX
