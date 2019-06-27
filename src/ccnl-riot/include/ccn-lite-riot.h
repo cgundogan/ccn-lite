@@ -526,7 +526,7 @@ static inline void print_accumulated_stats(void) {
     printf("STATS;%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";"
            "%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";"
            "%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";"
-           "%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32 ";",
+           "%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32 "\n",
            fwd_interest,
            retrans_send_interest,
            recv_interest,
