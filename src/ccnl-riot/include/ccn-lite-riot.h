@@ -377,6 +377,12 @@ extern uint32_t recv_drop_data;
 extern uint32_t ccnl_dup_drop;
 extern uint32_t netdev_evt_tx_noack;
 extern uint32_t discard_802154_cnt;
+extern uint32_t recv_nam;
+extern uint32_t send_nam;
+extern uint32_t recv_pam;
+extern uint32_t send_pam;
+extern uint32_t recv_sol;
+extern uint32_t send_sol;
 
 static inline void print_fwd_interest(struct ccnl_pkt_s *pkt) {
 #ifdef PRINT_ALL_EVENTS
@@ -468,34 +474,78 @@ static inline void print_recv_data(struct ccnl_pkt_s *pkt) {
     recv_data++;
 }
 
+static inline void print_send_pam(void) {
+#ifdef PRINT_ALL_EVENTS
+    printf("hpt;%lu;%*.s\n", (unsigned long)xtimer_now_usec64());
+#endif
+    send_pam++;
+}
+static inline void print_recv_pam(void) {
+#ifdef PRINT_ALL_EVENTS
+    printf("hpr;%lu;%*.s\n", (unsigned long)xtimer_now_usec64());
+#endif
+    recv_pam++;
+}
+static inline void print_send_sol(void) {
+#ifdef PRINT_ALL_EVENTS
+    printf("hst;%lu;%*.s\n", (unsigned long)xtimer_now_usec64());
+#endif
+    send_sol++;
+}
+static inline void print_recv_sol(void) {
+#ifdef PRINT_ALL_EVENTS
+    printf("hsr;%lu;%*.s\n", (unsigned long)xtimer_now_usec64());
+#endif
+    recv_sol++;
+}
+static inline void print_send_nam(char *name, size_t name_len) {
+#ifdef PRINT_ALL_EVENTS
+    printf("hnt;%lu;%*.s\n", (unsigned long)xtimer_now_usec64(), name_len, name);
+#endif
+    send_nam++;
+}
+static inline void print_recv_nam(char *name, size_t name_len) {
+#ifdef PRINT_ALL_EVENTS
+    printf("hnr;%lu;%*.s\n", (unsigned long)xtimer_now_usec64(), name_len, name);
+#endif
+    recv_nam++;
+}
+
 static inline void print_accumulated_stats(void) {
     netstats_t *stats;
     gnrc_netif_t *netif;
 
     netif = gnrc_netif_iter(NULL);
     gnrc_netapi_get(netif->pid, NETOPT_STATS, NETSTATS_LAYER2, &stats,
-        sizeof(&stats));
+                    sizeof(&stats));
 
     printf("STATS;%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";"
-      "%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";"
-      "%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%",
-        fwd_interest,
-        retrans_send_interest,
-        recv_interest,
-        send_drop_interest,
-        cs_send_data,
-        fwd_data,
-        recv_drop_data,
-        recv_data,
-        ccnl_dup_drop,
-        stats->tx_unicast_count,
-        stats->tx_mcast_count,
-        stats->tx_bytes,
-        stats->tx_success,
-        stats->tx_failed,
-        netdev_evt_tx_noack,
-        discard_802154_cnt
-    );
+           "%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";"
+           "%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";",
+           "%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32 ";",
+           fwd_interest,
+           retrans_send_interest,
+           recv_interest,
+           send_drop_interest,
+           cs_send_data,
+           fwd_data,
+           recv_drop_data,
+           recv_data,
+           ccnl_dup_drop,
+           stats->tx_unicast_count,
+           stats->tx_mcast_count,
+           stats->tx_bytes,
+           stats->tx_success,
+           stats->tx_failed,
+           netdev_evt_tx_noack,
+           discard_802154_cnt,
+           send_pam,
+           recv_pam,
+           send_nam,
+           recv_nam,
+           send_sol,
+           recv_sol
+        );
 
     ps();
 }
