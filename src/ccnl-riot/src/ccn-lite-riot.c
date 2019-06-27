@@ -94,7 +94,19 @@ struct ccnl_relay_s ccnl_relay;
 /**
  * @brief Local loopback face
  */
-static struct ccnl_face_s *loopback_face;
+struct ccnl_face_s *loopback_face;
+
+
+uint32_t fwd_interest=0;
+uint32_t retrans_send_interest=0;
+uint32_t send_drop_interest=0;
+uint32_t recv_interest=0;
+uint32_t cs_send_data=0;
+uint32_t fwd_data=0;
+uint32_t recv_data=0;
+uint32_t recv_drop_data=0;
+uint32_t netdev_evt_tx_noack=0;
+uint32_t ccnl_dup_drop=0;
 
 /**
  * @brief Debugging level

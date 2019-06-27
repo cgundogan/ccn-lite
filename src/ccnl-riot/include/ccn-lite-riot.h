@@ -36,6 +36,9 @@
 #include "evtimer.h"
 #include "evtimer_msg.h"
 
+#include "net/netstats.h"
+#include "ps.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -151,6 +154,12 @@ extern kernel_pid_t ccnl_event_loop_pid;
 #ifndef CCNL_THREAD_PRIORITY
 #define CCNL_THREAD_PRIORITY (THREAD_PRIORITY_MAIN - 1)
 #endif
+
+/**
+ * @brief Local loopback face
+ */
+extern struct ccnl_face_s *loopback_face;
+
 
 /**
  * Struct holding CCN-Lite's central relay information
@@ -356,6 +365,143 @@ static inline void ccnl_riot_interest_remove(evtimer_t *et, struct ccnl_interest
     }
     irq_restore(state);
 }
+
+extern uint32_t fwd_interest;
+extern uint32_t retrans_send_interest;
+extern uint32_t send_drop_interest;
+extern uint32_t recv_interest;
+extern uint32_t cs_send_data;
+extern uint32_t fwd_data;
+extern uint32_t recv_data;
+extern uint32_t recv_drop_data;
+extern uint32_t ccnl_dup_drop;
+extern uint32_t netdev_evt_tx_noack;
+extern uint32_t discard_802154_cnt;
+
+static inline void print_fwd_interest(struct ccnl_pkt_s *pkt) {
+#ifdef PRINT_ALL_EVENTS
+    char s[CCNL_MAX_PREFIX_SIZE];
+    ccnl_prefix_to_str(pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    printf("itf;%lu;%s;%u;%u\n", (unsigned long)xtimer_now_usec64(), &s[0],ccnl_relay.pitcnt, ccnl_relay.contentcnt);
+#endif
+    (void)pkt;
+    fwd_interest++;
+}
+
+static inline void print_retrans_send_interest(struct ccnl_pkt_s *pkt) {
+#ifdef PRINT_ALL_EVENTS
+    char s[CCNL_MAX_PREFIX_SIZE];
+    ccnl_prefix_to_str(pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    printf("irf;%lu;%s;%u;%u\n",(unsigned long)xtimer_now_usec64(), &s[0],ccnl_relay.pitcnt, ccnl_relay.contentcnt);
+#endif
+    (void)pkt;
+    retrans_send_interest++;
+}
+
+static inline void print_send_drop_interest(struct ccnl_pkt_s *pkt) {
+#ifdef PRINT_ALL_EVENTS
+    char s[CCNL_MAX_PREFIX_SIZE];
+    ccnl_prefix_to_str(pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    printf("itd;%lu;%s;%u;%u\n",(unsigned long)xtimer_now_usec64(), &s[0],ccnl_relay.pitcnt, ccnl_relay.contentcnt);
+#endif
+    (void)pkt;
+    send_drop_interest++;
+}
+
+static inline void print_recv_interest(struct ccnl_pkt_s *pkt) {
+#ifdef PRINT_ALL_EVENTS
+    char s[CCNL_MAX_PREFIX_SIZE];
+    ccnl_prefix_to_str(pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    printf("ivf;%lu;%s;%u;%u\n",(unsigned long)xtimer_now_usec64(), &s[0],ccnl_relay.pitcnt, ccnl_relay.contentcnt);
+#endif
+    (void)pkt;
+    recv_interest++;
+}
+
+static inline void print_recv_data(struct ccnl_pkt_s *pkt) {
+#ifdef PRINT_ALL_EVENTS
+    char s[CCNL_MAX_PREFIX_SIZE];
+    ccnl_prefix_to_str(pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    printf("idd;%lu;%s;%u;%u\n",(unsigned long)xtimer_now_usec64(), &s[0],ccnl_relay.pitcnt, ccnl_relay.contentcnt);
+#endif
+    (void)pkt;
+    ccnl_dup_drop++;
+}
+
+static inline void print_cs_send_data(struct ccnl_pkt_s *pkt) {
+#ifdef PRINT_ALL_EVENTS
+    char s[CCNL_MAX_PREFIX_SIZE];
+    ccnl_prefix_to_str(pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    printf("dtc;%lu;%s;%u;%u\n",(unsigned long)xtimer_now_usec64(), &s[0],ccnl_relay.pitcnt, ccnl_relay.contentcnt);
+#endif
+    (void)pkt;
+    cs_send_data++;
+}
+
+static inline void print_fwd_data(struct ccnl_pkt_s *pkt) {
+#ifdef PRINT_ALL_EVENTS
+    char s[CCNL_MAX_PREFIX_SIZE];
+    ccnl_prefix_to_str(pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    printf("dtf;%lu;%s;%u;%u\n",(unsigned long)xtimer_now_usec64(), &s[0],ccnl_relay.pitcnt, ccnl_relay.contentcnt);
+#endif
+    (void)pkt;
+    fwd_data++;
+}
+
+static inline void print_recv_drop_data(struct ccnl_pkt_s *pkt) { // not yet tested
+#ifdef PRINT_ALL_EVENTS
+    char s[CCNL_MAX_PREFIX_SIZE];
+    ccnl_prefix_to_str(pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    printf("dvd;%lu;%s;%u;%u\n",(unsigned long)xtimer_now_usec64(), &s[0],ccnl_relay.pitcnt, ccnl_relay.contentcnt);
+#endif
+    (void)pkt;
+    recv_drop_data++;
+}
+
+static inline void print_recv_data(struct ccnl_pkt_s *pkt) {
+#ifdef PRINT_ALL_EVENTS
+    char s[CCNL_MAX_PREFIX_SIZE];
+    ccnl_prefix_to_str(pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    printf("dvf;%lu;%s;%u;%u\n",(unsigned long)xtimer_now_usec64(), &s[0],ccnl_relay.pitcnt, ccnl_relay.contentcnt);
+#endif
+    (void)pkt;
+    recv_data++;
+}
+
+static inline void print_accumulated_stats(void) {
+    netstats_t *stats;
+    gnrc_netif_t *netif;
+
+    netif = gnrc_netif_iter(NULL);
+    gnrc_netapi_get(netif->pid, NETOPT_STATS, NETSTATS_LAYER2, &stats,
+        sizeof(&stats));
+
+    printf("STATS;%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";"
+      "%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";"
+      "%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%",
+        fwd_interest,
+        retrans_send_interest,
+        recv_interest,
+        send_drop_interest,
+        cs_send_data,
+        fwd_data,
+        recv_drop_data,
+        recv_data,
+        ccnl_dup_drop,
+        stats->tx_unicast_count,
+        stats->tx_mcast_count,
+        stats->tx_bytes,
+        stats->tx_success,
+        stats->tx_failed,
+        netdev_evt_tx_noack,
+        discard_802154_cnt
+    );
+
+    ps();
+}
+
+
+
 
 #ifdef __cplusplus
 }
