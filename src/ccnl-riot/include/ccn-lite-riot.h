@@ -424,7 +424,7 @@ static inline void print_recv_interest(struct ccnl_pkt_s *pkt) {
     recv_interest++;
 }
 
-static inline void print_dropdup_interest(struct ccnl_pkt_s *pkt) {
+static inline void print_drop_dup_interest(struct ccnl_pkt_s *pkt) {
 #ifdef PRINT_ALL_EVENTS
     char s[CCNL_MAX_PREFIX_SIZE];
     ccnl_prefix_to_str(pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
@@ -502,12 +502,16 @@ static inline void print_send_nam(char *name, size_t name_len) {
 #ifdef PRINT_ALL_EVENTS
     printf("hnt;%lu;%*.s\n", (unsigned long)xtimer_now_usec64(), name_len, name);
 #endif
+    (void)name;
+    (void)name_len;
     send_nam++;
 }
 static inline void print_recv_nam(char *name, size_t name_len) {
 #ifdef PRINT_ALL_EVENTS
     printf("hnr;%lu;%*.s\n", (unsigned long)xtimer_now_usec64(), name_len, name);
 #endif
+    (void)name;
+    (void)name_len;
     recv_nam++;
 }
 
@@ -521,7 +525,7 @@ static inline void print_accumulated_stats(void) {
 
     printf("STATS;%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";"
            "%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";"
-           "%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";",
+           "%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";"
            "%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32";%" PRIu32 ";",
            fwd_interest,
            retrans_send_interest,

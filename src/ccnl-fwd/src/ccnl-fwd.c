@@ -43,6 +43,8 @@
 #include <ccnl-pkt-switch.h>
 #endif
 
+#include "ccn-lite-riot.h"
+
 //#include "ccnl-logging.h"
 
 
@@ -223,7 +225,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 
     if (ccnl_nonce_isDup(relay, *pkt)) {
     #ifndef CCNL_LINUXKERNEL
-        print_drop_dup_interest(pkt);
+        print_drop_dup_interest(*pkt);
         DEBUGMSG_CFWD(DEBUG, "  dropped because of duplicate nonce %"PRIi32"\n", nonce);
     #else
         DEBUGMSG_CFWD(DEBUG, "  dropped because of duplicate nonce %d\n", nonce);
