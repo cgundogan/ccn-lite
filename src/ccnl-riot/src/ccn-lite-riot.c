@@ -107,6 +107,12 @@ uint32_t recv_data=0;
 uint32_t recv_drop_data=0;
 uint32_t netdev_evt_tx_noack=0;
 uint32_t ccnl_dup_drop=0;
+uint32_t recv_nam = 0;
+uint32_t send_nam = 0;
+uint32_t recv_pam = 0;
+uint32_t send_pam = 0;
+uint32_t recv_sol = 0;
+uint32_t send_sol = 0;
 
 /**
  * @brief Debugging level
