@@ -401,8 +401,6 @@ void
     evtimer_init_msg(&ccnl_evtimer);
     struct ccnl_relay_s *ccnl = (struct ccnl_relay_s*) arg;
 
-    char s[CCNL_MAX_PREFIX_SIZE];
-
     thread_t *me = (thread_t*) sched_threads[sched_active_pid];
     unsigned cib_len = 0;
 
