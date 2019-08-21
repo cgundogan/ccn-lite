@@ -46,11 +46,6 @@
 #include "ccnl-pkt-builder.h"
 #include "ccnl-qos.h"
 
-extern uint32_t num_ints;
-extern uint32_t num_gasints;
-extern uint32_t num_datas;
-extern uint32_t num_gasdatas;
-
 struct ccnl_face_s *loopback_face;
 
 /**
@@ -298,22 +293,6 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         gnrc_pktbuf_release(pkt);
     }
 
-    char s[CCNL_MAX_PREFIX_SIZE];
-    ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE);
-
-
-    if (strstr(s, "/HK/gas-level") != NULL) {
-        num_gasdatas++;
-        printf("gpc;%lu;%s;%lu;%lu;%u\n", (unsigned long) xtimer_now_usec64(), &s[14], (unsigned long) num_gasints, (unsigned long) num_gasdatas, ccnl_relay.pitcnt);
-    }
-    else if (strstr(s, "/HK/control") != NULL) {
-        num_datas++;
-        printf("apc;%lu;%s;%lu;%lu;%u\n", (unsigned long) xtimer_now_usec64(), &s[12], (unsigned long)num_ints, (unsigned long)num_datas, ccnl_relay.pitcnt);
-    } else {
-        num_datas++;
-        printf("spc;%lu;%s;%lu;%lu;%u\n", (unsigned long) xtimer_now_usec64(), &s[12], (unsigned long)num_ints, (unsigned long)num_datas, ccnl_relay.pitcnt);
-    }
-
     return 0;
 }
 
@@ -379,16 +358,6 @@ ccnl_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccn
     evtimer_add_msg(&ccnl_evtimer, &ccnl_int->evtmsg_retrans, ccnl_event_loop_pid);
     ccnl_int->retries++;
 
-    char s[CCNL_MAX_PREFIX_SIZE];
-    ccnl_prefix_to_str(ccnl_int->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
-    if (strstr(s, "/HK/gas-level") != NULL) {
-        printf("rgq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[14], relay->pitcnt);
-    }
-    else if (strstr(s, "/HK/control") != NULL) {
-        printf("raq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[12], relay->pitcnt);
-    } else {
-        printf("rsq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[12], relay->pitcnt);
-    }
     ccnl_interest_propagate(relay, ccnl_int);
 }
 
@@ -467,18 +436,6 @@ void
             case GNRC_NETAPI_MSG_TYPE_SND:
                 DEBUGMSG(DEBUG, "ccn-lite: GNRC_NETAPI_MSG_TYPE_SND received\n");
                 pkt = (struct ccnl_pkt_s *) m.content.ptr;
-                ccnl_prefix_to_str(pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
-                if (strstr(s, "/HK/gas-level") != NULL) {
-                    num_gasints++;
-                    printf("gq;%lu;%s;%lu;%lu;%u;1\n", (unsigned long) xtimer_now_usec64(), &s[14], (unsigned long) num_gasints, (unsigned long) num_gasdatas,ccnl_relay.pitcnt);
-                }
-                else if (strstr(s, "/HK/control") != NULL) {
-                    num_ints++;
-                    printf("aq;%lu;%s;%lu;%lu;%u;1\n", (unsigned long) xtimer_now_usec64(), &s[12], (unsigned long) num_ints, (unsigned long) num_datas, ccnl_relay.pitcnt);
-                } else {
-                    num_ints++;
-                    printf("sq;%lu;%s;%lu;%lu;%u;1\n", (unsigned long) xtimer_now_usec64(), &s[12], (unsigned long)num_ints, (unsigned long)num_datas, ccnl_relay.pitcnt);
-                }
                 ccnl_fwd_handleInterest(ccnl, loopback_face, &pkt, ccnl_ndntlv_cMatch);
                 ccnl_pkt_free(pkt);
                 break;

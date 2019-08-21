@@ -36,11 +36,6 @@
 #include "xtimer.h"
 #endif
 
-extern uint32_t num_ints;
-extern uint32_t num_datas;
-extern uint32_t num_gasints;
-extern uint32_t num_gasdatas;
-
 struct ccnl_face_s*
 ccnl_get_face_or_create(struct ccnl_relay_s *ccnl, int ifndx,
                         struct sockaddr *sa, size_t addrlen)
@@ -467,17 +462,6 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
             }
             if (fwd->face) {
                 ccnl_send_pkt(ccnl, fwd->face, i->pkt);
-                if (i->from != loopback_face) {
-                    ccnl_prefix_to_str(i->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
-                    if (strstr(s, "/HK/gas-level") != NULL) {
-                        printf("fgq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[14], ccnl->pitcnt);
-                    }
-                    else if (strstr(s, "/HK/control") != NULL) {
-                        printf("faq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt);
-                    } else {
-                        printf("fsq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt);
-                    }
-                }
                 break;
             }
 #if defined(USE_RONR)
@@ -714,19 +698,6 @@ ccnl_content_serve_pending(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
                          pi->face->faceid, (void*) c->pkt);
 
                 ccnl_send_pkt(ccnl, pi->face, c->pkt);
-
-
-                ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE);
-
-                if (strstr(s, "/HK/gas-level") != NULL) {
-                    printf("fgp;%lu;%s;%lu;%lu;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[14], (unsigned long) num_gasints, (unsigned long) num_gasdatas, ccnl->pitcnt);
-                }
-                else if (strstr(s, "/HK/control") != NULL) {
-                    printf("fap;%lu;%s;%lu;%lu;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[12], (unsigned long)num_ints, (unsigned long)num_datas, ccnl->pitcnt);
-                } else {
-                    printf("fsp;%lu;%s;%lu;%lu;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[12], (unsigned long)num_ints, (unsigned long)num_datas, ccnl->pitcnt);
-                    }
-
             } else {// upcall to deliver content to local client
 #ifdef CCNL_APP_RX
                 ccnl_app_RX(ccnl, c);

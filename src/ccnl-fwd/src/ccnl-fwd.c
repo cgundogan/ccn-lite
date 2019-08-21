@@ -43,11 +43,6 @@
 #include <ccnl-pkt-switch.h>
 #endif
 
-extern uint32_t num_ints;
-extern uint32_t num_datas;
-extern uint32_t num_gasints;
-extern uint32_t num_gasdatas;
-
 //#include "ccnl-logging.h"
 
 #include "ccnl-qos.h"
