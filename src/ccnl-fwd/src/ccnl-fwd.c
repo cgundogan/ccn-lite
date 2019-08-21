@@ -264,16 +264,6 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         if (from) {
             if (from->ifndx >= 0) {
                 ccnl_send_pkt(relay, from, c->pkt);
-                char s[CCNL_MAX_PREFIX_SIZE];
-                ccnl_prefix_to_str(c->pkt->pfx,s,CCNL_MAX_PREFIX_SIZE);
-                if (strstr(s, "/HK/gas-level") != NULL) {
-                    printf("gpp;%lu;%s;%u\n", (unsigned long) xtimer_now_usec64(), &s[14], relay->pitcnt);
-                }
-                else if (strstr(s, "/HK/control") != NULL) {
-                    printf("app;%lu;%s;%u\n", (unsigned long) xtimer_now_usec64(), &s[12], relay->pitcnt);
-                } else {
-                    printf("spp;%lu;%s;%u\n", (unsigned long) xtimer_now_usec64(), &s[12], relay->pitcnt);
-                }
                 if (ccnl_callback_tx_on_data(relay, from, c->pkt)) {
                     return 0;
                 }
