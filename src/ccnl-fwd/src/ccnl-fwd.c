@@ -184,8 +184,6 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     struct ccnl_interest_s *i;
     struct ccnl_content_s *c;
     int propagate= 0;
-    char s[CCNL_MAX_PREFIX_SIZE];
-    (void) s;
     int32_t nonce = 0;
     if (pkt != NULL && (*pkt) != NULL && (*pkt)->s.ndntlv.nonce != NULL) {
         if ((*pkt)->s.ndntlv.nonce->datalen == 4) {
@@ -195,16 +193,6 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 
     if (from) {
         char *from_as_str = ccnl_addr2ascii(&(from->peer));
-
-        ccnl_prefix_to_str((*pkt)->pfx,s,CCNL_MAX_PREFIX_SIZE);
-        if (strstr(s, "/HK/gas-level") != NULL) {
-            printf("irxgp;%lu;%s\n", (unsigned long) xtimer_now_usec64(), &s[14]);
-        }
-        else if (strstr(s, "/HK/control") != NULL) {
-            printf("irxap;%lu;%s\n", (unsigned long) xtimer_now_usec64(), &s[12]);
-        } else {
-            printf("irxsp;%lu;%s\n", (unsigned long) xtimer_now_usec64(), &s[12]);
-        }
 
 #ifndef CCNL_LINUXKERNEL
         DEBUGMSG_CFWD(INFO, "  incoming interest=<%s>%s nonce=%"PRIi32" from=%s\n",
