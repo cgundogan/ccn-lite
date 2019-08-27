@@ -293,8 +293,6 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         gnrc_pktbuf_release(pkt);
     }
 
-    printf("%.*s\n", c->pkt->contlen, c->pkt->content);
-
     return 0;
 }
 
