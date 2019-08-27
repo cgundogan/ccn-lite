@@ -371,8 +371,6 @@ ccnl_interest_remove(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
 
     DBL_LINKED_LIST_REMOVE(ccnl->pit, i);
 
-    ccnl->pitcnt--;
-
     thread_t *me = (thread_t*) sched_threads[sched_active_pid];
     for (unsigned int j = 0; j <= me->msg_queue.mask; j++) {
         if (me->msg_array[j].content.ptr == i) {
