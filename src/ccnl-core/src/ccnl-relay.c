@@ -380,7 +380,7 @@ ccnl_interest_remove(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
 
     ccnl->pitcnt--;
 
-    if (strcmp(i->tc->traffic_class, "/HK/control")) {
+    if (strcmp(i->tc->traffic_class, "/HK/control") == 0) {
         num_pits_qos--;
     }
     else {
@@ -577,7 +577,7 @@ ccnl_content_remove(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
     c2 = c->next;
     DBL_LINKED_LIST_REMOVE(ccnl->contents, c);
 
-    if (strcmp(c->pkt->tc->traffic_class, "/HK/control")) {
+    if (strcmp(c->pkt->tc->traffic_class, "/HK/control") == 0) {
         num_cs_qos--;
     }
     else {
@@ -621,7 +621,7 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
     if ((ccnl->max_cache_entries <= 0) || (ccnl->contentcnt < ccnl->max_cache_entries)) {
             DBL_LINKED_LIST_ADD(ccnl->contents, c);
             ccnl->contentcnt++;
-            if (strcmp(c->pkt->tc->traffic_class, "/HK/control")) {
+            if (strcmp(c->pkt->tc->traffic_class, "/HK/control") == 0) {
                 num_cs_qos++;
             }
             else {

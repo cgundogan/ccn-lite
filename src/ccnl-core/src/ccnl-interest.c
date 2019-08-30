@@ -74,7 +74,7 @@ ccnl_interest_new(struct ccnl_relay_s *ccnl, struct ccnl_face_s *from,
     qos_traffic_class_t *tclass = qos_traffic_class(s);
     i->tc = tclass;
 
-    if (strcmp(i->tc->traffic_class, "/HK/control")) {
+    if (strcmp(i->tc->traffic_class, "/HK/control") == 0) {
         num_pits_qos++;
     }
     else {
@@ -86,7 +86,7 @@ ccnl_interest_new(struct ccnl_relay_s *ccnl, struct ccnl_face_s *from,
             // No PIT entry was removed, so we should discard this Interest
             ccnl_pkt_free(i->pkt);
             ccnl_free(i);
-            if (strcmp(i->tc->traffic_class, "/HK/control")) {
+            if (strcmp(i->tc->traffic_class, "/HK/control") == 0) {
                 num_pits_qos--;
             }
             else {
