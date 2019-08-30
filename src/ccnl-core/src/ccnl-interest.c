@@ -43,6 +43,9 @@
 #include "ccn-lite-riot.h"
 #endif
 
+extern uint32_t num_pits_qos;
+extern uint32_t num_pits_noqos;
+
 struct ccnl_interest_s*
 ccnl_interest_new(struct ccnl_relay_s *ccnl, struct ccnl_face_s *from,
                   struct ccnl_pkt_s **pkt)
@@ -71,11 +74,24 @@ ccnl_interest_new(struct ccnl_relay_s *ccnl, struct ccnl_face_s *from,
     qos_traffic_class_t *tclass = qos_traffic_class(s);
     i->tc = tclass;
 
+    if (strcmp(i->tc->traffic_class, "/HK/control")) {
+        num_pits_qos++;
+    }
+    else {
+        num_pits_noqos++;
+    }
+
     if (ccnl->pitcnt >= ccnl->max_pit_entries) {
         if (!pit_strategy_remove(ccnl, i)) {
             // No PIT entry was removed, so we should discard this Interest
             ccnl_pkt_free(i->pkt);
             ccnl_free(i);
+            if (strcmp(i->tc->traffic_class, "/HK/control")) {
+                num_pits_qos--;
+            }
+            else {
+                num_pits_noqos--;
+            }
             return NULL;
         }
     }

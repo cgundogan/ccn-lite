@@ -47,6 +47,10 @@ extern uint32_t num_ints;
 extern uint32_t num_datas;
 extern uint32_t num_gasints;
 extern uint32_t num_gasdatas;
+extern uint32_t num_pits_qos ;
+extern uint32_t num_pits_noqos;
+extern uint32_t num_cs_qos ;
+extern uint32_t num_cs_noqos;
 
 //#include "ccnl-logging.h"
 
@@ -206,9 +210,9 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
             printf("irxgp;%lu;%s\n", (unsigned long) xtimer_now_usec64(), &s[14]);
         }
         else if (strstr(s, "/HK/control") != NULL) {
-            printf("irxap;%lu;%s\n", (unsigned long) xtimer_now_usec64(), &s[12]);
+            printf("irxap;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], relay->pitcnt, relay->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
         } else {
-            printf("irxsp;%lu;%s\n", (unsigned long) xtimer_now_usec64(), &s[12]);
+            printf("irxsp;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], relay->pitcnt, relay->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
         }
 
 #ifndef CCNL_LINUXKERNEL
@@ -285,9 +289,9 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
                     printf("gpp;%lu;%s;%u\n", (unsigned long) xtimer_now_usec64(), &s[14], relay->pitcnt);
                 }
                 else if (strstr(s, "/HK/control") != NULL) {
-                    printf("app;%lu;%s;%u\n", (unsigned long) xtimer_now_usec64(), &s[12], relay->pitcnt);
+                    printf("app;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], relay->pitcnt, relay->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
                 } else {
-                    printf("spp;%lu;%s;%u\n", (unsigned long) xtimer_now_usec64(), &s[12], relay->pitcnt);
+                    printf("spp;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], relay->pitcnt, relay->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
                 }
                 if (ccnl_callback_tx_on_data(relay, from, c->pkt)) {
                     return 0;

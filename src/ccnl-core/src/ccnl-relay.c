@@ -40,6 +40,10 @@ extern uint32_t num_ints;
 extern uint32_t num_datas;
 extern uint32_t num_gasints;
 extern uint32_t num_gasdatas;
+extern uint32_t num_pits_qos ;
+extern uint32_t num_pits_noqos;
+extern uint32_t num_cs_qos ;
+extern uint32_t num_cs_noqos;
 
 struct ccnl_face_s*
 ccnl_get_face_or_create(struct ccnl_relay_s *ccnl, int ifndx,
@@ -376,6 +380,13 @@ ccnl_interest_remove(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
 
     ccnl->pitcnt--;
 
+    if (strcmp(i->tc->traffic_class, "/HK/control")) {
+        num_pits_qos--;
+    }
+    else {
+        num_pits_noqos--;
+    }
+
     thread_t *me = (thread_t*) sched_threads[sched_active_pid];
     for (unsigned int j = 0; j <= me->msg_queue.mask; j++) {
         if (me->msg_array[j].content.ptr == i) {
@@ -566,6 +577,13 @@ ccnl_content_remove(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
     c2 = c->next;
     DBL_LINKED_LIST_REMOVE(ccnl->contents, c);
 
+    if (strcmp(c->pkt->tc->traffic_class, "/HK/control")) {
+        num_cs_qos--;
+    }
+    else {
+        num_cs_noqos--;
+    }
+
     if (c->pkt) {
         ccnl_pkt_free(c->pkt);
     }
@@ -603,6 +621,12 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
     if ((ccnl->max_cache_entries <= 0) || (ccnl->contentcnt < ccnl->max_cache_entries)) {
             DBL_LINKED_LIST_ADD(ccnl->contents, c);
             ccnl->contentcnt++;
+            if (strcmp(c->pkt->tc->traffic_class, "/HK/control")) {
+                num_cs_qos++;
+            }
+            else {
+                num_cs_noqos++;
+            }
 #ifdef CCNL_RIOT
 #if 0
             /* set cache timeout timer if content is not static */
