@@ -50,9 +50,9 @@ extern uint32_t num_ints;
 extern uint32_t num_gasints;
 extern uint32_t num_datas;
 extern uint32_t num_gasdatas;
-extern uint32_t num_pits_qos ;
+extern uint32_t num_pits_qos;
 extern uint32_t num_pits_noqos;
-extern uint32_t num_cs_qos ;
+extern uint32_t num_cs_qos;
 extern uint32_t num_cs_noqos;
 
 struct ccnl_face_s *loopback_face;
@@ -478,10 +478,10 @@ void
                 }
                 else if (strstr(s, "/HK/control") != NULL) {
                     num_ints++;
-                    printf("aq;%lu;%s;%lu;%lu;%u;1;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], (unsigned long) num_ints, (unsigned long) num_datas, ccnl_relay.pitcnt, ccnl_relay.contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+                    printf("aq;%lu;%s;%lu;%lu;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], (unsigned long) num_ints, (unsigned long) num_datas, ccnl_relay.pitcnt, ccnl_relay.contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
                 } else {
                     num_ints++;
-                    printf("sq;%lu;%s;%lu;%lu;%u;1;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], (unsigned long)num_ints, (unsigned long)num_datas, ccnl_relay.pitcnt, ccnl_relay.contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+                    printf("sq;%lu;%s;%lu;%lu;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], (unsigned long)num_ints, (unsigned long)num_datas, ccnl_relay.pitcnt, ccnl_relay.contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
                 }
                 ccnl_fwd_handleInterest(ccnl, loopback_face, &pkt, ccnl_ndntlv_cMatch);
                 ccnl_pkt_free(pkt);

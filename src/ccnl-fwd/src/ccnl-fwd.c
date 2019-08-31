@@ -47,9 +47,9 @@ extern uint32_t num_ints;
 extern uint32_t num_datas;
 extern uint32_t num_gasints;
 extern uint32_t num_gasdatas;
-extern uint32_t num_pits_qos ;
+extern uint32_t num_pits_qos;
 extern uint32_t num_pits_noqos;
-extern uint32_t num_cs_qos ;
+extern uint32_t num_cs_qos;
 extern uint32_t num_cs_noqos;
 
 //#include "ccnl-logging.h"

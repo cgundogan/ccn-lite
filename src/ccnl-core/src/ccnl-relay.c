@@ -40,9 +40,9 @@ extern uint32_t num_ints;
 extern uint32_t num_datas;
 extern uint32_t num_gasints;
 extern uint32_t num_gasdatas;
-extern uint32_t num_pits_qos ;
+extern uint32_t num_pits_qos;
 extern uint32_t num_pits_noqos;
-extern uint32_t num_cs_qos ;
+extern uint32_t num_cs_qos;
 extern uint32_t num_cs_noqos;
 
 struct ccnl_face_s*
@@ -387,6 +387,14 @@ ccnl_interest_remove(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
         num_pits_noqos--;
     }
 
+    char s[CCNL_MAX_PREFIX_SIZE];
+    ccnl_prefix_to_str(i->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    if (strstr(s, "/HK/control") != NULL) {
+        printf("iadel;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+    } else {
+        printf("isdel;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+    }
+
     thread_t *me = (thread_t*) sched_threads[sched_active_pid];
     for (unsigned int j = 0; j <= me->msg_queue.mask; j++) {
         if (me->msg_array[j].content.ptr == i) {
@@ -482,9 +490,9 @@ ccnl_interest_propagate(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
                         printf("fgq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[14], ccnl->pitcnt);
                     }
                     else if (strstr(s, "/HK/control") != NULL) {
-                        printf("faq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt);
+                        printf("faq;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
                     } else {
-                        printf("fsq;%lu;%s;%u;0\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt);
+                        printf("fsq;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
                     }
                 }
                 break;
@@ -584,6 +592,14 @@ ccnl_content_remove(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         num_cs_noqos--;
     }
 
+    char s[CCNL_MAX_PREFIX_SIZE];
+    ccnl_prefix_to_str(c->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    if (strstr(s, "/HK/control") != NULL) {
+        printf("cadel;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+    } else {
+        printf("csdel;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+    }
+
     if (c->pkt) {
         ccnl_pkt_free(c->pkt);
     }
@@ -626,6 +642,12 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
             }
             else {
                 num_cs_noqos++;
+            }
+            ccnl_prefix_to_str(c->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+            if (strstr(s, "/HK/control") != NULL) {
+                printf("cacr;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+            } else {
+                printf("cscr;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
             }
 #ifdef CCNL_RIOT
 #if 0
