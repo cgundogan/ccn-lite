@@ -539,6 +539,21 @@ void
                 break;
             case CCNL_MSG_INT_TIMEOUT:
                 ccnl_int = (struct ccnl_interest_s *)m.content.ptr;
+
+                if (strcmp(ccnl_int->tc->traffic_class, "/HK/control") == 0) {
+                    num_pits_qos--;
+                }
+                else {
+                    num_pits_noqos--;
+                }
+
+                ccnl_prefix_to_str(ccnl_int->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+                if (strstr(s, "/HK/control") != NULL) {
+                    printf("iadelt;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+                } else {
+                    printf("isdelt;%lu;%s;%u;%u;%lu;%lu;%lu;%lu\n", (unsigned long) xtimer_now_usec64(), &s[12], ccnl->pitcnt, ccnl->contentcnt, num_pits_qos, num_pits_noqos, num_cs_qos, num_cs_noqos);
+                }
+
                 ccnl_interest_remove(ccnl, ccnl_int);
                 break;
             case CCNL_MSG_FACE_TIMEOUT:
