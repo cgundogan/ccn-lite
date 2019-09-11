@@ -293,6 +293,10 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         gnrc_pktbuf_release(pkt);
     }
 
+#ifdef NODE_GATEWAY
+    printf("%.*s\n", c->pkt->contlen, c->pkt->content);
+#endif
+
     return 0;
 }
 
