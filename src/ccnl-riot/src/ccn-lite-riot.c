@@ -271,6 +271,8 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
     (void) rc; /* just to silence a compiler warning (if USE_DEBUG is not set) */
 }
 
+extern void ccnl_app_RX_fwd(struct ccnl_content_s *c);
+
 /* packets delivered to the application */
 int
 ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
@@ -293,9 +295,7 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         gnrc_pktbuf_release(pkt);
     }
 
-#ifdef NODE_GATEWAY
-    printf("%.*s\n", c->pkt->contlen, c->pkt->content);
-#endif
+    ccnl_app_RX_fwd(c);
 
     return 0;
 }
