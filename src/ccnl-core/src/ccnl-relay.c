@@ -544,7 +544,7 @@ ccnl_interest_broadcast(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *inter
     }
 }
 
-void acm_icn_cs_demo_remove(struct ccnl_content_s *c);
+void acm_icn_demo_cs_remove(struct ccnl_content_s *c);
 
 struct ccnl_content_s*
 ccnl_content_remove(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
