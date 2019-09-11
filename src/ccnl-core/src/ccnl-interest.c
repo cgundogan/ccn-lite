@@ -43,6 +43,8 @@
 #include "ccn-lite-riot.h"
 #endif
 
+extern void acm_icn_demo_interest_new(struct ccnl_interest_s *i);
+
 struct ccnl_interest_s*
 ccnl_interest_new(struct ccnl_relay_s *ccnl, struct ccnl_face_s *from,
                   struct ccnl_pkt_s **pkt)
@@ -84,6 +86,8 @@ ccnl_interest_new(struct ccnl_relay_s *ccnl, struct ccnl_face_s *from,
     DBL_LINKED_LIST_ADD(ccnl->pit, i);
 
     ccnl->pitcnt++;
+
+    acm_icn_demo_interest_new(i);
 
 #ifdef CCNL_RIOT
     ccnl_evtimer_reset_interest_retrans(i);

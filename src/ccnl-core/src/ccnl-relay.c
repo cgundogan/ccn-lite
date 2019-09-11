@@ -344,6 +344,7 @@ ccnl_face_enqueue(struct ccnl_relay_s *ccnl, struct ccnl_face_s *to,
     return 0;
 }
 
+extern void acm_icn_demo_interest_remove(struct ccnl_interest_s *i);
 
 struct ccnl_interest_s*
 ccnl_interest_remove(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
@@ -377,6 +378,8 @@ ccnl_interest_remove(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *i)
             memset(&(me->msg_array[j]), 0, sizeof(me->msg_array[j]));
         }
     }
+
+    acm_icn_demo_interest_remove(i);
 
     if (i->pkt) {
         ccnl_pkt_free(i->pkt);
@@ -541,11 +544,15 @@ ccnl_interest_broadcast(struct ccnl_relay_s *ccnl, struct ccnl_interest_s *inter
     }
 }
 
+void acm_icn_cs_demo_remove(struct ccnl_content_s *c);
+
 struct ccnl_content_s*
 ccnl_content_remove(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 {
     struct ccnl_content_s *c2;
     DEBUGMSG_CORE(TRACE, "ccnl_content_remove\n");
+
+    acm_icn_demo_cs_remove(c);
 
     c2 = c->next;
     DBL_LINKED_LIST_REMOVE(ccnl->contents, c);
@@ -561,6 +568,8 @@ ccnl_content_remove(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 #endif
     return c2;
 }
+
+extern void acm_icn_demo_cs_new(struct ccnl_content_s *c);
 
 struct ccnl_content_s*
 ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
@@ -587,6 +596,7 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
     if ((ccnl->max_cache_entries <= 0) || (ccnl->contentcnt < ccnl->max_cache_entries)) {
             DBL_LINKED_LIST_ADD(ccnl->contents, c);
             ccnl->contentcnt++;
+            acm_icn_demo_cs_new(c);
 #ifdef CCNL_RIOT
 #if 0
             /* set cache timeout timer if content is not static */
