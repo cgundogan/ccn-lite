@@ -591,7 +591,10 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 
     if (ccnl->max_cache_entries > 0 && ccnl->contentcnt >= ccnl->max_cache_entries) {
         if (cache_strategy_remove(ccnl, c) == 0) {
-            ccnl_content_remove(ccnl, c);
+            if (c->pkt) {
+                ccnl_pkt_free(c->pkt);
+            }
+            ccnl_free(c);
             return NULL;
         }
     }
