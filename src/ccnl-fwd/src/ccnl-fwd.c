@@ -108,10 +108,14 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 
     if (relay->max_cache_entries != 0 && cache_strategy_cache(relay, c, pit_pending)) {
         DEBUGMSG_CFWD(DEBUG, "  adding content to cache\n");
-        ccnl_content_add2cache(relay, c);
-        int contlen = (int) (c->pkt->contlen > INT_MAX ? INT_MAX : c->pkt->contlen);
-        DEBUGMSG_CFWD(INFO, "data after creating packet %.*s\n", contlen, c->pkt->content);
-        if (ccnl_callback_rx_on_data2(relay, c)) {
+        if (ccnl_content_add2cache(relay, c)) {
+            int contlen = (int) (c->pkt->contlen > INT_MAX ? INT_MAX : c->pkt->contlen);
+            DEBUGMSG_CFWD(INFO, "data after creating packet %.*s\n", contlen, c->pkt->content);
+            if (ccnl_callback_rx_on_data2(relay, c)) {
+                return 0;
+            }
+        }
+        else {
             return 0;
         }
     } else {
