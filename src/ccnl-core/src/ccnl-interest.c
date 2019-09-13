@@ -44,6 +44,7 @@
 #endif
 
 extern void acm_icn_demo_interest_new(struct ccnl_interest_s *i);
+extern int acm_icn_demo_interest_filter(struct ccnl_interest_s *i);
 
 struct ccnl_interest_s*
 ccnl_interest_new(struct ccnl_relay_s *ccnl, struct ccnl_face_s *from,
@@ -72,6 +73,12 @@ ccnl_interest_new(struct ccnl_relay_s *ccnl, struct ccnl_face_s *from,
     ccnl_prefix_to_str(i->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
     qos_traffic_class_t *tclass = qos_traffic_class(s);
     i->tc = tclass;
+
+    if (acm_icn_demo_interest_filter(i)) {
+        ccnl_pkt_free(i->pkt);
+        ccnl_free(i);
+        return NULL;
+    }
 
     if (ccnl->pitcnt >= ccnl->max_pit_entries) {
         if (!pit_strategy_remove(ccnl, i)) {
