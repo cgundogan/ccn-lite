@@ -45,6 +45,8 @@
 #include "ccnl-producer.h"
 #include "ccnl-pkt-builder.h"
 
+unsigned long rreqtx = 0;
+
 /**
  * @brief May be defined for a particular caching strategy
  */
@@ -269,6 +271,7 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
 
                             /* actual sending */
                             DEBUGMSG(DEBUG, " try to pass to GNRC (%i): %p\n", (int) ifc->if_pid, (void*) pkt);
+                            rreqtx = xtimer_now_usec();
                             if (gnrc_netapi_send(ifc->if_pid, pkt) < 1) {
                                 puts("error: unable to send\n");
                                 gnrc_pktbuf_release(pkt);
@@ -283,7 +286,8 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
     (void) rc; /* just to silence a compiler warning (if USE_DEBUG is not set) */
 }
 
-/* packets delivered to the application */
+extern int my_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c);
+
 int
 ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
 {
@@ -293,6 +297,9 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
     gnrc_pktsnip_t *pkt= gnrc_pktbuf_add(NULL, c->pkt->content,
                                          c->pkt->contlen,
                                          GNRC_NETTYPE_CCN_CHUNK);
+
+    my_app_RX(ccnl, c);
+
     if (pkt == NULL) {
         DEBUGMSG(WARNING, "Something went wrong allocating buffer for the chunk!\n");
         return -1;
@@ -346,6 +353,11 @@ _receive(struct ccnl_relay_s *ccnl, msg_t *m)
 static void
 ccnl_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccnl_int)
 {
+    unsigned long reqtxt1 = 0, reqtxt2 = 0, reqtxt3 = 0;
+    char s[CCNL_MAX_PREFIX_SIZE];
+
+    reqtxt1 = xtimer_now_usec();
+
     if(ccnl_int->retries >= CCNL_MAX_INTEREST_RETRANSMIT) {
         return;
     }
@@ -355,7 +367,11 @@ ccnl_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccn
     ((evtimer_event_t *)&ccnl_int->evtmsg_retrans)->offset = CCNL_INTEREST_RETRANS_TIMEOUT;
     evtimer_add_msg(&ccnl_evtimer, &ccnl_int->evtmsg_retrans, ccnl_event_loop_pid);
     ccnl_int->retries++;
+    reqtxt2 = xtimer_now_usec();
     ccnl_interest_propagate(relay, ccnl_int);
+    reqtxt3 = xtimer_now_usec();
+    ccnl_prefix_to_str(ccnl_int->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+    printf("rreqtx;%lu;%lu;%lu;%lu;%.*s\n", reqtxt1, reqtxt2, rreqtx, reqtxt3, 5, s+37);
 }
 
 /* the main event-loop */
