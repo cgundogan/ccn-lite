@@ -355,6 +355,10 @@ ccnl_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccn
 {
     unsigned long reqtxt1 = 0, reqtxt2 = 0, reqtxt3 = 0;
     char s[CCNL_MAX_PREFIX_SIZE];
+    (void) reqtxt1;
+    (void) reqtxt2;
+    (void) reqtxt3;
+    (void) s;
 
     reqtxt1 = xtimer_now_usec();
 
@@ -371,7 +375,9 @@ ccnl_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccn
     ccnl_interest_propagate(relay, ccnl_int);
     reqtxt3 = xtimer_now_usec();
     ccnl_prefix_to_str(ccnl_int->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
+#if EXP_L2_PRINT==0
     printf("rreqtx;%lu;%lu;%lu;%lu;%.*s\n", reqtxt1, reqtxt2, rreqtx, reqtxt3, 5, s+19);
+#endif
 }
 
 /* the main event-loop */
