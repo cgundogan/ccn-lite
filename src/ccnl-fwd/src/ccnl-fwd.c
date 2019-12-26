@@ -219,9 +219,6 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         return 0;
     }
 #endif
-    if (local_producer(relay, from, *pkt)) {
-        return 0;
-    }
 #if defined(USE_SUITE_CCNB) && defined(USE_MGMT)
     if ((*pkt)->suite == CCNL_SUITE_CCNB && (*pkt)->pfx->compcnt == 4 &&
                                   !memcmp((*pkt)->pfx->comp[0], "ccnx", 4)) {
@@ -264,6 +261,20 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         }
 
         return 0; // we are done
+    }
+
+    c = local_producer(relay, from, *pkt);
+    if (c) {
+        if (from) {
+            if (from->ifndx >= 0) {
+                ccnl_send_pkt(relay, from, c->pkt);
+            } else {
+#ifdef CCNL_APP_RX
+                ccnl_app_RX(relay, c);
+#endif
+            }
+        }
+        return 0;
     }
 
     // CONFORM: Step 2: check whether interest is already known
