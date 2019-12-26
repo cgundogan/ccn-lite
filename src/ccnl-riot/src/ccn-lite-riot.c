@@ -199,6 +199,9 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
     (void) ccnl;
     int rc;
     DEBUGMSG(TRACE, "ccnl_ll_TX %d bytes to %s\n", (buf ? (int) buf->datalen : -1), ccnl_addr2ascii(dest));
+#if EXP_L2_PRINT
+    printf("l2tx;%.*s;%u\n", 23, ccnl_addr2ascii(dest), (buf ? (int) buf->datalen : -1));
+#endif
 
     (void) ifc;
     switch(dest->sa.sa_family) {
@@ -344,6 +347,12 @@ _receive(struct ccnl_relay_s *ccnl, msg_t *m)
     su.sa.sa_family = AF_PACKET;
     su.linklayer.sll_halen = nethdr->src_l2addr_len;
     memcpy(su.linklayer.sll_addr, gnrc_netif_hdr_get_src_addr(nethdr), nethdr->src_l2addr_len);
+
+#if EXP_L2_PRINT
+            char src_str[GNRC_NETIF_HDR_L2ADDR_PRINT_LEN];
+            printf("l2rx;%s;%u\n", gnrc_netif_addr_to_str(gnrc_netif_hdr_get_src_addr(nethdr),
+                                                          nethdr->src_l2addr_len, src_str), ccn_pkt->size);
+#endif
 
     /* call CCN-lite callback and free memory in packet buffer */
     ccnl_core_RX(ccnl, i, ccn_pkt->data, ccn_pkt->size, &su.sa, sizeof(su.sa));
