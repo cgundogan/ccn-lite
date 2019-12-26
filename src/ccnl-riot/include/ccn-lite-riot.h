@@ -35,6 +35,7 @@
 #include "irq.h"
 #include "evtimer.h"
 #include "evtimer_msg.h"
+#include "random.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -287,7 +288,7 @@ static inline void ccnl_evtimer_reset_interest_retrans(struct ccnl_interest_s *i
     evtimer_del((evtimer_t *)(&ccnl_evtimer), (evtimer_event_t *)&i->evtmsg_retrans);
     i->evtmsg_retrans.msg.type = CCNL_MSG_INT_RETRANS;
     i->evtmsg_retrans.msg.content.ptr = i;
-    ((evtimer_event_t *)&i->evtmsg_retrans)->offset = CCNL_INTEREST_RETRANS_TIMEOUT;
+    ((evtimer_event_t *)&i->evtmsg_retrans)->offset = random_uint32_range(CCNL_INTEREST_RETRANS_TIMEOUT,CCNL_INTEREST_RETRANS_TIMEOUT+500);
     evtimer_add_msg(&ccnl_evtimer, &i->evtmsg_retrans, ccnl_event_loop_pid);
 }
 

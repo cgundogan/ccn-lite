@@ -43,6 +43,8 @@
 #include <ccnl-pkt-switch.h>
 #endif
 
+#include "random.h"
+
 //#include "ccnl-logging.h"
 
 
@@ -111,9 +113,14 @@ ccnl_fwd_handleContent(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 
     if (relay->max_cache_entries != 0) { // it's set to -1 or a limit
         DEBUGMSG_CFWD(DEBUG, "  adding content to cache\n");
-        ccnl_content_add2cache(relay, c);
-        int contlen = (int) (c->pkt->contlen > INT_MAX ? INT_MAX : c->pkt->contlen);
-        DEBUGMSG_CFWD(INFO, "data after creating packet %.*s\n", contlen, c->pkt->content);
+        if (random_uint32_range(0,2)) {
+            ccnl_content_add2cache(relay, c);
+            int contlen = (int) (c->pkt->contlen > INT_MAX ? INT_MAX : c->pkt->contlen);
+            DEBUGMSG_CFWD(INFO, "data after creating packet %.*s\n", contlen, c->pkt->content);
+        }
+        else {
+            ccnl_content_free(c);
+        }
     } else {
         DEBUGMSG_CFWD(DEBUG, "  content not added to cache\n");
         ccnl_content_free(c);
