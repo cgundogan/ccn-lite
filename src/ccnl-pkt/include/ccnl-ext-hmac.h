@@ -128,6 +128,7 @@ ccnl_ccntlv_prependSignedContentWithHdr(struct ccnl_prefix_s *name,
  * @param[in]  contentpos Position of the content in the \p buf
  * @param[in]  keyval The key to use for signing the content (>= 64 bytes)
  * @param[in]  keydigest The digest (>= 32 bytes)
+ * @param[in]  keydigest Length of \p keydigest
  * @param[out] offset TODO
  * @param[out] buf A byte representation of the actual packet
  *
@@ -139,6 +140,7 @@ ccnl_ndntlv_prependSignedContent(struct ccnl_prefix_s *name,
                                  uint32_t *final_block_id, size_t *contentpos,
                                  uint8_t *keyval, // 64B
                                  uint8_t *keydigest, // 32B
+                                 size_t keydigestlen,
                                  size_t *offset, uint8_t *buf, size_t *reslen);
 #endif // USE_SUITE_NDNTLV
 #endif // NEEDS_PACKET_CRAFTING
