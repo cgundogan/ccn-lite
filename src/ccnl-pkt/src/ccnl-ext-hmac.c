@@ -170,6 +170,7 @@ ccnl_ndntlv_prependSignedContent(struct ccnl_prefix_s *name,
                                  uint32_t *final_block_id, size_t *contentpos,
                                  uint8_t *keyval, // 64B
                                  uint8_t *keydigest, // 32B
+                                 size_t keydigestlen,
                                  size_t *offset, uint8_t *buf, size_t *reslen) {
     size_t mdlength = 32;
     size_t oldoffset = *offset, oldoffset2, mdoffset, endofsign;
@@ -191,17 +192,14 @@ ccnl_ndntlv_prependSignedContent(struct ccnl_prefix_s *name,
     // to find length from start of content to end of SignatureInfo
     endofsign = *offset;
 
-#ifdef XXX // we skip this
-    // keyid
-    *offset -= 32;
-    memcpy(buf + *offset, keydigest, 32);
-    if (ccnl_ndntlv_prependTL(NDN_TLV_KeyLocatorDigest, 32, offset, buf)) {
+    *offset -= keydigestlen;
+    memcpy(buf + *offset, keydigest, keydigestlen);
+    if (ccnl_ndntlv_prependTL(NDN_TLV_KeyLocatorDigest, keydigestlen, offset, buf)) {
         return -1;
     }
-    if (ccnl_ndntlv_prependTL(NDN_TLV_KeyLocator, 32+2, offset, buf)) {
+    if (ccnl_ndntlv_prependTL(NDN_TLV_KeyLocator, keydigestlen+2, offset, buf)) {
         return -1;
     }
-#endif
 
     // use NDN_SigTypeVal_SignatureHmacWithSha256
     if (ccnl_ndntlv_prependBlob(NDN_TLV_SignatureType, signatureType, 1,

@@ -292,6 +292,22 @@ ccnl_ndntlv_bytes2pkt(uint64_t pkttype, uint8_t *start,
                 len2 -= i;
             }
             break;
+        case NDN_TLV_KeyLocator:
+            while (len2 > 0) {
+                if (ccnl_ndntlv_dehead(&cp, &len2, &typ, &i)) {
+                    goto Bail;
+                }
+                switch(typ) {
+                case NDN_TLV_KeyLocator:
+                    // do nothing for now
+                    break;
+                default:
+                    break;
+                }
+                cp += i;
+                len2 -= i;
+            }
+            break;
         case NDN_TLV_SignatureValue:
             if (pkt->hmacStart && validAlgoIsHmac256 && len == 32) {
                 pkt->hmacLen = oldpos;
