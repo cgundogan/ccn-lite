@@ -377,7 +377,7 @@ ccnl_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccn
 
     ccnl_int->evtmsg_retrans.msg.type = CCNL_MSG_INT_RETRANS;
     ccnl_int->evtmsg_retrans.msg.content.ptr = ccnl_int;
-    ((evtimer_event_t *)&ccnl_int->evtmsg_retrans)->offset = (CCNL_INTEREST_RETRANS_TIMEOUT - 250) + random_uint32_range(0, 500);
+    ((evtimer_event_t *)&ccnl_int->evtmsg_retrans)->offset = (CCNL_INTEREST_RETRANS_TIMEOUT - 100) + random_uint32_range(0, 200);
     evtimer_add_msg(&ccnl_evtimer, &ccnl_int->evtmsg_retrans, ccnl_event_loop_pid);
     ccnl_int->retries++;
     reqtxt2 = xtimer_now_usec();
