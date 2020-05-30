@@ -249,6 +249,8 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
             // Step 1: search in content store
     DEBUGMSG_CFWD(DEBUG, "  searching in CS\n");
 
+    ccnl_prefix_to_str((*pkt)->pfx, s, CCNL_MAX_PREFIX_SIZE);
+
     for (c = relay->contents; c; c = c->next) {
         if (c->pkt->pfx->suite != (*pkt)->pfx->suite)
             continue;
@@ -259,9 +261,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 
         if (from) {
             if (from->ifndx >= 0) {
-                char s[CCNL_MAX_PREFIX_SIZE];
-                ccnl_prefix_to_str(c->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
-                printf("cshit;%.*s\n", 5, s+19);
+                printf("csh;%.*s\n", 5, s+19);
                 ccnl_send_pkt(relay, from, c->pkt);
             } else {
 #ifdef CCNL_APP_RX 
@@ -286,6 +286,8 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         }
         return 0;
     }
+
+    printf("csm;%.*s\n", 5, s+19);
 
     // CONFORM: Step 2: check whether interest is already known
     for (i = relay->pit; i; i = i->next)
