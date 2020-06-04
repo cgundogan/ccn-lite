@@ -219,8 +219,6 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 
     ccnl_prefix_to_str((*pkt)->pfx, s, CCNL_MAX_PREFIX_SIZE);
 
-    printf("irx;%.*s\n", 5, s+19);
-
 #ifdef USE_DUP_CHECK
 
     if (ccnl_nonce_isDup(relay, *pkt)) {
@@ -229,6 +227,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     #else
         DEBUGMSG_CFWD(DEBUG, "  dropped because of duplicate nonce %d\n", nonce);
     #endif
+        printf("irx;%.*s\n", 5, s+19);
         return 0;
     }
 #endif
