@@ -220,7 +220,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     #else
         DEBUGMSG_CFWD(DEBUG, "  dropped because of duplicate nonce %d\n", nonce);
     #endif
-        printf("irx;%.*s\n", 5, s+19);
+        printf("fqi;%.*s\n", 5, s+19);
         return 0;
     }
 #endif
@@ -257,7 +257,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
 
         if (from) {
             if (from->ifndx >= 0) {
-                printf("csh;%.*s\n", 5, s+19);
+                printf("fch;%.*s\n", 5, s+19);
                 ccnl_send_pkt(relay, from, c->pkt);
             } else {
 #ifdef CCNL_APP_RX 
@@ -274,6 +274,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         if (from) {
             if (from->ifndx >= 0) {
                 ccnl_send_pkt(relay, from, c->pkt);
+                ccnl_content_free(c);
             } else {
 #ifdef CCNL_APP_RX
                 ccnl_app_RX(relay, c);
@@ -283,7 +284,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
         return 0;
     }
 
-    printf("csm;%.*s\n", 5, s+19);
+    printf("fcm;%.*s\n", 5, s+19);
 
     // CONFORM: Step 2: check whether interest is already known
     for (i = relay->pit; i; i = i->next)

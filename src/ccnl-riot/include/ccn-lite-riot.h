@@ -347,7 +347,7 @@ static inline void ccnl_riot_interest_remove(evtimer_t *et, struct ccnl_interest
 
     unsigned state = irq_disable();
     /* remove messages that relate to this interest from the message queue */
-    thread_t *me = (thread_t*) sched_threads[sched_active_pid];
+    thread_t *me = (thread_t*) sched_threads[thread_getpid()];
     for (unsigned j = 0; j <= me->msg_queue.mask; j++) {
         if (me->msg_array[j].content.ptr == i) {
             /* removing is done by setting to zero */

@@ -377,7 +377,7 @@ ccnl_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccn
     ccnl_int->retries++;
     ccnl_interest_propagate(relay, ccnl_int);
     ccnl_prefix_to_str(ccnl_int->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
-    printf("rrqtx;%.*s\n", 5, s+19);
+    printf("txrq;%.*s\n", 5, s+19);
 }
 
 /* the main event-loop */
@@ -461,7 +461,7 @@ void
                 ccnl_int = (struct ccnl_interest_s *)m.content.ptr;
                 char s[CCNL_MAX_PREFIX_SIZE];
                 ccnl_prefix_to_str(ccnl_int->pkt->pfx, s, CCNL_MAX_PREFIX_SIZE);
-                printf("error;rp;%.*s\n", 5, s+19);
+                printf("err;p;%.*s\n", 5, s+19);
                 ccnl_interest_remove(ccnl, ccnl_int);
                 break;
             case CCNL_MSG_FACE_TIMEOUT:
@@ -515,7 +515,7 @@ ccnl_wait_for_chunk(void *buf, size_t buf_len, uint64_t timeout)
 
         /* TODO: receive from socket or interface */
         _timeout_msg.type = CCNL_MSG_TIMEOUT;
-        xtimer_set_msg64(&_wait_timer, timeout, &_timeout_msg, sched_active_pid);
+        xtimer_set_msg64(&_wait_timer, timeout, &_timeout_msg, thread_getpid());
         msg_t m;
         msg_receive(&m);
         if (m.type == GNRC_NETAPI_MSG_TYPE_RCV) {
