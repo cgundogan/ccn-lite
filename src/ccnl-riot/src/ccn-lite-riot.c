@@ -273,6 +273,8 @@ ccnl_ll_TX(struct ccnl_relay_s *ccnl, struct ccnl_if_s *ifc,
     (void) rc; /* just to silence a compiler warning (if USE_DEBUG is not set) */
 }
 
+extern int my_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c);
+
 /* packets delivered to the application */
 int
 ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
@@ -283,6 +285,8 @@ ccnl_app_RX(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
     gnrc_pktsnip_t *pkt= gnrc_pktbuf_add(NULL, c->pkt->content,
                                          c->pkt->contlen,
                                          GNRC_NETTYPE_CCN_CHUNK);
+    my_app_RX(ccnl, c);
+
     if (pkt == NULL) {
         DEBUGMSG(WARNING, "Something went wrong allocating buffer for the chunk!\n");
         return -1;
