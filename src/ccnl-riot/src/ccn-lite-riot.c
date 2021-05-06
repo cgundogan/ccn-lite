@@ -84,7 +84,7 @@ struct ccnl_relay_s ccnl_relay;
 /**
  * @brief Local loopback face
  */
-static struct ccnl_face_s *loopback_face;
+struct ccnl_face_s *loopback_face;
 
 /**
  * @brief Debugging level
