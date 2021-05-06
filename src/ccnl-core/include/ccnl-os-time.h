@@ -67,10 +67,17 @@ timestamp(void);
 #ifdef CCNL_UNIX
 
 #ifndef CCNL_OMNET
+#ifndef CCNL_RIOT
 #  define CCNL_NOW()                    current_time()
+#endif // CCNL_RIOT
 #endif //CCNL_OMNET
 
 #endif // CCNL_UNIX
+
+#ifdef CCNL_RIOT
+#include <xtimer.h>
+#define CCNL_NOW() (xtimer_now_usec64())
+#endif
 
 #if defined(CCNL_UNIX) || defined (CCNL_RIOT) || defined (CCNL_ARDUINO)
 
