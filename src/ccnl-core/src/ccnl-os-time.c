@@ -95,6 +95,14 @@ current_time(void)
                 ((double)(tv.tv_usec) - start_usec) / 1000000;
 }
 
+#ifdef CCNL_RIOT
+char*
+timestamp(void)
+{
+    return "";
+}
+
+#else
 char*
 timestamp(void)
 {
@@ -111,6 +119,8 @@ timestamp(void)
         
     return ts;
 }
+
+#endif // CCNL_RIOT
 
 #endif
 
