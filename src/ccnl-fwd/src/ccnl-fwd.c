@@ -226,6 +226,7 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     if (c) {
         if (from && from->ifndx >= 0) {
             ccnl_send_pkt(relay, from, c->pkt);
+            ccnl_content_free(c);
         }
         return 0;
     }

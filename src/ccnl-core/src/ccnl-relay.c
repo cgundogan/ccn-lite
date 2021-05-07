@@ -540,12 +540,12 @@ ccnl_content_remove(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
         ccnl_free(c->pkt);
     }
     //    ccnl_prefix_free(c->name);
-    ccnl_free(c);
-
-    ccnl->contentcnt--;
 #ifdef CCNL_RIOT
     evtimer_del((evtimer_t *)(&ccnl_evtimer), (evtimer_event_t *)&c->evtmsg_cstimeout);
 #endif
+    ccnl_free(c);
+
+    ccnl->contentcnt--;
     return c2;
 }
 
