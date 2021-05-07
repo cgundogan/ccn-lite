@@ -35,7 +35,7 @@ ccnl_set_local_producer(ccnl_producer_func func)
     _prod_func = func;
 }
 
-int
+struct ccnl_content_s *
 local_producer(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
                    struct ccnl_pkt_s *pkt)
 {
