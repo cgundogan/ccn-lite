@@ -589,12 +589,6 @@ ccnl_content_add2cache(struct ccnl_relay_s *ccnl, struct ccnl_content_s *c)
          (ccnl->contentcnt <= ccnl->max_cache_entries)) {
             DBL_LINKED_LIST_ADD(ccnl->contents, c);
             ccnl->contentcnt++;
-#ifdef CCNL_RIOT
-            /* set cache timeout timer if content is not static */
-            if (!(c->flags & CCNL_CONTENT_FLAGS_STATIC)) {
-                ccnl_evtimer_set_cs_timeout(c);
-            }
-#endif
     }
 
     return c;
