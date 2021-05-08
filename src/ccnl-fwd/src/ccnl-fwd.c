@@ -222,17 +222,9 @@ ccnl_fwd_handleInterest(struct ccnl_relay_s *relay, struct ccnl_face_s *from,
     }
 #endif
 #ifndef CCNL_LINUXKERNEL
-    c = local_producer(relay, from, *pkt);
-    if (c) {
-        if (from && from->ifndx >= 0) {
-            ccnl_send_pkt(relay, from, c->pkt);
-            ccnl_content_free(c);
-        }
+    if (local_producer(relay, from, *pkt)) {
         return 0;
     }
-//    if (local_producer(relay, from, *pkt)) {
-//        return 0;
-//    }
 #endif
 #if defined(USE_SUITE_CCNB) && defined(USE_MGMT)
     if ((*pkt)->suite == CCNL_SUITE_CCNB && (*pkt)->pfx->compcnt == 4 &&
