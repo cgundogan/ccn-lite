@@ -333,6 +333,8 @@ _receive(struct ccnl_relay_s *ccnl, msg_t *m)
     gnrc_pktbuf_release(pkt);
 }
 
+void on_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccnl_int);
+
 static void
 ccnl_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccnl_int)
 {
@@ -346,6 +348,7 @@ ccnl_interest_retransmit(struct ccnl_relay_s *relay, struct ccnl_interest_s *ccn
     evtimer_add_msg(&ccnl_evtimer, &ccnl_int->evtmsg_retrans, ccnl_event_loop_pid);
     ccnl_int->retries++;
     ccnl_interest_propagate(relay, ccnl_int);
+    on_interest_retransmit(relay, ccnl_int);
 }
 
 /* the main event-loop */
